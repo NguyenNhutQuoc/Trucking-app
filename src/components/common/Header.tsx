@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import colors from "@/constants/colors";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 interface HeaderProps {
   title: string;
@@ -35,9 +35,10 @@ const Header: React.FC<HeaderProps> = ({
   onMenuPress,
   containerStyle,
   titleStyle,
-  backgroundColor = colors.primary,
+  backgroundColor,
 }) => {
   const navigation = useNavigation();
+  const { colors, isDarkMode } = useAppTheme();
 
   const handleBackPress = () => {
     if (onBackPress) {
@@ -47,10 +48,18 @@ const Header: React.FC<HeaderProps> = ({
     }
   };
 
+  const headerBgColor = backgroundColor || colors.primary;
+
   return (
     <>
-      <StatusBar backgroundColor={backgroundColor} barStyle="light-content" />
-      <View style={[styles.container, { backgroundColor }, containerStyle]}>
+      <StatusBar backgroundColor={headerBgColor} barStyle="light-content" />
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: headerBgColor },
+          containerStyle,
+        ]}
+      >
         <View style={styles.leftContainer}>
           {showBack && (
             <TouchableOpacity

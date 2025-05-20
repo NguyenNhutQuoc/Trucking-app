@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import colors from "@/constants/colors";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -42,6 +42,7 @@ const Input: React.FC<InputProps> = ({
   ...props
 }) => {
   const [secureTextEntry, setSecureTextEntry] = useState<boolean>(secure);
+  const { colors } = useAppTheme();
 
   const toggleSecureEntry = () => {
     setSecureTextEntry(!secureTextEntry);
@@ -49,12 +50,21 @@ const Input: React.FC<InputProps> = ({
 
   const renderInput = () => (
     <View
-      style={[styles.inputContainer, !!error && styles.inputError, inputStyle]}
+      style={[
+        styles.inputContainer,
+        {
+          backgroundColor: colors.gray100,
+          borderColor: error ? colors.error : colors.gray300,
+        },
+        !!error && styles.inputError,
+        inputStyle,
+      ]}
     >
       {leftIcon && <View style={styles.leftIconContainer}>{leftIcon}</View>}
       <TextInput
         style={[
           styles.input,
+          { color: colors.text },
           !!leftIcon && styles.inputWithLeftIcon,
           !!(rightIcon || secure) && styles.inputWithRightIcon,
         ]}
@@ -84,7 +94,13 @@ const Input: React.FC<InputProps> = ({
   return (
     <View style={[styles.container, containerStyle]}>
       {label && (
-        <Text style={[styles.label, !!error && styles.labelError, labelStyle]}>
+        <Text
+          style={[
+            styles.label,
+            { color: error ? colors.error : colors.gray700 },
+            labelStyle,
+          ]}
+        >
           {label}
         </Text>
       )}
@@ -98,7 +114,12 @@ const Input: React.FC<InputProps> = ({
       )}
 
       {(error || helper) && (
-        <Text style={[styles.helperText, !!error && styles.errorText]}>
+        <Text
+          style={[
+            styles.helperText,
+            { color: error ? colors.error : colors.gray600 },
+          ]}
+        >
           {error || helper}
         </Text>
       )}
@@ -114,29 +135,22 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "500",
-    color: colors.gray700,
     marginBottom: 6,
-  },
-  labelError: {
-    color: colors.error,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.gray100,
     borderWidth: 1,
-    borderColor: colors.gray300,
     borderRadius: 8,
     overflow: "hidden",
   },
   inputError: {
-    borderColor: colors.error,
+    borderColor: "red", // This is overridden with the theme color
   },
   input: {
     flex: 1,
     height: 48,
     paddingHorizontal: 12,
-    color: colors.text,
     fontSize: 16,
   },
   inputWithLeftIcon: {
@@ -157,12 +171,8 @@ const styles = StyleSheet.create({
   },
   helperText: {
     fontSize: 12,
-    color: colors.gray600,
     marginTop: 4,
     marginLeft: 4,
-  },
-  errorText: {
-    color: colors.error,
   },
 });
 

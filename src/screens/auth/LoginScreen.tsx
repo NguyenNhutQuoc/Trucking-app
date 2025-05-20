@@ -17,15 +17,16 @@ import { useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import Input from "@/components/common/Input";
 import Button from "@/components/common/Button";
 import Loading from "@/components/common/Loading";
-import colors from "@/constants/colors";
 import { APP_NAME, APP_VERSION } from "@/constants/config";
 
 const LoginScreen: React.FC = () => {
   const navigation = useNavigation();
   const { login } = useAuth();
+  const { colors, isDarkMode } = useAppTheme();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -83,8 +84,10 @@ const LoginScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="dark" />
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
+    >
+      <StatusBar style={isDarkMode ? "light" : "dark"} />
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -100,8 +103,12 @@ const LoginScreen: React.FC = () => {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.title}>{APP_NAME}</Text>
-            <Text style={styles.subtitle}>Đăng nhập để tiếp tục</Text>
+            <Text style={[styles.title, { color: colors.primary }]}>
+              {APP_NAME}
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Đăng nhập để tiếp tục
+            </Text>
           </View>
 
           <View style={styles.formContainer}>
@@ -148,7 +155,11 @@ const LoginScreen: React.FC = () => {
             />
 
             <TouchableOpacity style={styles.forgotPasswordContainer}>
-              <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
+              <Text
+                style={[styles.forgotPasswordText, { color: colors.primary }]}
+              >
+                Quên mật khẩu?
+              </Text>
             </TouchableOpacity>
 
             <Button
@@ -162,7 +173,9 @@ const LoginScreen: React.FC = () => {
         </ScrollView>
 
         <View style={styles.footer}>
-          <Text style={styles.versionText}>Phiên bản: {APP_VERSION}</Text>
+          <Text style={[styles.versionText, { color: colors.gray500 }]}>
+            Phiên bản: {APP_VERSION}
+          </Text>
         </View>
 
         <Loading loading={loading} overlay message="Đang đăng nhập..." />
@@ -174,7 +187,6 @@ const LoginScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
@@ -198,12 +210,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: colors.primary,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: colors.textSecondary,
   },
   formContainer: {
     width: "100%",
@@ -213,7 +223,6 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   forgotPasswordText: {
-    color: colors.primary,
     fontSize: 14,
   },
   loginButton: {
@@ -226,7 +235,6 @@ const styles = StyleSheet.create({
   },
   versionText: {
     fontSize: 12,
-    color: colors.gray500,
   },
 });
 

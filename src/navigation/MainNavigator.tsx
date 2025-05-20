@@ -9,12 +9,14 @@ import WeighingNavigator from "./WeighingNavigator";
 import ReportsNavigator from "./ReportsNavigator";
 import SettingsNavigator from "./SettingsNavigator";
 import ManagementNavigator from "./ManagementNavigator";
-import colors from "@/constants/colors";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import { MainTabParamList } from "@/types/navigation.types";
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const MainNavigator: React.FC = () => {
+  const { colors } = useAppTheme();
+
   return (
     <Tab.Navigator
       screenOptions={{

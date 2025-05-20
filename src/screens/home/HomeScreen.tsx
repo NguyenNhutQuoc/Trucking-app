@@ -2,11 +2,9 @@
 import React, { useState, useEffect } from "react";
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  SafeAreaView,
   RefreshControl,
   ScrollView,
 } from "react-native";
@@ -14,17 +12,20 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import { weighingApi } from "@/api/weighing";
 import Header from "@/components/common/Header";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import Loading from "@/components/common/Loading";
-import colors from "@/constants/colors";
+import ThemedView from "@/components/common/ThemedView";
+import ThemedText from "@/components/common/ThemedText";
 import { Phieucan } from "@/types/api.types";
 
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation();
   const { userInfo } = useAuth();
+  const { colors } = useAppTheme();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -144,29 +145,37 @@ const HomeScreen: React.FC = () => {
               color={colors.gray700}
               style={styles.icon}
             />
-            <Text style={styles.vehicleNumber}>{item.soxe}</Text>
-            <Text style={styles.weighTicketNumber}>#{item.sophieu}</Text>
+            <ThemedText style={styles.vehicleNumber}>{item.soxe}</ThemedText>
+            <ThemedText type="subtitle" style={styles.weighTicketNumber}>
+              #{item.sophieu}
+            </ThemedText>
           </View>
 
           <View style={styles.infoRow}>
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Vào:</Text>
-              <Text style={styles.infoValue}>
+              <ThemedText type="subtitle" style={styles.infoLabel}>
+                Vào:
+              </ThemedText>
+              <ThemedText style={styles.infoValue}>
                 {new Date(item.ngaycan1).toLocaleTimeString("vi-VN", {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
-              </Text>
+              </ThemedText>
             </View>
 
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Trọng lượng:</Text>
-              <Text style={styles.infoValue}>{item.tlcan1} kg</Text>
+              <ThemedText type="subtitle" style={styles.infoLabel}>
+                Trọng lượng:
+              </ThemedText>
+              <ThemedText style={styles.infoValue}>{item.tlcan1} kg</ThemedText>
             </View>
           </View>
 
           <View style={styles.bottomRow}>
-            <Text style={styles.productName}>{item.loaihang}</Text>
+            <ThemedText type="subtitle" style={styles.productName}>
+              {item.loaihang}
+            </ThemedText>
           </View>
         </View>
       </Card>
@@ -174,7 +183,7 @@ const HomeScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <ThemedView useSafeArea>
       <Header
         title="Trạm A"
         showMenu={true}
@@ -188,24 +197,38 @@ const HomeScreen: React.FC = () => {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
         }
       >
         <View style={styles.todayStatsContainer}>
           <Card style={styles.todayStatsCard} elevated>
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Hôm nay:</Text>
-                <Text style={styles.statValue}>
+                <ThemedText type="subtitle" style={styles.statLabel}>
+                  Hôm nay:
+                </ThemedText>
+                <ThemedText style={styles.statValue}>
                   {todayStats.totalVehicles} xe
-                </Text>
+                </ThemedText>
               </View>
-              <View style={styles.statDivider} />
+              <View
+                style={[
+                  styles.statDivider,
+                  { backgroundColor: colors.gray200 },
+                ]}
+              />
               <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Tổng trọng lượng:</Text>
-                <Text style={styles.statValue}>
+                <ThemedText type="subtitle" style={styles.statLabel}>
+                  Tổng trọng lượng:
+                </ThemedText>
+                <ThemedText style={styles.statValue}>
                   {formatWeight(todayStats.totalWeight)}
-                </Text>
+                </ThemedText>
               </View>
             </View>
           </Card>
@@ -214,7 +237,7 @@ const HomeScreen: React.FC = () => {
         <View style={styles.actionButtonsContainer}>
           <View style={styles.actionButtonRow}>
             <TouchableOpacity
-              style={styles.actionButton}
+              style={[styles.actionButton, { backgroundColor: colors.card }]}
               onPress={handleViewAllWeighings}
             >
               <View
@@ -225,13 +248,13 @@ const HomeScreen: React.FC = () => {
               >
                 <Ionicons name="list" size={28} color="white" />
               </View>
-              <Text style={styles.actionText}>Danh Sách Cân</Text>
+              <ThemedText style={styles.actionText}>Danh Sách Cân</ThemedText>
             </TouchableOpacity>
           </View>
 
           <View style={styles.actionButtonRow}>
             <TouchableOpacity
-              style={styles.actionButton}
+              style={[styles.actionButton, { backgroundColor: colors.card }]}
               onPress={handleViewReports}
             >
               <View
@@ -242,11 +265,11 @@ const HomeScreen: React.FC = () => {
               >
                 <Ionicons name="bar-chart" size={28} color="white" />
               </View>
-              <Text style={styles.actionText}>Báo Cáo</Text>
+              <ThemedText style={styles.actionText}>Báo Cáo</ThemedText>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.actionButton}
+              style={[styles.actionButton, { backgroundColor: colors.card }]}
               onPress={() => {
                 // @ts-ignore
                 navigation.navigate("Management");
@@ -260,19 +283,23 @@ const HomeScreen: React.FC = () => {
               >
                 <Ionicons name="settings" size={28} color="white" />
               </View>
-              <Text style={styles.actionText}>Quản Lý</Text>
+              <ThemedText style={styles.actionText}>Quản Lý</ThemedText>
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.pendingWeighingsContainer}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
+            <ThemedText style={styles.sectionTitle}>
               Đang chờ cân ra ({pendingWeighings.length})
-            </Text>
+            </ThemedText>
             {pendingWeighings.length > 0 && (
               <TouchableOpacity onPress={handleViewAllWeighings}>
-                <Text style={styles.viewAllText}>Xem tất cả</Text>
+                <ThemedText
+                  style={[styles.viewAllText, { color: colors.primary }]}
+                >
+                  Xem tất cả
+                </ThemedText>
               </TouchableOpacity>
             )}
           </View>
@@ -292,9 +319,9 @@ const HomeScreen: React.FC = () => {
                   size={48}
                   color={colors.gray400}
                 />
-                <Text style={styles.emptyStateText}>
+                <ThemedText type="subtitle" style={styles.emptyStateText}>
                   Không có xe đang chờ cân ra
-                </Text>
+                </ThemedText>
               </View>
             </Card>
           )}
@@ -302,7 +329,9 @@ const HomeScreen: React.FC = () => {
 
         <View style={styles.activityContainer}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Hoạt động cân trong ngày</Text>
+            <ThemedText style={styles.sectionTitle}>
+              Hoạt động cân trong ngày
+            </ThemedText>
           </View>
 
           <Card style={styles.activityChartCard}>
@@ -313,7 +342,9 @@ const HomeScreen: React.FC = () => {
                     key={index}
                     style={[styles.barContainer, { height: 100 * height }]}
                   >
-                    <View style={styles.bar} />
+                    <View
+                      style={[styles.bar, { backgroundColor: colors.primary }]}
+                    />
                   </View>
                 ))}
               </View>
@@ -323,15 +354,11 @@ const HomeScreen: React.FC = () => {
       </ScrollView>
 
       <Loading loading={loading} />
-    </SafeAreaView>
+    </ThemedView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   scrollContent: {
     padding: 16,
   },
@@ -356,15 +383,12 @@ const styles = StyleSheet.create({
   },
   statDivider: {
     width: 1,
-    backgroundColor: colors.gray200,
   },
   statLabel: {
-    color: colors.gray600,
     fontSize: 14,
     marginBottom: 4,
   },
   statValue: {
-    color: colors.text,
     fontSize: 20,
     fontWeight: "600",
   },
@@ -379,7 +403,6 @@ const styles = StyleSheet.create({
   actionButton: {
     alignItems: "center",
     width: "48%",
-    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
     shadowColor: "#000",
@@ -399,7 +422,6 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: 14,
     fontWeight: "500",
-    color: colors.text,
   },
   pendingWeighingsContainer: {
     marginBottom: 20,
@@ -413,11 +435,9 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
   },
   viewAllText: {
     fontSize: 14,
-    color: colors.primary,
   },
   pendingWeighingCard: {
     marginBottom: 12,
@@ -437,12 +457,10 @@ const styles = StyleSheet.create({
   vehicleNumber: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
     flex: 1,
   },
   weighTicketNumber: {
     fontSize: 14,
-    color: colors.gray600,
   },
   infoRow: {
     flexDirection: "row",
@@ -454,12 +472,10 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 14,
-    color: colors.gray600,
     marginRight: 4,
   },
   infoValue: {
     fontSize: 14,
-    color: colors.text,
     fontWeight: "500",
   },
   bottomRow: {
@@ -468,7 +484,6 @@ const styles = StyleSheet.create({
   },
   productName: {
     fontSize: 14,
-    color: colors.gray700,
   },
   completeButton: {
     padding: 8,
@@ -484,7 +499,6 @@ const styles = StyleSheet.create({
   emptyStateText: {
     marginTop: 8,
     fontSize: 14,
-    color: colors.gray600,
     textAlign: "center",
   },
   activityContainer: {
@@ -510,7 +524,6 @@ const styles = StyleSheet.create({
   bar: {
     width: "100%",
     height: "100%",
-    backgroundColor: colors.primary,
     borderRadius: 4,
   },
 });

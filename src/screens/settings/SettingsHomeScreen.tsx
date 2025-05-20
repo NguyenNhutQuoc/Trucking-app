@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import Header from "@/components/common/Header";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
@@ -26,10 +27,10 @@ type NavigationProp = SettingsStackScreenProps<"SettingsHome">["navigation"];
 const SettingsHomeScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { userInfo, logout } = useAuth();
+  const { colors, isDarkMode, toggleTheme } = useAppTheme();
 
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
   const [syncEnabled, setSyncEnabled] = React.useState(true);
-  const [darkModeEnabled, setDarkModeEnabled] = React.useState(false);
 
   const renderSettingItem = (
     icon: string,
@@ -41,14 +42,25 @@ const SettingsHomeScreen: React.FC = () => {
       style={styles.settingItem}
       onPress={() => navigation.navigate(screen as any)}
     >
-      <View style={styles.settingIconContainer}>
+      <View
+        style={[
+          styles.settingIconContainer,
+          { backgroundColor: colors.gray100 },
+        ]}
+      >
         <Ionicons name={icon as any} size={24} color={colors.primary} />
       </View>
 
       <View style={styles.settingContent}>
-        <Text style={styles.settingTitle}>{title}</Text>
+        <Text style={[styles.settingTitle, { color: colors.text }]}>
+          {title}
+        </Text>
         {description && (
-          <Text style={styles.settingDescription}>{description}</Text>
+          <Text
+            style={[styles.settingDescription, { color: colors.textSecondary }]}
+          >
+            {description}
+          </Text>
         )}
       </View>
 
@@ -64,14 +76,25 @@ const SettingsHomeScreen: React.FC = () => {
     description?: string,
   ) => (
     <View style={styles.settingItem}>
-      <View style={styles.settingIconContainer}>
+      <View
+        style={[
+          styles.settingIconContainer,
+          { backgroundColor: colors.gray100 },
+        ]}
+      >
         <Ionicons name={icon as any} size={24} color={colors.primary} />
       </View>
 
       <View style={styles.settingContent}>
-        <Text style={styles.settingTitle}>{title}</Text>
+        <Text style={[styles.settingTitle, { color: colors.text }]}>
+          {title}
+        </Text>
         {description && (
-          <Text style={styles.settingDescription}>{description}</Text>
+          <Text
+            style={[styles.settingDescription, { color: colors.textSecondary }]}
+          >
+            {description}
+          </Text>
         )}
       </View>
 
@@ -96,7 +119,9 @@ const SettingsHomeScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
+    >
       <Header title="Cài Đặt" />
 
       <ScrollView
@@ -105,15 +130,22 @@ const SettingsHomeScreen: React.FC = () => {
       >
         <Card style={styles.profileCard}>
           <View style={styles.profileSection}>
-            <View style={styles.profileAvatar}>
+            <View
+              style={[
+                styles.profileAvatar,
+                { backgroundColor: colors.primary + "15" },
+              ]}
+            >
               <Ionicons name="person" size={40} color={colors.primary} />
             </View>
 
             <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>
+              <Text style={[styles.profileName, { color: colors.text }]}>
                 {userInfo?.tenNV || "User"}
               </Text>
-              <Text style={styles.profileRole}>
+              <Text
+                style={[styles.profileRole, { color: colors.textSecondary }]}
+              >
                 {userInfo?.type === 1 ? "Quản trị viên" : "Nhân viên"}
               </Text>
             </View>
@@ -133,7 +165,9 @@ const SettingsHomeScreen: React.FC = () => {
           />
         </Card>
 
-        <Text style={styles.sectionTitle}>Cài đặt ứng dụng</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Cài đặt ứng dụng
+        </Text>
 
         <Card style={styles.settingsCard}>
           {renderSettingItem(
@@ -172,7 +206,9 @@ const SettingsHomeScreen: React.FC = () => {
           )}
         </Card>
 
-        <Text style={styles.sectionTitle}>Tùy chọn nhanh</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Tùy chọn nhanh
+        </Text>
 
         <Card style={styles.settingsCard}>
           {renderSwitchItem(
@@ -194,17 +230,22 @@ const SettingsHomeScreen: React.FC = () => {
           {renderSwitchItem(
             "moon-outline",
             "Chế độ tối",
-            darkModeEnabled,
-            setDarkModeEnabled,
+            isDarkMode,
+            toggleTheme,
             "Thay đổi chế độ hiển thị sang tối",
           )}
         </Card>
 
-        <Text style={styles.sectionTitle}>Khác</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Khác</Text>
 
         <Card style={styles.settingsCard}>
           <TouchableOpacity style={styles.settingItem} onPress={() => {}}>
-            <View style={styles.settingIconContainer}>
+            <View
+              style={[
+                styles.settingIconContainer,
+                { backgroundColor: colors.gray100 },
+              ]}
+            >
               <Ionicons
                 name="help-circle-outline"
                 size={24}
@@ -213,14 +254,21 @@ const SettingsHomeScreen: React.FC = () => {
             </View>
 
             <View style={styles.settingContent}>
-              <Text style={styles.settingTitle}>Trợ giúp & Hỗ trợ</Text>
+              <Text style={[styles.settingTitle, { color: colors.text }]}>
+                Trợ giúp & Hỗ trợ
+              </Text>
             </View>
 
             <Ionicons name="chevron-forward" size={20} color={colors.gray500} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.settingItem} onPress={() => {}}>
-            <View style={styles.settingIconContainer}>
+            <View
+              style={[
+                styles.settingIconContainer,
+                { backgroundColor: colors.gray100 },
+              ]}
+            >
               <Ionicons
                 name="document-text-outline"
                 size={24}
@@ -229,14 +277,21 @@ const SettingsHomeScreen: React.FC = () => {
             </View>
 
             <View style={styles.settingContent}>
-              <Text style={styles.settingTitle}>Điều khoản & Quy định</Text>
+              <Text style={[styles.settingTitle, { color: colors.text }]}>
+                Điều khoản & Quy định
+              </Text>
             </View>
 
             <Ionicons name="chevron-forward" size={20} color={colors.gray500} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.settingItem} onPress={() => {}}>
-            <View style={styles.settingIconContainer}>
+            <View
+              style={[
+                styles.settingIconContainer,
+                { backgroundColor: colors.gray100 },
+              ]}
+            >
               <Ionicons
                 name="information-circle-outline"
                 size={24}
@@ -245,8 +300,15 @@ const SettingsHomeScreen: React.FC = () => {
             </View>
 
             <View style={styles.settingContent}>
-              <Text style={styles.settingTitle}>Thông tin ứng dụng</Text>
-              <Text style={styles.settingDescription}>
+              <Text style={[styles.settingTitle, { color: colors.text }]}>
+                Thông tin ứng dụng
+              </Text>
+              <Text
+                style={[
+                  styles.settingDescription,
+                  { color: colors.textSecondary },
+                ]}
+              >
                 Phiên bản {APP_VERSION} (Build {BUILD_NUMBER})
               </Text>
             </View>
@@ -257,7 +319,7 @@ const SettingsHomeScreen: React.FC = () => {
           <Button
             title="Đăng xuất"
             variant="outline"
-            contentStyle={styles.logoutButton}
+            contentStyle={{ ...styles.logoutButton, borderColor: colors.error }}
             onPress={handleLogout}
             icon={
               <Ionicons name="log-out-outline" size={18} color={colors.error} />
@@ -273,7 +335,6 @@ const SettingsHomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
@@ -294,7 +355,6 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: colors.primary + "15",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 16,
@@ -305,17 +365,14 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 18,
     fontWeight: "600",
-    color: colors.text,
     marginBottom: 4,
   },
   profileRole: {
     fontSize: 14,
-    color: colors.textSecondary,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
     marginTop: 8,
     marginBottom: 12,
   },
@@ -329,13 +386,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: colors.gray200,
+    borderBottomColor: "rgba(0,0,0,0.1)", // This will be managed by Card component
   },
   settingIconContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.gray100,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -346,11 +402,9 @@ const styles = StyleSheet.create({
   settingTitle: {
     fontSize: 14,
     fontWeight: "500",
-    color: colors.text,
   },
   settingDescription: {
     fontSize: 12,
-    color: colors.textSecondary,
     marginTop: 2,
   },
   logoutButtonContainer: {

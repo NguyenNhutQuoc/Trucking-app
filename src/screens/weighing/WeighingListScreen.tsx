@@ -2,13 +2,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  SafeAreaView,
   RefreshControl,
   TextInput,
+  ScrollView,
+  Text,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -18,13 +18,16 @@ import Header from "@/components/common/Header";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import Loading from "@/components/common/Loading";
-import colors from "@/constants/colors";
+import ThemedView from "@/components/common/ThemedView";
+import ThemedText from "@/components/common/ThemedText";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import { Phieucan } from "@/types/api.types";
 
 type FilterState = "all" | "completed" | "pending" | "today";
 
 const WeighingListScreen: React.FC = () => {
   const navigation = useNavigation();
+  const { colors } = useAppTheme();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -160,72 +163,106 @@ const WeighingListScreen: React.FC = () => {
         style={styles.weighingCard}
         rightContent={
           <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
-            <Text style={styles.statusText}>{statusText}</Text>
+            <ThemedText style={styles.statusText}>{statusText}</ThemedText>
           </View>
         }
       >
         <View style={styles.weighingHeader}>
           <View style={styles.weighingHeaderLeft}>
-            <Text style={styles.vehicleNumber}>{item.soxe}</Text>
-            <Text style={styles.weighTicketNumber}>#{item.sophieu}</Text>
+            <ThemedText style={styles.vehicleNumber}>{item.soxe}</ThemedText>
+            <ThemedText type="subtitle" style={styles.weighTicketNumber}>
+              #{item.sophieu}
+            </ThemedText>
           </View>
         </View>
 
         <View style={styles.weighingDetails}>
           <View style={styles.weighingDetailRow}>
             <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Vào:</Text>
-              <Text style={styles.detailValue}>{timeString}</Text>
+              <ThemedText type="subtitle" style={styles.detailLabel}>
+                Vào:
+              </ThemedText>
+              <ThemedText style={styles.detailValue}>{timeString}</ThemedText>
             </View>
 
             <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Trọng lượng vào:</Text>
-              <Text style={styles.detailValue}>{item.tlcan1} kg</Text>
+              <ThemedText type="subtitle" style={styles.detailLabel}>
+                Trọng lượng vào:
+              </ThemedText>
+              <ThemedText style={styles.detailValue}>
+                {item.tlcan1} kg
+              </ThemedText>
             </View>
           </View>
 
           {item.ngaycan2 && (
             <View style={styles.weighingDetailRow}>
               <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Ra:</Text>
-                <Text style={styles.detailValue}>
+                <ThemedText type="subtitle" style={styles.detailLabel}>
+                  Ra:
+                </ThemedText>
+                <ThemedText style={styles.detailValue}>
                   {new Date(item.ngaycan2).toLocaleTimeString("vi-VN", {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
-                </Text>
+                </ThemedText>
               </View>
 
               <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Trọng lượng ra:</Text>
-                <Text style={styles.detailValue}>{item.tlcan2} kg</Text>
+                <ThemedText type="subtitle" style={styles.detailLabel}>
+                  Trọng lượng ra:
+                </ThemedText>
+                <ThemedText style={styles.detailValue}>
+                  {item.tlcan2} kg
+                </ThemedText>
               </View>
             </View>
           )}
 
           {netWeight && (
             <View style={styles.netWeightContainer}>
-              <Text style={styles.detailLabel}>Trọng lượng hàng:</Text>
-              <Text style={styles.netWeightValue}>{netWeight} kg</Text>
+              <ThemedText type="subtitle" style={styles.detailLabel}>
+                Trọng lượng hàng:
+              </ThemedText>
+              <ThemedText style={styles.netWeightValue}>
+                {netWeight} kg
+              </ThemedText>
             </View>
           )}
         </View>
 
-        <View style={styles.weighingFooter}>
-          <Text style={styles.productName}>{item.loaihang}</Text>
-          <Text style={styles.customerName}>{item.khachhang}</Text>
+        <View
+          style={[styles.weighingFooter, { borderTopColor: colors.gray200 }]}
+        >
+          <ThemedText type="subtitle" style={styles.productName}>
+            {item.loaihang}
+          </ThemedText>
+          <ThemedText type="subtitle" style={styles.customerName}>
+            {item.khachhang}
+          </ThemedText>
         </View>
       </Card>
     );
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <ThemedView useSafeArea>
       <Header title="Danh Sách Cân" showBack />
 
       <View style={styles.container}>
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
+        <View
+          style={[
+            styles.searchContainer,
+            { backgroundColor: colors.card, borderBottomColor: colors.gray200 },
+          ]}
+        >
+          <View
+            style={[
+              styles.searchInputContainer,
+              { backgroundColor: colors.gray100 },
+            ]}
+          >
             <Ionicons
               name="search"
               size={20}
@@ -233,7 +270,7 @@ const WeighingListScreen: React.FC = () => {
               style={styles.searchIcon}
             />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: colors.text }]}
               placeholder="Tìm kiếm..."
               placeholderTextColor={colors.gray500}
               value={searchQuery}
@@ -250,15 +287,20 @@ const WeighingListScreen: React.FC = () => {
             ) : null}
           </View>
 
-          <TouchableOpacity style={styles.filterButton}>
+          <TouchableOpacity
+            style={[styles.filterButton, { backgroundColor: colors.gray100 }]}
+          >
             <Ionicons name="options-outline" size={20} color={colors.gray700} />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.filterTabsContainer}>
+        <View
+          style={[styles.filterTabsContainer, { backgroundColor: colors.card }]}
+        >
           <ScrollableFilter
             activeFilter={activeFilter}
             onFilterChange={handleFilterChange}
+            colors={colors}
           />
         </View>
 
@@ -269,7 +311,12 @@ const WeighingListScreen: React.FC = () => {
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
+            />
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
@@ -278,11 +325,11 @@ const WeighingListScreen: React.FC = () => {
                 size={48}
                 color={colors.gray400}
               />
-              <Text style={styles.emptyText}>
+              <ThemedText style={styles.emptyText}>
                 {searchQuery
                   ? "Không tìm thấy kết quả phù hợp"
                   : "Không có phiếu cân nào"}
-              </Text>
+              </ThemedText>
               <Button
                 title="Tạo phiếu cân mới"
                 onPress={handleNewWeighing}
@@ -296,18 +343,20 @@ const WeighingListScreen: React.FC = () => {
       </View>
 
       <Loading loading={loading} />
-    </SafeAreaView>
+    </ThemedView>
   );
 };
 
 interface ScrollableFilterProps {
   activeFilter: FilterState;
   onFilterChange: (filter: FilterState) => void;
+  colors: any;
 }
 
 const ScrollableFilter: React.FC<ScrollableFilterProps> = ({
   activeFilter,
   onFilterChange,
+  colors,
 }) => {
   const filters: { key: FilterState; label: string }[] = [
     { key: "all", label: "Tất cả" },
@@ -323,14 +372,22 @@ const ScrollableFilter: React.FC<ScrollableFilterProps> = ({
           key={filter.key}
           style={[
             styles.filterTab,
-            activeFilter === filter.key && styles.activeFilterTab,
+            { backgroundColor: colors.gray100 },
+            activeFilter === filter.key && [
+              styles.activeFilterTab,
+              { backgroundColor: colors.primary },
+            ],
           ]}
           onPress={() => onFilterChange(filter.key)}
         >
           <Text
             style={[
               styles.filterText,
-              activeFilter === filter.key && styles.activeFilterText,
+              { color: colors.gray700 },
+              activeFilter === filter.key && [
+                styles.activeFilterText,
+                { color: "white" },
+              ],
             ]}
           >
             {filter.label}
@@ -342,10 +399,6 @@ const ScrollableFilter: React.FC<ScrollableFilterProps> = ({
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   container: {
     flex: 1,
   },
@@ -353,15 +406,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: colors.card,
     borderBottomWidth: 1,
-    borderBottomColor: colors.gray200,
   },
   searchInputContainer: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.gray100,
     borderRadius: 8,
     paddingHorizontal: 12,
     height: 40,
@@ -372,7 +422,6 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: colors.text,
     height: "100%",
   },
   filterButton: {
@@ -382,10 +431,8 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 8,
-    backgroundColor: colors.gray100,
   },
   filterTabsContainer: {
-    backgroundColor: colors.card,
     paddingTop: 8,
   },
   filtersContainer: {
@@ -397,18 +444,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginRight: 12,
     borderRadius: 16,
-    backgroundColor: colors.gray100,
   },
   activeFilterTab: {
-    backgroundColor: colors.primary,
+    // Managed dynamically
   },
   filterText: {
     fontSize: 14,
-    color: colors.gray700,
+    // Color managed dynamically
   },
   activeFilterText: {
-    color: "white",
     fontWeight: "500",
+    // Color managed dynamically
   },
   listContent: {
     padding: 16,
@@ -430,12 +476,10 @@ const styles = StyleSheet.create({
   vehicleNumber: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
     marginRight: 8,
   },
   weighTicketNumber: {
     fontSize: 14,
-    color: colors.gray600,
   },
   statusBadge: {
     paddingHorizontal: 8,
@@ -463,13 +507,11 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 14,
-    color: colors.gray600,
     marginRight: 4,
   },
   detailValue: {
     fontSize: 14,
     fontWeight: "500",
-    color: colors.text,
   },
   netWeightContainer: {
     flexDirection: "row",
@@ -479,22 +521,18 @@ const styles = StyleSheet.create({
   netWeightValue: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
   },
   weighingFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: colors.gray200,
   },
   productName: {
     fontSize: 14,
-    color: colors.gray700,
   },
   customerName: {
     fontSize: 14,
-    color: colors.gray700,
   },
   addButton: {
     padding: 4,
@@ -506,7 +544,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: colors.gray600,
     textAlign: "center",
     marginVertical: 16,
   },

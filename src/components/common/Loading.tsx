@@ -8,7 +8,7 @@ import {
   Modal,
   ViewStyle,
 } from "react-native";
-import colors from "@/constants/colors";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 interface LoadingProps {
   loading: boolean;
@@ -26,23 +26,32 @@ const Loading: React.FC<LoadingProps> = ({
   fullscreen = false,
   overlay = false,
   size = "large",
-  color = colors.primary,
+  color,
   style,
 }) => {
+  const { colors } = useAppTheme();
+
   if (!loading) return null;
+
+  const loadingColor = color || colors.primary;
 
   const content = (
     <View
       style={[
         styles.container,
         fullscreen && styles.fullscreen,
+        fullscreen && { backgroundColor: colors.background },
         overlay && styles.overlay,
         style,
       ]}
     >
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size={size} color={color} />
-        {message && <Text style={styles.message}>{message}</Text>}
+      <View style={[styles.loadingContainer, { backgroundColor: colors.card }]}>
+        <ActivityIndicator size={size} color={loadingColor} />
+        {message && (
+          <Text style={[styles.message, { color: colors.text }]}>
+            {message}
+          </Text>
+        )}
       </View>
     </View>
   );
@@ -70,7 +79,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "white",
     zIndex: 999,
   },
   overlay: {
@@ -86,14 +94,12 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 10,
     alignItems: "center",
-    backgroundColor: "white",
     minWidth: 140,
   },
   message: {
     marginTop: 16,
     fontSize: 14,
     fontWeight: "500",
-    color: colors.text,
     textAlign: "center",
   },
 });

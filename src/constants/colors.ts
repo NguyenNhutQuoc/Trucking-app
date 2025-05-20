@@ -19,6 +19,8 @@ const colors = {
   textDisabled: "#CED4DA",
   border: "#E9ECEF",
 
+  white: "#FFFFFF",
+
   // Status colors
   completed: "#40C057",
   pending: "#FAB005",
@@ -50,3 +52,30 @@ const colors = {
 };
 
 export default colors;
+
+// Dark theme colors
+export const darkColors = {
+  ...colors,
+  primary: "#5C7CFA",
+  primaryDark: "#4263EB",
+  primaryLight: "#748FFC",
+
+  background: "#121212", // Dark background
+  card: "#1E1E1E", // Darker card background
+  text: "#E9ECEF", // Light text for contrast
+  textSecondary: "#ADB5BD",
+  textDisabled: "#495057",
+  border: "#343A40",
+
+  // Gray scale - inverted for dark mode
+  gray50: "#343A40",
+  gray100: "#495057",
+  gray200: "#6C757D",
+  gray300: "#868E96",
+  gray400: "#ADB5BD",
+  gray500: "#CED4DA",
+  gray600: "#DEE2E6",
+  gray700: "#E9ECEF",
+  gray800: "#F1F3F5",
+  gray900: "#F8F9FA",
+};

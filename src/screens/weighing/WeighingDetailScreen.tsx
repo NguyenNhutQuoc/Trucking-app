@@ -2,13 +2,12 @@
 import React, { useState } from "react";
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   Alert,
   Share,
+  Text,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -18,7 +17,9 @@ import Header from "@/components/common/Header";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import Loading from "@/components/common/Loading";
-import colors from "@/constants/colors";
+import ThemedView from "@/components/common/ThemedView";
+import ThemedText from "@/components/common/ThemedText";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import { formatDate, formatTime, formatWeight } from "@/utils/formatters";
 import { RootStackParamList } from "@/types/navigation.types";
 
@@ -27,6 +28,7 @@ type WeighingDetailRouteProp = RouteProp<RootStackParamList, "WeighingDetail">;
 const WeighingDetailScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<WeighingDetailRouteProp>();
+  const { colors } = useAppTheme();
   const { weighing } = route.params;
 
   const [loading, setLoading] = useState(false);
@@ -127,14 +129,16 @@ const WeighingDetailScreen: React.FC = () => {
 
     return (
       <View style={styles.infoItem}>
-        <Text style={styles.infoLabel}>{label}</Text>
-        <Text style={styles.infoValue}>{value}</Text>
+        <ThemedText type="subtitle" style={styles.infoLabel}>
+          {label}
+        </ThemedText>
+        <ThemedText style={styles.infoValue}>{value}</ThemedText>
       </View>
     );
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <ThemedView useSafeArea>
       <Header
         title="Chi Tiết Phiếu Cân"
         showBack
@@ -152,22 +156,33 @@ const WeighingDetailScreen: React.FC = () => {
         <Card style={styles.headerCard}>
           <View style={styles.headerContent}>
             <View style={styles.ticketInfo}>
-              <Text style={styles.ticketNumber}>Phiếu #{weighing.sophieu}</Text>
+              <ThemedText style={styles.ticketNumber}>
+                Phiếu #{weighing.sophieu}
+              </ThemedText>
               <View
                 style={[
                   styles.statusBadge,
                   { backgroundColor: getStatusColor() },
                 ]}
               >
-                <Text style={styles.statusText}>{getStatusText()}</Text>
+                <ThemedText style={styles.statusText}>
+                  {getStatusText()}
+                </ThemedText>
               </View>
             </View>
 
             <View style={styles.vehicleInfo}>
-              <View style={styles.vehicleIconContainer}>
+              <View
+                style={[
+                  styles.vehicleIconContainer,
+                  { backgroundColor: colors.gray100 },
+                ]}
+              >
                 <Ionicons name="car" size={24} color={colors.primary} />
               </View>
-              <Text style={styles.vehicleNumber}>{weighing.soxe}</Text>
+              <ThemedText style={styles.vehicleNumber}>
+                {weighing.soxe}
+              </ThemedText>
             </View>
           </View>
         </Card>
@@ -211,30 +226,42 @@ const WeighingDetailScreen: React.FC = () => {
         )}
 
         {netWeight && (
-          <Card title="Kết quả" style={styles.resultCard}>
+          <Card
+            title="Kết quả"
+            style={{
+              ...styles.resultCard,
+              backgroundColor: colors.primary + "10",
+            }}
+          >
             <View style={styles.resultContent}>
               <View style={styles.resultItem}>
-                <Text style={styles.resultLabel}>Trọng lượng hàng:</Text>
-                <Text style={styles.resultValue}>
+                <ThemedText style={styles.resultLabel}>
+                  Trọng lượng hàng:
+                </ThemedText>
+                <ThemedText style={styles.resultValue}>
                   {formatWeight(netWeight)}
-                </Text>
+                </ThemedText>
               </View>
 
               {weighing.dongia && (
                 <>
                   <View style={styles.resultItem}>
-                    <Text style={styles.resultLabel}>Đơn giá:</Text>
-                    <Text style={styles.resultValue}>
+                    <ThemedText style={styles.resultLabel}>Đơn giá:</ThemedText>
+                    <ThemedText style={styles.resultValue}>
                       {weighing.dongia.toLocaleString()} VND/tấn
-                    </Text>
+                    </ThemedText>
                   </View>
 
                   <View style={styles.resultItem}>
-                    <Text style={styles.resultLabel}>Thành tiền:</Text>
-                    <Text style={styles.resultTotal}>
+                    <ThemedText style={styles.resultLabel}>
+                      Thành tiền:
+                    </ThemedText>
+                    <ThemedText
+                      style={[styles.resultTotal, { color: colors.success }]}
+                    >
                       {((netWeight / 1000) * weighing.dongia).toLocaleString()}{" "}
                       VND
-                    </Text>
+                    </ThemedText>
                   </View>
                 </>
               )}
@@ -244,7 +271,7 @@ const WeighingDetailScreen: React.FC = () => {
 
         {weighing.ghichu && (
           <Card title="Ghi chú" style={styles.infoCard}>
-            <Text style={styles.notes}>{weighing.ghichu}</Text>
+            <ThemedText style={styles.notes}>{weighing.ghichu}</ThemedText>
           </Card>
         )}
 
@@ -304,15 +331,11 @@ const WeighingDetailScreen: React.FC = () => {
       </ScrollView>
 
       <Loading loading={loading} overlay message="Đang xử lý..." />
-    </SafeAreaView>
+    </ThemedView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   container: {
     flex: 1,
   },
@@ -335,7 +358,6 @@ const styles = StyleSheet.create({
   ticketNumber: {
     fontSize: 18,
     fontWeight: "600",
-    color: colors.text,
   },
   statusBadge: {
     paddingHorizontal: 12,
@@ -355,7 +377,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.gray100,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -363,7 +384,6 @@ const styles = StyleSheet.create({
   vehicleNumber: {
     fontSize: 20,
     fontWeight: "700",
-    color: colors.text,
   },
   infoCard: {
     marginBottom: 16,
@@ -378,19 +398,16 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 14,
-    color: colors.gray600,
     flex: 1,
   },
   infoValue: {
     fontSize: 14,
     fontWeight: "500",
-    color: colors.text,
     flex: 2,
     textAlign: "right",
   },
   resultCard: {
     marginBottom: 16,
-    backgroundColor: colors.primary + "10",
   },
   resultContent: {
     padding: 0,
@@ -402,21 +419,18 @@ const styles = StyleSheet.create({
   },
   resultLabel: {
     fontSize: 14,
-    color: colors.gray700,
+    fontWeight: "500",
   },
   resultValue: {
     fontSize: 14,
     fontWeight: "600",
-    color: colors.text,
   },
   resultTotal: {
     fontSize: 18,
     fontWeight: "700",
-    color: colors.success,
   },
   notes: {
     fontSize: 14,
-    color: colors.text,
     padding: 0,
   },
   actionsContainer: {

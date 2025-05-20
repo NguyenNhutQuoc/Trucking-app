@@ -265,7 +265,7 @@ export const weighingApi = {
         "/phieucan/statistics/today",
       );
 
-      console.log("Today statistics:", response.data);
+      console.log("Today statistics:", response.data.data.byProduct);
       return response.data;
     } catch (error) {
       console.error("Get today statistics error:", error);

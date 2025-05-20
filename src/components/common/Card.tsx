@@ -8,7 +8,7 @@ import {
   ViewStyle,
   TextStyle,
 } from "react-native";
-import colors from "@/constants/colors";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 interface CardProps {
   title?: string;
@@ -43,6 +43,8 @@ const Card: React.FC<CardProps> = ({
   status = "default",
   rightContent,
 }) => {
+  const { colors } = useAppTheme();
+
   const getStatusColor = (): string => {
     switch (status) {
       case "success":
@@ -62,7 +64,9 @@ const Card: React.FC<CardProps> = ({
     <View
       style={[
         styles.card,
+        { backgroundColor: colors.card },
         bordered && styles.bordered,
+        bordered && { borderColor: colors.gray200 },
         elevated && styles.elevated,
         style,
       ]}
@@ -74,15 +78,30 @@ const Card: React.FC<CardProps> = ({
       )}
 
       {(header || title || subtitle) && (
-        <View style={styles.headerContainer}>
+        <View
+          style={[
+            styles.headerContainer,
+            { borderBottomColor: colors.gray200 },
+          ]}
+        >
           {header || (
             <View style={styles.titleContainer}>
               <View style={styles.titleWrapper}>
                 {title && (
-                  <Text style={[styles.title, titleStyle]}>{title}</Text>
+                  <Text
+                    style={[styles.title, { color: colors.text }, titleStyle]}
+                  >
+                    {title}
+                  </Text>
                 )}
                 {subtitle && (
-                  <Text style={[styles.subtitle, subtitleStyle]}>
+                  <Text
+                    style={[
+                      styles.subtitle,
+                      { color: colors.textSecondary },
+                      subtitleStyle,
+                    ]}
+                  >
                     {subtitle}
                   </Text>
                 )}
@@ -97,7 +116,13 @@ const Card: React.FC<CardProps> = ({
 
       <View style={[styles.content, contentStyle]}>{children}</View>
 
-      {footer && <View style={styles.footerContainer}>{footer}</View>}
+      {footer && (
+        <View
+          style={[styles.footerContainer, { borderTopColor: colors.gray200 }]}
+        >
+          {footer}
+        </View>
+      )}
     </View>
   );
 
@@ -114,14 +139,12 @@ const Card: React.FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.card,
     borderRadius: 12,
     overflow: "hidden",
     marginBottom: 16,
   },
   bordered: {
     borderWidth: 1,
-    borderColor: colors.gray200,
   },
   elevated: {
     elevation: 3,
@@ -141,7 +164,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: colors.gray200,
   },
   titleContainer: {
     flexDirection: "row",
@@ -154,11 +176,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
   },
   subtitle: {
     fontSize: 14,
-    color: colors.textSecondary,
     marginTop: 2,
   },
   rightContent: {
@@ -170,7 +190,6 @@ const styles = StyleSheet.create({
   footerContainer: {
     padding: 12,
     borderTopWidth: 1,
-    borderTopColor: colors.gray200,
   },
 });
 

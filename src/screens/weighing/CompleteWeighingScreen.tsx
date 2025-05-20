@@ -2,10 +2,8 @@
 import React, { useState, useEffect } from "react";
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   Alert,
   ScrollView,
 } from "react-native";
@@ -14,12 +12,14 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 
 import { weighingApi } from "@/api/weighing";
 import { useAuth } from "@/hooks/useAuth";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import Header from "@/components/common/Header";
 import Card from "@/components/common/Card";
 import Input from "@/components/common/Input";
 import Button from "@/components/common/Button";
 import Loading from "@/components/common/Loading";
-import colors from "@/constants/colors";
+import ThemedView from "@/components/common/ThemedView";
+import ThemedText from "@/components/common/ThemedText";
 import { formatDate, formatTime } from "@/utils/formatters";
 import { WeighingStackParamList } from "@/types/navigation.types";
 import { Phieucan, PhieucanComplete } from "@/types/api.types";
@@ -33,6 +33,7 @@ const CompleteWeighingScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<CompleteWeighingRouteProp>();
   const { userInfo } = useAuth();
+  const { colors } = useAppTheme();
 
   const { weighingId } = route.params;
 
@@ -137,44 +138,67 @@ const CompleteWeighingScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <ThemedView useSafeArea>
       <Header title="Hoàn Thành Cân" showBack />
 
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
       >
-        <Text style={styles.title}>Nhập trọng lượng cân ra</Text>
+        <ThemedText style={styles.title}>Nhập trọng lượng cân ra</ThemedText>
 
         <Card style={styles.weighingInfoCard}>
           <View style={styles.vehicleInfo}>
-            <View style={styles.vehicleIconContainer}>
+            <View
+              style={[
+                styles.vehicleIconContainer,
+                { backgroundColor: colors.gray100 },
+              ]}
+            >
               <Ionicons name="car" size={24} color={colors.primary} />
             </View>
-            <Text style={styles.vehicleNumber}>{weighing.soxe}</Text>
-            <Text style={styles.ticketNumber}>#{weighing.sophieu}</Text>
+            <ThemedText style={styles.vehicleNumber}>
+              {weighing.soxe}
+            </ThemedText>
+            <ThemedText type="subtitle" style={styles.ticketNumber}>
+              #{weighing.sophieu}
+            </ThemedText>
           </View>
 
           <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Khách hàng:</Text>
-            <Text style={styles.infoValue}>{weighing.khachhang}</Text>
+            <ThemedText type="subtitle" style={styles.infoLabel}>
+              Khách hàng:
+            </ThemedText>
+            <ThemedText style={styles.infoValue}>
+              {weighing.khachhang}
+            </ThemedText>
           </View>
 
           <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Loại hàng:</Text>
-            <Text style={styles.infoValue}>{weighing.loaihang}</Text>
+            <ThemedText type="subtitle" style={styles.infoLabel}>
+              Loại hàng:
+            </ThemedText>
+            <ThemedText style={styles.infoValue}>
+              {weighing.loaihang}
+            </ThemedText>
           </View>
 
           <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Cân vào:</Text>
-            <Text style={styles.infoValue}>
+            <ThemedText type="subtitle" style={styles.infoLabel}>
+              Cân vào:
+            </ThemedText>
+            <ThemedText style={styles.infoValue}>
               {formatDate(weighing.ngaycan1)} {formatTime(weighing.ngaycan1)}
-            </Text>
+            </ThemedText>
           </View>
 
           <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Trọng lượng vào:</Text>
-            <Text style={styles.infoValue}>{weighing.tlcan1} kg</Text>
+            <ThemedText type="subtitle" style={styles.infoLabel}>
+              Trọng lượng vào:
+            </ThemedText>
+            <ThemedText style={styles.infoValue}>
+              {weighing.tlcan1} kg
+            </ThemedText>
           </View>
         </Card>
 
@@ -193,11 +217,20 @@ const CompleteWeighingScreen: React.FC = () => {
           />
 
           {weight && Number(weight) > 0 && weighing.tlcan1 && (
-            <Card style={styles.resultCard}>
-              <Text style={styles.resultLabel}>Trọng lượng hàng:</Text>
-              <Text style={styles.resultValue}>
+            <Card
+              style={{
+                ...styles.resultCard,
+                backgroundColor: colors.success + "10",
+              }}
+            >
+              <ThemedText style={styles.resultLabel}>
+                Trọng lượng hàng:
+              </ThemedText>
+              <ThemedText
+                style={[styles.resultValue, { color: colors.success }]}
+              >
                 {Math.abs(Number(weight) - weighing.tlcan1)} kg
-              </Text>
+              </ThemedText>
             </Card>
           )}
         </View>
@@ -228,15 +261,11 @@ const CompleteWeighingScreen: React.FC = () => {
       </ScrollView>
 
       <Loading loading={submitting} overlay message="Đang xử lý..." />
-    </SafeAreaView>
+    </ThemedView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   container: {
     flex: 1,
   },
@@ -246,7 +275,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: "600",
-    color: colors.text,
     marginBottom: 16,
     textAlign: "center",
   },
@@ -262,7 +290,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.gray100,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -270,12 +297,10 @@ const styles = StyleSheet.create({
   vehicleNumber: {
     fontSize: 18,
     fontWeight: "600",
-    color: colors.text,
     flex: 1,
   },
   ticketNumber: {
     fontSize: 14,
-    color: colors.gray600,
   },
   infoItem: {
     flexDirection: "row",
@@ -284,12 +309,10 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 14,
-    color: colors.gray600,
   },
   infoValue: {
     fontSize: 14,
     fontWeight: "500",
-    color: colors.text,
   },
   weighInputContainer: {
     marginBottom: 24,
@@ -298,18 +321,15 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   resultCard: {
-    backgroundColor: colors.success + "10",
     padding: 16,
   },
   resultLabel: {
     fontSize: 16,
-    color: colors.gray700,
     marginBottom: 8,
   },
   resultValue: {
     fontSize: 24,
     fontWeight: "700",
-    color: colors.success,
     textAlign: "center",
   },
   actionButtons: {

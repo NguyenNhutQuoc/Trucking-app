@@ -88,6 +88,7 @@ export interface PhieucanStatistics {
     productName: string;
     weighCount: number;
     totalWeight: number;
+    totalPrice: number;
   }[];
   byVehicle: {
     vehicleNumber: string;

@@ -6,13 +6,14 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
+import { useAppTheme } from "@/hooks/useAppTheme";
 import Header from "@/components/common/Header";
-import colors from "@/constants/colors";
+import ThemedView from "@/components/common/ThemedView";
+import ThemedText from "@/components/common/ThemedText";
 import { ManagementStackScreenProps } from "@/types/navigation.types";
 
 type NavigationProp =
@@ -20,6 +21,7 @@ type NavigationProp =
 
 const ManagementHomeScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { colors } = useAppTheme();
 
   const menuItems = [
     {
@@ -81,7 +83,7 @@ const ManagementHomeScreen: React.FC = () => {
   const renderMenuItem = (item: (typeof menuItems)[0], index: number) => (
     <TouchableOpacity
       key={item.id}
-      style={styles.menuItem}
+      style={[styles.menuItem, { backgroundColor: colors.card }]}
       onPress={() => handleMenuPress(item.screen)}
     >
       <View
@@ -89,33 +91,31 @@ const ManagementHomeScreen: React.FC = () => {
       >
         <Ionicons name={item.icon as any} size={28} color={item.color} />
       </View>
-      <Text style={styles.menuItemText}>{item.title}</Text>
+      <ThemedText style={styles.menuItemText}>{item.title}</ThemedText>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <ThemedView useSafeArea>
       <Header title="Quản Lý" />
 
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
       >
-        <Text style={styles.sectionTitle}>Chọn mục quản lý</Text>
+        <ThemedText type="title" style={styles.sectionTitle}>
+          Chọn mục quản lý
+        </ThemedText>
 
         <View style={styles.menuGrid}>
           {menuItems.map((item, index) => renderMenuItem(item, index))}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </ThemedView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   container: {
     flex: 1,
   },
@@ -126,7 +126,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: colors.text,
     marginBottom: 16,
   },
   menuGrid: {
@@ -136,7 +135,6 @@ const styles = StyleSheet.create({
   },
   menuItem: {
     width: "48%",
-    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -158,7 +156,6 @@ const styles = StyleSheet.create({
   menuItemText: {
     fontSize: 14,
     fontWeight: "500",
-    color: colors.text,
     textAlign: "center",
   },
 });

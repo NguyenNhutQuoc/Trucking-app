@@ -9,7 +9,7 @@ import {
   ViewStyle,
   TextStyle,
 } from "react-native";
-import colors from "@/constants/colors";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
@@ -42,6 +42,8 @@ const Button: React.FC<ButtonProps> = ({
   textStyle,
   ...props
 }) => {
+  const { colors } = useAppTheme();
+
   // Xác định styles dựa trên variant
   const getVariantStyles = (): { container: ViewStyle; text: TextStyle } => {
     switch (variant) {
@@ -164,6 +166,7 @@ const Button: React.FC<ButtonProps> = ({
         sizeStyles.container,
         fullWidth && styles.fullWidth,
         disabled && styles.disabled,
+        disabled && { backgroundColor: colors.gray300 },
         contentStyle,
       ]}
       disabled={disabled || loading}
@@ -188,6 +191,7 @@ const Button: React.FC<ButtonProps> = ({
               sizeStyles.text,
               !!icon && styles.textWithIcon,
               disabled && styles.disabledText,
+              disabled && { color: colors.gray600 },
               textStyle,
             ]}
           >
@@ -222,12 +226,11 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   disabled: {
-    backgroundColor: colors.gray300,
     elevation: 0,
     shadowOpacity: 0,
   },
   disabledText: {
-    color: colors.gray600,
+    // Color is applied dynamically
   },
 });
 

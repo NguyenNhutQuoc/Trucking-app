@@ -5,7 +5,13 @@ import {
   NavigatorScreenParams,
 } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Phieucan, Khachhang, Hanghoa, Soxe } from "./api.types";
+import {
+  Phieucan,
+  Khachhang,
+  Hanghoa,
+  Soxe,
+  NhanvienWithPermissions,
+} from "./api.types";
 
 // Auth Navigator
 export type AuthStackParamList = {
@@ -21,17 +27,22 @@ export type MainTabParamList = {
   Management: undefined;
 };
 
-// Management Navigator
 export type ManagementStackParamList = {
   ManagementHome: undefined;
   VehicleList: undefined;
-  DriverList: undefined;
   CompanyList: undefined;
   ProductList: undefined;
-  AddVehicle: { vehicle?: any };
-  AddDriver: { driver?: any };
-  AddCompany: { company?: any };
-  AddProduct: { product?: any };
+  UserList: undefined;
+  PermissionList: undefined;
+
+  AddVehicle: { vehicle?: Soxe };
+  AddCompany: { company?: Khachhang };
+  AddProduct: { product?: Hanghoa | undefined };
+  AddUser: { user?: NhanvienWithPermissions };
+  AddPermissionGroup: { group?: any };
+
+  UserPermissions: { user: NhanvienWithPermissions };
+  GroupPermissions: { group: any };
 };
 
 // Weighing Navigator

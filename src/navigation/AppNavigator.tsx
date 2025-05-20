@@ -1,13 +1,17 @@
 // src/navigation/AppNavigator.tsx
 import React from "react";
-import { NavigationContainer } from "@react-navigation/native";
+import {
+  NavigationContainer,
+  DefaultTheme,
+  DarkTheme,
+} from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import AuthNavigator from "./AuthNavigator";
 import MainNavigator from "./MainNavigator";
-import colors from "@/constants/colors";
 import Loading from "@/components/common/Loading";
 
 // Screens
@@ -20,14 +24,28 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const AppNavigator: React.FC = () => {
   const { isLoading, isAuthenticated } = useAuth();
+  const { isDarkMode, colors } = useAppTheme();
+
+  // Create custom navigation theme
+  const navigationTheme = {
+    ...(isDarkMode ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(isDarkMode ? DarkTheme.colors : DefaultTheme.colors),
+      primary: colors.primary,
+      background: colors.background,
+      card: colors.card,
+      text: colors.text,
+      border: colors.border,
+    },
+  };
 
   if (isLoading) {
     return <Loading loading fullscreen message="Đang tải..." />;
   }
 
   return (
-    <NavigationContainer>
-      <StatusBar style="light" />
+    <NavigationContainer theme={navigationTheme}>
+      <StatusBar style={isDarkMode ? "light" : "dark"} />
       <Stack.Navigator
         screenOptions={{
           headerShown: false,

@@ -77,11 +77,11 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
     }
 
     if (!formData.ma && !editMode) {
-      newErrors.ma = "Vui lòng nhập mã công ty";
+      newErrors.ma = "Vui lòng nhập mã Khách Hàng";
     }
 
     if (!formData.ten && !editMode) {
-      newErrors.ten = "Vui lòng nhập tên công ty";
+      newErrors.ten = "Vui lòng nhập tên Khách Hàng";
     }
 
     setErrors(newErrors);
@@ -129,8 +129,8 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
         Alert.alert(
           "Thành công",
           editMode
-            ? "Cập nhật thông tin công ty thành công"
-            : "Tạo công ty mới thành công",
+            ? "Cập nhật thông tin Khách Hàng thành công"
+            : "Tạo Khách Hàng mới thành công",
           [
             {
               text: "OK",
@@ -143,11 +143,11 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
           ],
         );
       } else {
-        Alert.alert("Lỗi", "Có lỗi xảy ra khi lưu thông tin công ty");
+        Alert.alert("Lỗi", "Có lỗi xảy ra khi lưu thông tin Khách Hàng");
       }
     } catch (error) {
       console.error("Save company error:", error);
-      Alert.alert("Lỗi", "Có lỗi xảy ra khi lưu thông tin công ty");
+      Alert.alert("Lỗi", "Có lỗi xảy ra khi lưu thông tin Khách Hàng");
     } finally {
       setLoading(false);
     }
@@ -169,7 +169,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
         keyboardShouldPersistTaps="handled"
       >
         <Input
-          label="Mã công ty *"
+          label="Mã Khách Hàng *"
           value={formData.ma}
           onChangeText={(text) => handleInputChange("ma", text)}
           error={errors.ma}
@@ -180,7 +180,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
         />
 
         <Input
-          label="Tên công ty *"
+          label="Tên Khách Hàng *"
           value={formData.ten}
           onChangeText={(text) => handleInputChange("ten", text)}
           error={errors.ten}

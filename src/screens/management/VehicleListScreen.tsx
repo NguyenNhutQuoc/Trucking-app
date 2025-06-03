@@ -1,12 +1,12 @@
+// Let's implement dark mode for VehicleListScreen.tsx:
+
 // src/screens/management/VehicleListScreen.tsx
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  SafeAreaView,
   Alert,
   TextInput,
 } from "react-native";
@@ -18,7 +18,9 @@ import Header from "@/components/common/Header";
 import Card from "@/components/common/Card";
 import Loading from "@/components/common/Loading";
 import Button from "@/components/common/Button";
-import colors from "@/constants/colors";
+import ThemedView from "@/components/common/ThemedView";
+import ThemedText from "@/components/common/ThemedText";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import { Soxe } from "@/types/api.types";
 import { ManagementStackScreenProps } from "@/types/navigation.types";
 
@@ -26,6 +28,7 @@ type NavigationProp = ManagementStackScreenProps<"VehicleList">["navigation"];
 
 const VehicleListScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { colors } = useAppTheme();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -130,27 +133,34 @@ const VehicleListScreen: React.FC = () => {
     return (
       <Card style={styles.vehicleCard}>
         <View style={styles.vehicleInfo}>
-          <View style={styles.vehicleIconContainer}>
+          <View
+            style={[
+              styles.vehicleIconContainer,
+              { backgroundColor: colors.primary + "15" },
+            ]}
+          >
             <Ionicons name="car" size={24} color={colors.primary} />
           </View>
           <View style={styles.vehicleDetails}>
-            <Text style={styles.vehicleNumber}>{item.soxe}</Text>
-            <Text style={styles.vehicleWeight}>
+            <ThemedText style={styles.vehicleNumber}>{item.soxe}</ThemedText>
+            <ThemedText type="subtitle" style={styles.vehicleWeight}>
               Trọng lượng: {item.trongluong} kg
-            </Text>
+            </ThemedText>
           </View>
         </View>
 
-        <View style={styles.actionButtons}>
+        <View
+          style={[styles.actionButtons, { borderTopColor: colors.gray200 }]}
+        >
           <TouchableOpacity
-            style={styles.actionButton}
+            style={[styles.actionButton, { backgroundColor: colors.gray100 }]}
             onPress={() => handleEditVehicle(item)}
           >
             <Ionicons name="create-outline" size={22} color={colors.primary} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.actionButton}
+            style={[styles.actionButton, { backgroundColor: colors.gray100 }]}
             onPress={() => handleDeleteVehicle(item)}
           >
             <Ionicons name="trash-outline" size={22} color={colors.error} />
@@ -161,7 +171,7 @@ const VehicleListScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <ThemedView useSafeArea>
       <Header
         title="Danh Sách Xe"
         showBack
@@ -173,8 +183,21 @@ const VehicleListScreen: React.FC = () => {
       />
 
       <View style={styles.container}>
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
+        <View
+          style={[
+            styles.searchContainer,
+            {
+              backgroundColor: colors.card,
+              borderBottomColor: colors.gray200,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.searchInputContainer,
+              { backgroundColor: colors.gray100 },
+            ]}
+          >
             <Ionicons
               name="search"
               size={20}
@@ -182,7 +205,7 @@ const VehicleListScreen: React.FC = () => {
               style={styles.searchIcon}
             />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: colors.text }]}
               placeholder="Tìm kiếm biển số xe..."
               placeholderTextColor={colors.gray500}
               value={searchQuery}
@@ -218,11 +241,11 @@ const VehicleListScreen: React.FC = () => {
                     size={48}
                     color={colors.gray400}
                   />
-                  <Text style={styles.emptyText}>
+                  <ThemedText style={styles.emptyText}>
                     {searchQuery
                       ? "Không tìm thấy xe nào phù hợp"
                       : "Chưa có xe nào được thêm"}
-                  </Text>
+                  </ThemedText>
                   <Button
                     title="Thêm xe mới"
                     onPress={handleAddVehicle}
@@ -238,28 +261,21 @@ const VehicleListScreen: React.FC = () => {
       </View>
 
       <Loading loading={loading && !refreshing} />
-    </SafeAreaView>
+    </ThemedView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   container: {
     flex: 1,
   },
   searchContainer: {
     padding: 16,
-    backgroundColor: colors.card,
     borderBottomWidth: 1,
-    borderBottomColor: colors.gray200,
   },
   searchInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.gray100,
     borderRadius: 8,
     paddingHorizontal: 12,
     height: 40,
@@ -270,7 +286,6 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: colors.text,
     height: "100%",
   },
   listContent: {
@@ -288,7 +303,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: colors.primary + "15",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 16,
@@ -299,12 +313,10 @@ const styles = StyleSheet.create({
   vehicleNumber: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
     marginBottom: 4,
   },
   vehicleWeight: {
     fontSize: 14,
-    color: colors.gray600,
   },
   actionButtons: {
     flexDirection: "row",
@@ -312,13 +324,11 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: colors.gray200,
   },
   actionButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.gray100,
     justifyContent: "center",
     alignItems: "center",
     marginLeft: 8,
@@ -333,7 +343,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: colors.gray600,
     textAlign: "center",
     marginVertical: 16,
   },

@@ -1,11 +1,10 @@
 // src/screens/management/AddVehicleScreen.tsx
 import React from "react";
-import { SafeAreaView, StyleSheet } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 
 import Header from "@/components/common/Header";
 import VehicleForm from "@/components/forms/VehicleForm";
-import colors from "@/constants/colors";
+import ThemedView from "@/components/common/ThemedView";
 import { ManagementStackParamList } from "@/types/navigation.types";
 import { Soxe } from "@/types/api.types";
 
@@ -30,7 +29,7 @@ const AddVehicleScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <ThemedView useSafeArea style={{ flex: 1 }}>
       <Header title={editMode ? "Sửa Xe" : "Thêm Xe Mới"} showBack />
 
       <VehicleForm
@@ -38,15 +37,8 @@ const AddVehicleScreen: React.FC = () => {
         onSubmitSuccess={handleSubmitSuccess}
         onCancel={handleCancel}
       />
-    </SafeAreaView>
+    </ThemedView>
   );
 };
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-});
 
 export default AddVehicleScreen;

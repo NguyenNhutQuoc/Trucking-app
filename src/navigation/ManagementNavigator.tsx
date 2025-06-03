@@ -10,6 +10,11 @@ import AddVehicleScreen from "@/screens/management/AddVehicleScreen";
 import AddCompanyScreen from "@/screens/management/AddCompanyScreen";
 import AddProductScreen from "@/screens/management/AddProductScreen";
 import { ManagementStackParamList } from "@/types/navigation.types";
+import UserListScreen from "@/screens/management/UserListScreen";
+import AddUserScreen from "@/screens/management/AddUserScreen";
+import AddPermissionGroupScreen from "@/screens/management/AddEditGroupPermissionScreen";
+import UserPermissionsScreen from "@/screens/management/PermissionListScreen";
+import GroupPermissionsScreen from "@/screens/management/GroupPermissionListScreen";
 
 const Stack = createNativeStackNavigator<ManagementStackParamList>();
 
@@ -27,6 +32,18 @@ const ManagementNavigator: React.FC = () => {
       <Stack.Screen name="AddVehicle" component={AddVehicleScreen} />
       <Stack.Screen name="AddCompany" component={AddCompanyScreen} />
       <Stack.Screen name="AddProduct" component={AddProductScreen} />
+      {/* Add other screens here */}
+      <Stack.Screen name="UserList" component={UserListScreen} />
+      <Stack.Screen name="AddUser" component={AddUserScreen} />
+      <Stack.Screen
+        name="AddPermissionGroup"
+        component={AddPermissionGroupScreen}
+      />
+      <Stack.Screen name="UserPermissions" component={UserPermissionsScreen} />
+      <Stack.Screen
+        name="GroupPermissions"
+        component={GroupPermissionsScreen}
+      />
     </Stack.Navigator>
   );
 };

@@ -35,8 +35,11 @@ export const authApi = {
         );
       }
 
+      console.log("Login successful:", response.data);
+
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
+      console.log(error);
       console.error("Login error:", error);
       throw error;
     }

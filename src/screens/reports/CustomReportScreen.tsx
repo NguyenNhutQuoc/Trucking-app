@@ -1,15 +1,7 @@
 // src/screens/reports/CustomReportScreen.tsx
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  SafeAreaView,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import { View, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 
@@ -20,9 +12,12 @@ import { vehicleApi } from "@/api/vehicle";
 import Header from "@/components/common/Header";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
+import Loading from "@/components/common/Loading";
 import DateRangeSelector from "@/components/reports/DateRangeSelector";
 import FilterSelector from "@/components/reports/FilterSelector";
-import colors from "@/constants/colors";
+import ThemedView from "@/components/common/ThemedView";
+import ThemedText from "@/components/common/ThemedText";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import { formatWeight, formatCurrency, formatDate } from "@/utils/formatters";
 import { ReportsStackScreenProps } from "@/types/navigation.types";
 import { Khachhang, Hanghoa, Soxe } from "@/types/api.types";
@@ -38,6 +33,7 @@ interface FilterOption {
 
 const CustomReportScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { colors } = useAppTheme();
 
   const [loading, setLoading] = useState(false);
   const [startDate, setStartDate] = useState<Date>(
@@ -288,7 +284,7 @@ const CustomReportScreen: React.FC = () => {
 
   const getCompanyOptions = () => {
     const options: FilterOption[] = [
-      { id: "all", label: "Tất cả công ty", value: null, icon: "business" },
+      { id: "all", label: "Tất cả Khách Hàng", value: null, icon: "business" },
     ];
 
     companies.forEach((company) => {
@@ -346,7 +342,7 @@ const CustomReportScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <ThemedView useSafeArea>
       <Header title="Báo Cáo Tùy Chỉnh" showBack />
 
       <ScrollView
@@ -354,8 +350,9 @@ const CustomReportScreen: React.FC = () => {
         contentContainerStyle={styles.contentContainer}
       >
         <Card style={styles.dateRangeCard}>
-          <Text style={styles.sectionTitle}>Khoảng thời gian</Text>
+          <ThemedText style={styles.sectionTitle}>Khoảng thời gian</ThemedText>
           <DateRangeSelector
+            allowFutureDates={true}
             startDate={startDate}
             endDate={endDate}
             onDateRangeChange={handleDateRangeChange}
@@ -363,10 +360,10 @@ const CustomReportScreen: React.FC = () => {
         </Card>
 
         <Card style={styles.filtersCard}>
-          <Text style={styles.sectionTitle}>Bộ lọc</Text>
+          <ThemedText style={styles.sectionTitle}>Bộ lọc</ThemedText>
 
           <View style={styles.filterSection}>
-            <Text style={styles.filterLabel}>Công ty:</Text>
+            <ThemedText style={styles.filterLabel}>Khách Hàng:</ThemedText>
             <FilterSelector
               options={getCompanyOptions()}
               selectedValue={selectedCompany}
@@ -375,7 +372,7 @@ const CustomReportScreen: React.FC = () => {
           </View>
 
           <View style={styles.filterSection}>
-            <Text style={styles.filterLabel}>Hàng hóa:</Text>
+            <ThemedText style={styles.filterLabel}>Hàng hóa:</ThemedText>
             <FilterSelector
               options={getProductOptions()}
               selectedValue={selectedProduct}
@@ -384,7 +381,7 @@ const CustomReportScreen: React.FC = () => {
           </View>
 
           <View style={styles.filterSection}>
-            <Text style={styles.filterLabel}>Xe:</Text>
+            <ThemedText style={styles.filterLabel}>Xe:</ThemedText>
             <FilterSelector
               options={getVehicleOptions()}
               selectedValue={selectedVehicle}
@@ -393,7 +390,7 @@ const CustomReportScreen: React.FC = () => {
           </View>
 
           <View style={styles.filterSection}>
-            <Text style={styles.filterLabel}>Loại:</Text>
+            <ThemedText style={styles.filterLabel}>Loại:</ThemedText>
             <FilterSelector
               options={getTypeOptions()}
               selectedValue={selectedType}
@@ -421,17 +418,24 @@ const CustomReportScreen: React.FC = () => {
 
         {showResults && reportData && (
           <Card style={styles.resultsCard}>
-            <Text style={styles.resultsTitle}>Kết quả báo cáo</Text>
+            <ThemedText style={styles.resultsTitle}>Kết quả báo cáo</ThemedText>
 
-            <View style={styles.appliedFiltersContainer}>
-              <Text style={styles.appliedFiltersTitle}>Bộ lọc đã áp dụng:</Text>
+            <View
+              style={[
+                styles.appliedFiltersContainer,
+                { backgroundColor: colors.gray100 },
+              ]}
+            >
+              <ThemedText style={styles.appliedFiltersTitle}>
+                Bộ lọc đã áp dụng:
+              </ThemedText>
               <View style={styles.appliedFiltersList}>
                 <View style={styles.appliedFilter}>
                   <Ionicons name="calendar" size={16} color={colors.primary} />
-                  <Text style={styles.appliedFilterText}>
+                  <ThemedText style={styles.appliedFilterText}>
                     Từ {formatDate(startDate.toISOString())} đến{" "}
                     {formatDate(endDate.toISOString())}
-                  </Text>
+                  </ThemedText>
                 </View>
 
                 {reportData.companyFilter && (
@@ -441,27 +445,27 @@ const CustomReportScreen: React.FC = () => {
                       size={16}
                       color={colors.primary}
                     />
-                    <Text style={styles.appliedFilterText}>
-                      Công ty: {reportData.companyFilter.company.ten}
-                    </Text>
+                    <ThemedText style={styles.appliedFilterText}>
+                      Khách Hàng: {reportData.companyFilter.company.ten}
+                    </ThemedText>
                   </View>
                 )}
 
                 {reportData.productFilter && (
                   <View style={styles.appliedFilter}>
                     <Ionicons name="cube" size={16} color={colors.primary} />
-                    <Text style={styles.appliedFilterText}>
+                    <ThemedText style={styles.appliedFilterText}>
                       Hàng hóa: {reportData.productFilter.product.ten}
-                    </Text>
+                    </ThemedText>
                   </View>
                 )}
 
                 {reportData.vehicleFilter && (
                   <View style={styles.appliedFilter}>
                     <Ionicons name="car" size={16} color={colors.primary} />
-                    <Text style={styles.appliedFilterText}>
+                    <ThemedText style={styles.appliedFilterText}>
                       Xe: {reportData.vehicleFilter.vehicle.soxe}
-                    </Text>
+                    </ThemedText>
                   </View>
                 )}
 
@@ -476,41 +480,53 @@ const CustomReportScreen: React.FC = () => {
                       size={16}
                       color={colors.primary}
                     />
-                    <Text style={styles.appliedFilterText}>
+                    <ThemedText style={styles.appliedFilterText}>
                       Loại: {reportData.typeFilter.type}
-                    </Text>
+                    </ThemedText>
                   </View>
                 )}
               </View>
             </View>
 
-            <View style={styles.resultSummary}>
+            <View
+              style={[styles.resultSummary, { borderColor: colors.gray200 }]}
+            >
               <View style={styles.summaryRow}>
                 <View style={styles.summaryItem}>
-                  <Text style={styles.summaryLabel}>Tổng xe:</Text>
-                  <Text style={styles.summaryValue}>
+                  <ThemedText style={styles.summaryLabel}>Tổng xe:</ThemedText>
+                  <ThemedText style={styles.summaryValue}>
                     {reportData.filteredTotalVehicles}
-                  </Text>
+                  </ThemedText>
                 </View>
 
-                <View style={styles.summaryDivider} />
+                <View
+                  style={[
+                    styles.summaryDivider,
+                    { backgroundColor: colors.gray200 },
+                  ]}
+                />
 
                 <View style={styles.summaryItem}>
-                  <Text style={styles.summaryLabel}>Tổng trọng lượng:</Text>
-                  <Text style={styles.summaryValue}>
+                  <ThemedText style={styles.summaryLabel}>
+                    Tổng trọng lượng:
+                  </ThemedText>
+                  <ThemedText style={styles.summaryValue}>
                     {formatWeight(reportData.filteredTotalWeight, true)}
-                  </Text>
+                  </ThemedText>
                 </View>
               </View>
 
               {reportData.estimatedRevenue !== undefined && (
                 <View style={styles.revenueContainer}>
-                  <Text style={styles.revenueLabel}>
+                  <ThemedText style={styles.revenueLabel}>
                     Tổng giá trị ước tính:
-                  </Text>
-                  <Text style={styles.revenueValue}>
+                  </ThemedText>
+                  <ThemedText
+                    style={styles.revenueValue}
+                    color={colors.success}
+                  >
                     {formatCurrency(reportData.estimatedRevenue)}
-                  </Text>
+                  </ThemedText>
                 </View>
               )}
             </View>
@@ -528,15 +544,13 @@ const CustomReportScreen: React.FC = () => {
           </Card>
         )}
       </ScrollView>
-    </SafeAreaView>
+
+      <Loading loading={loading} overlay message="Đang xử lý..." />
+    </ThemedView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   container: {
     flex: 1,
   },
@@ -550,7 +564,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
     marginBottom: 12,
   },
   filtersCard: {
@@ -562,7 +575,6 @@ const styles = StyleSheet.create({
   filterLabel: {
     fontSize: 14,
     fontWeight: "500",
-    color: colors.gray700,
     marginBottom: 8,
   },
   actionsContainer: {
@@ -584,19 +596,16 @@ const styles = StyleSheet.create({
   resultsTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: colors.text,
     marginBottom: 16,
   },
   appliedFiltersContainer: {
     marginBottom: 16,
-    backgroundColor: colors.gray100,
     padding: 12,
     borderRadius: 8,
   },
   appliedFiltersTitle: {
     fontSize: 14,
     fontWeight: "500",
-    color: colors.gray700,
     marginBottom: 8,
   },
   appliedFiltersList: {
@@ -608,19 +617,16 @@ const styles = StyleSheet.create({
   },
   appliedFilterText: {
     fontSize: 14,
-    color: colors.text,
     marginLeft: 8,
   },
   resultSummary: {
     borderWidth: 1,
-    borderColor: colors.gray200,
     borderRadius: 8,
     overflow: "hidden",
     marginBottom: 16,
   },
   summaryRow: {
     flexDirection: "row",
-    borderBottomColor: colors.gray200,
   },
   summaryItem: {
     flex: 1,
@@ -630,17 +636,14 @@ const styles = StyleSheet.create({
   summaryDivider: {
     width: 1,
     height: "100%",
-    backgroundColor: colors.gray200,
   },
   summaryLabel: {
     fontSize: 14,
-    color: colors.gray600,
     marginBottom: 4,
   },
   summaryValue: {
     fontSize: 18,
     fontWeight: "600",
-    color: colors.text,
   },
   revenueContainer: {
     padding: 12,
@@ -648,13 +651,11 @@ const styles = StyleSheet.create({
   },
   revenueLabel: {
     fontSize: 14,
-    color: colors.gray600,
     marginBottom: 4,
   },
   revenueValue: {
     fontSize: 20,
     fontWeight: "700",
-    color: colors.success,
   },
   reportActions: {
     marginTop: 8,

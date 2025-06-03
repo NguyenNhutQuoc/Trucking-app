@@ -26,8 +26,6 @@ const MainNavigator: React.FC = () => {
         tabBarStyle: {
           backgroundColor: colors.card,
           borderTopColor: colors.gray200,
-          paddingBottom: Platform.OS === "ios" ? 0 : 8,
-          paddingTop: 8,
           height: Platform.OS === "ios" ? 85 : 65,
         },
         tabBarLabelStyle: {

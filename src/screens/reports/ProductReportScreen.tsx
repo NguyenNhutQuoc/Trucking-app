@@ -1,13 +1,10 @@
-// src/screens/reports/ProductReportsScreen.tsx
+// src/screens/reports/ProductReportScreen.tsx
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
-  Text,
   StyleSheet,
-  FlatList,
-  ActivityIndicator,
   TouchableOpacity,
-  SafeAreaView,
+  FlatList,
   RefreshControl,
   Alert,
 } from "react-native";
@@ -21,8 +18,11 @@ import { weighingApi } from "@/api/weighing";
 import Header from "@/components/common/Header";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
+import Loading from "@/components/common/Loading";
 import DateRangeSelector from "@/components/reports/DateRangeSelector";
-import colors from "@/constants/colors";
+import ThemedView from "@/components/common/ThemedView";
+import ThemedText from "@/components/common/ThemedText";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import { formatWeight, formatCurrency } from "@/utils/formatters";
 import { Hanghoa } from "@/types/api.types";
 import { ReportsStackScreenProps } from "@/types/navigation.types";
@@ -30,8 +30,9 @@ import { ReportsStackScreenProps } from "@/types/navigation.types";
 type NavigationProp = ReportsStackScreenProps<"ProductReports">["navigation"];
 const screenWidth = Dimensions.get("window").width;
 
-const ProductReportsScreen: React.FC = () => {
+const ProductReportScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { colors, isDarkMode } = useAppTheme();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -64,8 +65,7 @@ const ProductReportsScreen: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      await loadProducts();
-      await loadWeightStatistics();
+      await Promise.all([loadProducts(), loadWeightStatistics()]);
     } catch (error) {
       console.error("Load data error:", error);
       Alert.alert("Lỗi", "Không thể tải dữ liệu. Vui lòng thử lại sau.");
@@ -146,9 +146,9 @@ const ProductReportsScreen: React.FC = () => {
         ? ((item.totalWeight / totalWeight) * 100).toFixed(1)
         : "0";
 
-    // Calculate total value
+    // Calculate total value if we have the unit price
     const unitPrice = product ? product.dongia : 0;
-    const totalValue = item.totalWeight * unitPrice;
+    const totalValue = (item.totalWeight / 1000) * unitPrice;
 
     return (
       <Card style={styles.productCard}>
@@ -167,47 +167,63 @@ const ProductReportsScreen: React.FC = () => {
               color={chartColors[index % chartColors.length]}
             />
           </View>
-          <Text style={styles.productName} numberOfLines={1}>
+          <ThemedText style={styles.productName} numberOfLines={1}>
             {item.productName}
-          </Text>
-          <Text style={styles.percentageText}>{percentageOfTotal}%</Text>
+          </ThemedText>
+          <ThemedText style={styles.percentageText} color={colors.primary}>
+            {percentageOfTotal}%
+          </ThemedText>
         </View>
 
         <View style={styles.statsContainer}>
           <View style={styles.statRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Số lượt cân:</Text>
-              <Text style={styles.statValue}>{item.weighCount} xe</Text>
+              <ThemedText type="subtitle" style={styles.statLabel}>
+                Số lượt cân:
+              </ThemedText>
+              <ThemedText style={styles.statValue}>
+                {item.weighCount} xe
+              </ThemedText>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Trọng lượng:</Text>
-              <Text style={styles.statValue}>
+              <ThemedText type="subtitle" style={styles.statLabel}>
+                Trọng lượng:
+              </ThemedText>
+              <ThemedText style={styles.statValue}>
                 {formatWeight(item.totalWeight)}
-              </Text>
+              </ThemedText>
             </View>
           </View>
 
           {product && (
             <View style={styles.statRow}>
               <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Đơn giá:</Text>
-                <Text style={styles.statValue}>
-                  {formatCurrency(product.dongia)}/kg
-                </Text>
+                <ThemedText type="subtitle" style={styles.statLabel}>
+                  Đơn giá:
+                </ThemedText>
+                <ThemedText style={styles.statValue}>
+                  {formatCurrency(product.dongia)}/tấn
+                </ThemedText>
               </View>
               <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Thành tiền:</Text>
-                <Text style={[styles.statValue, styles.valueText]}>
+                <ThemedText type="subtitle" style={styles.statLabel}>
+                  Thành tiền:
+                </ThemedText>
+                <ThemedText style={styles.valueText} color={colors.success}>
                   {formatCurrency(totalValue)}
-                </Text>
+                </ThemedText>
               </View>
             </View>
           )}
         </View>
 
         {product && (
-          <View style={styles.productInfo}>
-            <Text style={styles.productCode}>Mã: {product.ma}</Text>
+          <View
+            style={[styles.productInfo, { borderTopColor: colors.gray200 }]}
+          >
+            <ThemedText type="caption" style={styles.productCode}>
+              Mã: {product.ma}
+            </ThemedText>
           </View>
         )}
       </Card>
@@ -236,11 +252,12 @@ const ProductReportsScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <ThemedView useSafeArea>
       <Header title="Báo Cáo Theo Hàng Hóa" showBack />
 
       <View style={styles.container}>
         <DateRangeSelector
+          allowFutureDates={true}
           startDate={startDate}
           endDate={endDate}
           onDateRangeChange={handleDateRangeChange}
@@ -249,8 +266,10 @@ const ProductReportsScreen: React.FC = () => {
 
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
+            <Loading loading={true} />
+            <ThemedText style={styles.loadingText}>
+              Đang tải dữ liệu...
+            </ThemedText>
           </View>
         ) : (
           <FlatList
@@ -262,33 +281,54 @@ const ProductReportsScreen: React.FC = () => {
                 <Card style={styles.summaryCard}>
                   <View style={styles.summaryRow}>
                     <View style={styles.summaryItem}>
-                      <Text style={styles.summaryLabel}>Tổng xe:</Text>
-                      <Text style={styles.summaryValue}>{totalVehicles}</Text>
+                      <ThemedText type="subtitle" style={styles.summaryLabel}>
+                        Tổng xe:
+                      </ThemedText>
+                      <ThemedText style={styles.summaryValue}>
+                        {totalVehicles}
+                      </ThemedText>
                     </View>
 
-                    <View style={styles.summaryDivider} />
+                    <View
+                      style={[
+                        styles.summaryDivider,
+                        { backgroundColor: colors.gray200 },
+                      ]}
+                    />
 
                     <View style={styles.summaryItem}>
-                      <Text style={styles.summaryLabel}>Tổng trọng lượng:</Text>
-                      <Text style={styles.summaryValue}>
+                      <ThemedText type="subtitle" style={styles.summaryLabel}>
+                        Tổng trọng lượng:
+                      </ThemedText>
+                      <ThemedText style={styles.summaryValue}>
                         {formatWeight(totalWeight, true)}
-                      </Text>
+                      </ThemedText>
                     </View>
                   </View>
 
-                  <View style={styles.totalValueContainer}>
-                    <Text style={styles.totalValueLabel}>Tổng giá trị:</Text>
-                    <Text style={styles.totalValueText}>
+                  <View
+                    style={[
+                      styles.totalValueContainer,
+                      { borderTopColor: colors.gray200 },
+                    ]}
+                  >
+                    <ThemedText type="subtitle" style={styles.totalValueLabel}>
+                      Tổng giá trị:
+                    </ThemedText>
+                    <ThemedText
+                      style={styles.totalValueText}
+                      color={colors.success}
+                    >
                       {formatCurrency(totalValue)}
-                    </Text>
+                    </ThemedText>
                   </View>
                 </Card>
 
                 {productStats.length > 0 && (
                   <Card style={styles.chartCard}>
-                    <Text style={styles.chartTitle}>
+                    <ThemedText style={styles.chartTitle}>
                       Phân bố trọng lượng theo hàng hóa (tấn)
-                    </Text>
+                    </ThemedText>
                     <View style={styles.chartContainer}>
                       <BarChart
                         data={getBarChartData()}
@@ -302,9 +342,13 @@ const ProductReportsScreen: React.FC = () => {
                           backgroundGradientTo: colors.card,
                           decimalPlaces: 1,
                           color: (opacity = 1) =>
-                            `rgba(92, 124, 250, ${opacity})`,
+                            isDarkMode
+                              ? `rgba(255, 255, 255, ${opacity})`
+                              : `rgba(0, 0, 0, ${opacity})`,
                           labelColor: (opacity = 1) =>
-                            `rgba(0, 0, 0, ${opacity})`,
+                            isDarkMode
+                              ? `rgba(255, 255, 255, ${opacity})`
+                              : `rgba(0, 0, 0, ${opacity})`,
                           style: {
                             borderRadius: 16,
                           },
@@ -320,7 +364,9 @@ const ProductReportsScreen: React.FC = () => {
                   </Card>
                 )}
 
-                <Text style={styles.sectionTitle}>Chi tiết theo hàng hóa</Text>
+                <ThemedText type="title" style={styles.sectionTitle}>
+                  Chi tiết theo hàng hóa
+                </ThemedText>
               </View>
             }
             ListEmptyComponent={
@@ -330,20 +376,34 @@ const ProductReportsScreen: React.FC = () => {
                   size={48}
                   color={colors.gray400}
                 />
-                <Text style={styles.emptyText}>
+                <ThemedText style={styles.emptyText}>
                   Không có dữ liệu trong khoảng thời gian này
-                </Text>
+                </ThemedText>
               </View>
             }
             contentContainerStyle={styles.listContent}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[colors.primary]}
+                tintColor={colors.primary}
+                progressBackgroundColor={colors.card}
+              />
             }
           />
         )}
       </View>
 
-      <View style={styles.exportContainer}>
+      <View
+        style={[
+          styles.exportContainer,
+          {
+            backgroundColor: colors.background,
+            borderTopColor: colors.gray200,
+          },
+        ]}
+      >
         <Button
           title="Xuất báo cáo"
           variant="primary"
@@ -351,24 +411,17 @@ const ProductReportsScreen: React.FC = () => {
           fullWidth
         />
       </View>
-    </SafeAreaView>
+    </ThemedView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   container: {
     flex: 1,
   },
   dateRangeSelector: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: colors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray200,
   },
   loadingContainer: {
     flex: 1,
@@ -378,7 +431,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: colors.gray600,
   },
   listContent: {
     padding: 16,
@@ -400,33 +452,27 @@ const styles = StyleSheet.create({
   summaryDivider: {
     width: 1,
     height: "70%",
-    backgroundColor: colors.gray200,
   },
   summaryLabel: {
     fontSize: 14,
-    color: colors.gray600,
     marginBottom: 4,
   },
   summaryValue: {
     fontSize: 18,
     fontWeight: "600",
-    color: colors.text,
   },
   totalValueContainer: {
     borderTopWidth: 1,
-    borderTopColor: colors.gray200,
     paddingVertical: 12,
     alignItems: "center",
   },
   totalValueLabel: {
     fontSize: 14,
-    color: colors.gray600,
     marginBottom: 4,
   },
   totalValueText: {
     fontSize: 20,
     fontWeight: "700",
-    color: colors.success,
   },
   chartCard: {
     marginBottom: 16,
@@ -435,7 +481,6 @@ const styles = StyleSheet.create({
   chartTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
     marginBottom: 8,
   },
   chartContainer: {
@@ -445,7 +490,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
     marginBottom: 12,
   },
   productCard: {
@@ -467,13 +511,11 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
     flex: 1,
   },
   percentageText: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.primary,
   },
   statsContainer: {
     marginBottom: 12,
@@ -488,25 +530,20 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 14,
-    color: colors.gray600,
   },
   statValue: {
     fontSize: 14,
     fontWeight: "500",
-    color: colors.text,
   },
   valueText: {
-    color: colors.success,
     fontWeight: "600",
   },
   productInfo: {
     borderTopWidth: 1,
-    borderTopColor: colors.gray200,
     paddingTop: 10,
   },
   productCode: {
     fontSize: 12,
-    color: colors.gray600,
   },
   emptyContainer: {
     alignItems: "center",
@@ -516,7 +553,6 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 16,
     fontSize: 14,
-    color: colors.gray600,
     textAlign: "center",
   },
   exportContainer: {
@@ -525,10 +561,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 16,
-    backgroundColor: colors.background,
     borderTopWidth: 1,
-    borderTopColor: colors.gray200,
   },
 });
 
-export default ProductReportsScreen;
+export default ProductReportScreen;

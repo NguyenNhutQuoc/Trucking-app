@@ -2,18 +2,16 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
-  Text,
   StyleSheet,
   FlatList,
   ActivityIndicator,
   TouchableOpacity,
-  SafeAreaView,
   RefreshControl,
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { BarChart, LineChart } from "react-native-chart-kit";
+import { LineChart } from "react-native-chart-kit";
 import { Dimensions } from "react-native";
 
 import { weighingApi } from "@/api/weighing";
@@ -21,7 +19,9 @@ import Header from "@/components/common/Header";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import DateRangeSelector from "@/components/reports/DateRangeSelector";
-import colors from "@/constants/colors";
+import ThemedView from "@/components/common/ThemedView";
+import ThemedText from "@/components/common/ThemedText";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import { formatWeight, formatDate } from "@/utils/formatters";
 import { ReportsStackScreenProps } from "@/types/navigation.types";
 
@@ -37,6 +37,7 @@ interface DailyData {
 
 const DateRangeReportsScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { colors, isDarkMode } = useAppTheme();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -158,51 +159,53 @@ const DateRangeReportsScreen: React.FC = () => {
         <View style={styles.dayHeader}>
           <View style={styles.dateContainer}>
             <Ionicons name="calendar" size={18} color={colors.primary} />
-            <Text style={styles.dateText}>{item.formattedDate}</Text>
+            <ThemedText style={styles.dateText}>
+              {item.formattedDate}
+            </ThemedText>
           </View>
         </View>
 
         <View style={styles.statsContainer}>
           <View style={styles.statRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Số lượt cân:</Text>
-              <Text
-                style={[
-                  styles.statValue,
-                  { color: getPerformanceColor(countPercentage) },
-                ]}
+              <ThemedText type="subtitle" style={styles.statLabel}>
+                Số lượt cân:
+              </ThemedText>
+              <ThemedText
+                style={styles.statValue}
+                color={getPerformanceColor(countPercentage)}
               >
                 {item.weighCount} lượt
-              </Text>
-              <Text style={styles.percentageText}>
+              </ThemedText>
+              <ThemedText type="caption" style={styles.percentageText}>
                 {countPercentage > 0 ? Math.round(countPercentage) : 0}% TB
-              </Text>
+              </ThemedText>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Tổng trọng lượng:</Text>
-              <Text
-                style={[
-                  styles.statValue,
-                  { color: getPerformanceColor(weightPercentage) },
-                ]}
+              <ThemedText type="subtitle" style={styles.statLabel}>
+                Tổng trọng lượng:
+              </ThemedText>
+              <ThemedText
+                style={styles.statValue}
+                color={getPerformanceColor(weightPercentage)}
               >
                 {formatWeight(item.totalWeight)}
-              </Text>
-              <Text style={styles.percentageText}>
+              </ThemedText>
+              <ThemedText type="caption" style={styles.percentageText}>
                 {weightPercentage > 0 ? Math.round(weightPercentage) : 0}% TB
-              </Text>
+              </ThemedText>
             </View>
           </View>
 
           <View style={styles.averageWeightContainer}>
-            <Text style={styles.averageWeightLabel}>
+            <ThemedText type="subtitle" style={styles.averageWeightLabel}>
               Trọng lượng trung bình / lượt cân:
-            </Text>
-            <Text style={styles.averageWeightValue}>
+            </ThemedText>
+            <ThemedText style={styles.averageWeightValue}>
               {item.weighCount > 0
                 ? formatWeight(item.totalWeight / item.weighCount)
                 : "0 kg"}
-            </Text>
+            </ThemedText>
           </View>
         </View>
       </Card>
@@ -248,11 +251,12 @@ const DateRangeReportsScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <ThemedView useSafeArea>
       <Header title="Báo Cáo Theo Thời Gian" showBack />
 
       <View style={styles.container}>
         <DateRangeSelector
+          allowFutureDates={true} // Không cho phép chọn ngày tương lai
           startDate={startDate}
           endDate={endDate}
           onDateRangeChange={handleDateRangeChange}
@@ -262,7 +266,9 @@ const DateRangeReportsScreen: React.FC = () => {
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
+            <ThemedText style={styles.loadingText}>
+              Đang tải dữ liệu...
+            </ThemedText>
           </View>
         ) : (
           <FlatList
@@ -274,37 +280,66 @@ const DateRangeReportsScreen: React.FC = () => {
                 <Card style={styles.summaryCard}>
                   <View style={styles.summaryRow}>
                     <View style={styles.summaryItem}>
-                      <Text style={styles.summaryLabel}>Tổng xe:</Text>
-                      <Text style={styles.summaryValue}>{totalVehicles}</Text>
+                      <ThemedText type="subtitle" style={styles.summaryLabel}>
+                        Tổng xe:
+                      </ThemedText>
+                      <ThemedText style={styles.summaryValue}>
+                        {totalVehicles}
+                      </ThemedText>
                     </View>
 
-                    <View style={styles.summaryDivider} />
+                    <View
+                      style={[
+                        styles.summaryDivider,
+                        { backgroundColor: colors.gray200 },
+                      ]}
+                    />
 
                     <View style={styles.summaryItem}>
-                      <Text style={styles.summaryLabel}>Tổng trọng lượng:</Text>
-                      <Text style={styles.summaryValue}>
+                      <ThemedText type="subtitle" style={styles.summaryLabel}>
+                        Tổng trọng lượng:
+                      </ThemedText>
+                      <ThemedText style={styles.summaryValue}>
                         {formatWeight(totalWeight, true)}
-                      </Text>
+                      </ThemedText>
                     </View>
                   </View>
 
-                  <View style={styles.averagesContainer}>
+                  <View
+                    style={[
+                      styles.averagesContainer,
+                      { borderTopColor: colors.gray200 },
+                    ]}
+                  >
                     <View style={styles.averageItem}>
-                      <Text style={styles.averageLabel}>TB xe/ngày:</Text>
-                      <Text style={styles.averageValue}>
+                      <ThemedText type="subtitle" style={styles.averageLabel}>
+                        TB xe/ngày:
+                      </ThemedText>
+                      <ThemedText
+                        style={styles.averageValue}
+                        color={colors.primary}
+                      >
                         {averageDailyVehicles.toFixed(1)}
-                      </Text>
+                      </ThemedText>
                     </View>
 
-                    <View style={styles.summaryDivider} />
+                    <View
+                      style={[
+                        styles.summaryDivider,
+                        { backgroundColor: colors.gray200 },
+                      ]}
+                    />
 
                     <View style={styles.averageItem}>
-                      <Text style={styles.averageLabel}>
+                      <ThemedText type="subtitle" style={styles.averageLabel}>
                         TB trọng lượng/ngày:
-                      </Text>
-                      <Text style={styles.averageValue}>
+                      </ThemedText>
+                      <ThemedText
+                        style={styles.averageValue}
+                        color={colors.primary}
+                      >
                         {formatWeight(averageDailyWeight, true)}
-                      </Text>
+                      </ThemedText>
                     </View>
                   </View>
                 </Card>
@@ -312,11 +347,14 @@ const DateRangeReportsScreen: React.FC = () => {
                 {dailyData.length > 0 && (
                   <Card style={styles.chartCard}>
                     <View style={styles.chartHeader}>
-                      <Text style={styles.chartTitle}>
+                      <ThemedText style={styles.chartTitle}>
                         {getChartData().chartTitle}
-                      </Text>
+                      </ThemedText>
                       <TouchableOpacity
-                        style={styles.chartToggleButton}
+                        style={[
+                          styles.chartToggleButton,
+                          { backgroundColor: colors.gray100 },
+                        ]}
                         onPress={toggleChartType}
                       >
                         <Ionicons
@@ -338,9 +376,13 @@ const DateRangeReportsScreen: React.FC = () => {
                           backgroundGradientTo: colors.card,
                           decimalPlaces: chartType === "weight" ? 1 : 0,
                           color: (opacity = 1) =>
-                            `rgba(92, 124, 250, ${opacity})`,
+                            isDarkMode
+                              ? `rgba(255, 255, 255, ${opacity})`
+                              : `rgba(0, 0, 0, ${opacity})`,
                           labelColor: (opacity = 1) =>
-                            `rgba(0, 0, 0, ${opacity})`,
+                            isDarkMode
+                              ? `rgba(255, 255, 255, ${opacity})`
+                              : `rgba(0, 0, 0, ${opacity})`,
                           style: {
                             borderRadius: 16,
                           },
@@ -363,7 +405,9 @@ const DateRangeReportsScreen: React.FC = () => {
                   </Card>
                 )}
 
-                <Text style={styles.sectionTitle}>Chi tiết theo ngày</Text>
+                <ThemedText type="title" style={styles.sectionTitle}>
+                  Chi tiết theo ngày
+                </ThemedText>
               </View>
             }
             ListEmptyComponent={
@@ -373,20 +417,34 @@ const DateRangeReportsScreen: React.FC = () => {
                   size={48}
                   color={colors.gray400}
                 />
-                <Text style={styles.emptyText}>
+                <ThemedText style={styles.emptyText}>
                   Không có dữ liệu trong khoảng thời gian này
-                </Text>
+                </ThemedText>
               </View>
             }
             contentContainerStyle={styles.listContent}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[colors.primary]}
+                tintColor={colors.primary}
+                progressBackgroundColor={colors.card}
+              />
             }
           />
         )}
       </View>
 
-      <View style={styles.exportContainer}>
+      <View
+        style={[
+          styles.exportContainer,
+          {
+            backgroundColor: colors.background,
+            borderTopColor: colors.gray200,
+          },
+        ]}
+      >
         <Button
           title="Xuất báo cáo"
           variant="primary"
@@ -394,24 +452,17 @@ const DateRangeReportsScreen: React.FC = () => {
           fullWidth
         />
       </View>
-    </SafeAreaView>
+    </ThemedView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   container: {
     flex: 1,
   },
   dateRangeSelector: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: colors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray200,
   },
   loadingContainer: {
     flex: 1,
@@ -421,7 +472,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: colors.gray600,
   },
   listContent: {
     padding: 16,
@@ -443,22 +493,18 @@ const styles = StyleSheet.create({
   summaryDivider: {
     width: 1,
     height: "70%",
-    backgroundColor: colors.gray200,
   },
   summaryLabel: {
     fontSize: 14,
-    color: colors.gray600,
     marginBottom: 4,
   },
   summaryValue: {
     fontSize: 18,
     fontWeight: "600",
-    color: colors.text,
   },
   averagesContainer: {
     flexDirection: "row",
     borderTopWidth: 1,
-    borderTopColor: colors.gray200,
     paddingVertical: 12,
   },
   averageItem: {
@@ -467,14 +513,12 @@ const styles = StyleSheet.create({
   },
   averageLabel: {
     fontSize: 14,
-    color: colors.gray600,
     marginBottom: 4,
     textAlign: "center",
   },
   averageValue: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.primary,
   },
   chartCard: {
     marginBottom: 16,
@@ -489,11 +533,9 @@ const styles = StyleSheet.create({
   chartTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
   },
   chartToggleButton: {
     padding: 8,
-    backgroundColor: colors.gray100,
     borderRadius: 20,
   },
   chartContainer: {
@@ -502,7 +544,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
     marginBottom: 12,
   },
   dayCard: {
@@ -518,7 +559,6 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
     marginLeft: 8,
   },
   statsContainer: {
@@ -534,7 +574,6 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 14,
-    color: colors.gray600,
     marginBottom: 2,
   },
   statValue: {
@@ -543,22 +582,19 @@ const styles = StyleSheet.create({
   },
   percentageText: {
     fontSize: 12,
-    color: colors.gray500,
   },
   averageWeightContainer: {
     marginTop: 4,
     borderTopWidth: 1,
-    borderTopColor: colors.gray200,
+    borderTopColor: "rgba(0,0,0,0.1)",
     paddingTop: 10,
   },
   averageWeightLabel: {
     fontSize: 14,
-    color: colors.gray600,
   },
   averageWeightValue: {
     fontSize: 15,
     fontWeight: "600",
-    color: colors.text,
     marginTop: 4,
   },
   emptyContainer: {
@@ -569,7 +605,6 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 16,
     fontSize: 14,
-    color: colors.gray600,
     textAlign: "center",
   },
   exportContainer: {
@@ -578,9 +613,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 16,
-    backgroundColor: colors.background,
     borderTopWidth: 1,
-    borderTopColor: colors.gray200,
   },
 });
 

@@ -1,11 +1,10 @@
 // src/screens/management/AddCompanyScreen.tsx
 import React from "react";
-import { SafeAreaView, StyleSheet } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 
 import Header from "@/components/common/Header";
 import CompanyForm from "@/components/forms/CompanyForm";
-import colors from "@/constants/colors";
+import ThemedView from "@/components/common/ThemedView";
 import { ManagementStackParamList } from "@/types/navigation.types";
 import { Khachhang } from "@/types/api.types";
 
@@ -30,23 +29,19 @@ const AddCompanyScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Header title={editMode ? "Sửa Công Ty" : "Thêm Công Ty Mới"} showBack />
+    <ThemedView useSafeArea style={{ flex: 1 }}>
+      <Header
+        title={editMode ? "Sửa Khách Hàng" : "Thêm Khách Hàng Mới"}
+        showBack
+      />
 
       <CompanyForm
         company={company}
         onSubmitSuccess={handleSubmitSuccess}
         onCancel={handleCancel}
       />
-    </SafeAreaView>
+    </ThemedView>
   );
 };
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-});
 
 export default AddCompanyScreen;

@@ -22,8 +22,17 @@ import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { Phieucan } from "@/types/api.types";
+import { formatWeight } from "@/utils/formatters";
+import colors from "@/constants/colors";
 
-type FilterState = "all" | "completed" | "pending" | "today";
+// Cập nhật type FilterState để bao gồm các trạng thái lọc mới
+type FilterState =
+  | "all"
+  | "completed"
+  | "pending"
+  | "today"
+  | "import"
+  | "export";
 
 const WeighingListScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -45,6 +54,18 @@ const WeighingListScreen: React.FC = () => {
   useEffect(() => {
     applyFilters();
   }, [weighings, activeFilter, searchQuery]);
+
+  // Hàm lấy màu dựa trên loại nhập/xuất
+  const getImportExportColor = (type: string): string => {
+    switch (type.toLowerCase()) {
+      case "nhập":
+        return colors.chartBlue;
+      case "xuất":
+        return colors.chartGreen;
+      default:
+        return colors.gray400;
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -91,6 +112,10 @@ const WeighingListScreen: React.FC = () => {
         const itemDate = new Date(item.ngaycan1).toISOString().split("T")[0];
         return itemDate === today;
       });
+    } else if (activeFilter === "import") {
+      result = result.filter((item) => item.xuatnhap.toLowerCase() === "nhập");
+    } else if (activeFilter === "export") {
+      result = result.filter((item) => item.xuatnhap.toLowerCase() === "xuất");
     }
 
     // Apply search query
@@ -142,11 +167,18 @@ const WeighingListScreen: React.FC = () => {
     return "Đang chờ";
   };
 
+  // Cập nhật renderWeighingItem
   const renderWeighingItem = ({ item }: { item: Phieucan }) => {
     const statusColor = getStatusColor(item);
     const statusText = getStatusText(item);
+    const importExportColor = getImportExportColor(item.xuatnhap);
 
     const date = new Date(item.ngaycan1);
+    const dateString = date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
     const timeString = date.toLocaleTimeString("vi-VN", {
       hour: "2-digit",
       minute: "2-digit",
@@ -160,7 +192,11 @@ const WeighingListScreen: React.FC = () => {
     return (
       <Card
         onPress={() => handleWeighingPress(item)}
-        style={styles.weighingCard}
+        style={{
+          ...styles.weighingCard,
+          borderLeftWidth: 4,
+          borderLeftColor: importExportColor,
+        }}
         rightContent={
           <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
             <ThemedText style={styles.statusText}>{statusText}</ThemedText>
@@ -170,7 +206,7 @@ const WeighingListScreen: React.FC = () => {
         <View style={styles.weighingHeader}>
           <View style={styles.weighingHeaderLeft}>
             <ThemedText style={styles.vehicleNumber}>{item.soxe}</ThemedText>
-            <ThemedText type="subtitle" style={styles.weighTicketNumber}>
+            <ThemedText style={styles.weighTicketNumber}>
               #{item.sophieu}
             </ThemedText>
           </View>
@@ -179,68 +215,91 @@ const WeighingListScreen: React.FC = () => {
         <View style={styles.weighingDetails}>
           <View style={styles.weighingDetailRow}>
             <View style={styles.detailItem}>
-              <ThemedText type="subtitle" style={styles.detailLabel}>
-                Vào:
-              </ThemedText>
-              <ThemedText style={styles.detailValue}>{timeString}</ThemedText>
+              <ThemedText style={styles.detailLabel}>Ngày:</ThemedText>
+              <ThemedText style={styles.detailValue}>{dateString}</ThemedText>
             </View>
-
             <View style={styles.detailItem}>
-              <ThemedText type="subtitle" style={styles.detailLabel}>
-                Trọng lượng vào:
-              </ThemedText>
-              <ThemedText style={styles.detailValue}>
-                {item.tlcan1} kg
-              </ThemedText>
+              <ThemedText style={styles.detailLabel}>Vào:</ThemedText>
+              <ThemedText style={styles.detailValue}>{timeString}</ThemedText>
             </View>
           </View>
 
-          {item.ngaycan2 && (
-            <View style={styles.weighingDetailRow}>
-              <View style={styles.detailItem}>
-                <ThemedText type="subtitle" style={styles.detailLabel}>
-                  Ra:
-                </ThemedText>
-                <ThemedText style={styles.detailValue}>
-                  {new Date(item.ngaycan2).toLocaleTimeString("vi-VN", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </ThemedText>
-              </View>
-
-              <View style={styles.detailItem}>
-                <ThemedText type="subtitle" style={styles.detailLabel}>
-                  Trọng lượng ra:
-                </ThemedText>
-                <ThemedText style={styles.detailValue}>
-                  {item.tlcan2} kg
-                </ThemedText>
-              </View>
+          <View style={styles.weighingDetailRow}>
+            <View style={styles.detailItem}>
+              <ThemedText style={styles.detailLabel}>TL vào:</ThemedText>
+              <ThemedText style={styles.detailValue}>
+                {formatWeight(item.tlcan1, false)}
+              </ThemedText>
             </View>
-          )}
+
+            {item.ngaycan2 && (
+              <View style={styles.detailItem}>
+                <ThemedText style={styles.detailLabel}>TL ra:</ThemedText>
+                <ThemedText style={styles.detailValue}>
+                  {formatWeight(item.tlcan2 || 0, false)}
+                </ThemedText>
+              </View>
+            )}
+          </View>
 
           {netWeight && (
             <View style={styles.netWeightContainer}>
-              <ThemedText type="subtitle" style={styles.detailLabel}>
-                Trọng lượng hàng:
-              </ThemedText>
-              <ThemedText style={styles.netWeightValue}>
-                {netWeight} kg
+              <ThemedText style={styles.detailLabel}>TL hàng:</ThemedText>
+              <ThemedText
+                style={[styles.netWeightValue, { color: importExportColor }]}
+              >
+                {formatWeight(netWeight, false)}
               </ThemedText>
             </View>
           )}
+
+          <View style={styles.typeContainer}>
+            <View
+              style={[
+                styles.typeTag,
+                { backgroundColor: importExportColor + "20" },
+              ]}
+            >
+              <ThemedText
+                style={[styles.typeText, { color: importExportColor }]}
+              >
+                {item.xuatnhap}
+              </ThemedText>
+            </View>
+            {item.kho && (
+              <View style={styles.storeTag}>
+                <Ionicons
+                  name="home-outline"
+                  size={12}
+                  color={colors.gray600}
+                />
+                <ThemedText style={styles.storeText}>{item.kho}</ThemedText>
+              </View>
+            )}
+          </View>
         </View>
 
-        <View
-          style={[styles.weighingFooter, { borderTopColor: colors.gray200 }]}
-        >
-          <ThemedText type="subtitle" style={styles.productName}>
-            {item.loaihang}
-          </ThemedText>
-          <ThemedText type="subtitle" style={styles.customerName}>
-            {item.khachhang}
-          </ThemedText>
+        <View style={styles.weighingFooter}>
+          <View style={styles.footerLeft}>
+            <Ionicons
+              name="cube-outline"
+              size={14}
+              color={colors.gray600}
+              style={styles.footerIcon}
+            />
+            <ThemedText style={styles.productName}>{item.loaihang}</ThemedText>
+          </View>
+          <View style={styles.footerRight}>
+            <Ionicons
+              name="business-outline"
+              size={14}
+              color={colors.gray600}
+              style={styles.footerIcon}
+            />
+            <ThemedText style={styles.customerName}>
+              {item.khachhang}
+            </ThemedText>
+          </View>
         </View>
       </Card>
     );
@@ -300,7 +359,6 @@ const WeighingListScreen: React.FC = () => {
           <ScrollableFilter
             activeFilter={activeFilter}
             onFilterChange={handleFilterChange}
-            colors={colors}
           />
         </View>
 
@@ -347,53 +405,67 @@ const WeighingListScreen: React.FC = () => {
   );
 };
 
+// Cập nhật component ScrollableFilter
 interface ScrollableFilterProps {
   activeFilter: FilterState;
   onFilterChange: (filter: FilterState) => void;
-  colors: any;
 }
 
 const ScrollableFilter: React.FC<ScrollableFilterProps> = ({
   activeFilter,
   onFilterChange,
-  colors,
 }) => {
-  const filters: { key: FilterState; label: string }[] = [
-    { key: "all", label: "Tất cả" },
-    { key: "completed", label: "Hoàn thành" },
-    { key: "pending", label: "Đang chờ" },
-    { key: "today", label: "Hôm nay" },
+  const { colors } = useAppTheme();
+
+  const filters: { key: FilterState; label: string; icon?: string }[] = [
+    { key: "all", label: "Tất cả", icon: "list-outline" },
+    { key: "pending", label: "Đang chờ", icon: "time-outline" },
+    { key: "completed", label: "Hoàn thành", icon: "checkmark-circle-outline" },
+    { key: "import", label: "Nhập", icon: "arrow-down-outline" },
+    { key: "export", label: "Xuất", icon: "arrow-up-outline" },
+    { key: "today", label: "Hôm nay", icon: "calendar-outline" },
   ];
 
   return (
     <View style={styles.filtersContainer}>
-      {filters.map((filter) => (
-        <TouchableOpacity
-          key={filter.key}
-          style={[
-            styles.filterTab,
-            { backgroundColor: colors.gray100 },
-            activeFilter === filter.key && [
-              styles.activeFilterTab,
-              { backgroundColor: colors.primary },
-            ],
-          ]}
-          onPress={() => onFilterChange(filter.key)}
-        >
-          <Text
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {filters.map((filter) => (
+          <TouchableOpacity
+            key={filter.key}
             style={[
-              styles.filterText,
-              { color: colors.gray700 },
-              activeFilter === filter.key && [
-                styles.activeFilterText,
-                { color: "white" },
-              ],
+              styles.filterTab,
+              activeFilter === filter.key
+                ? {
+                    backgroundColor: colors.primary,
+                  }
+                : {
+                    backgroundColor: "transparent",
+                  },
             ]}
+            onPress={() => onFilterChange(filter.key)}
           >
-            {filter.label}
-          </Text>
-        </TouchableOpacity>
-      ))}
+            {filter.icon && (
+              <Ionicons
+                name={filter.icon as any}
+                size={14}
+                color={activeFilter === filter.key ? colors.white : colors.text}
+                style={styles.filterIcon}
+              />
+            )}
+            <ThemedText
+              style={[
+                styles.filterText,
+                {
+                  color:
+                    activeFilter === filter.key ? colors.white : colors.text,
+                },
+              ]}
+            >
+              {filter.label}
+            </ThemedText>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
     </View>
   );
 };
@@ -436,25 +508,31 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   filtersContainer: {
-    flexDirection: "row",
     paddingHorizontal: 16,
+    paddingBottom: 8,
   },
   filterTab: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 8,
     paddingHorizontal: 16,
-    marginRight: 12,
-    borderRadius: 16,
+    marginRight: 8,
+    borderRadius: 20,
+    backgroundColor: colors.gray100,
   },
   activeFilterTab: {
-    // Managed dynamically
+    backgroundColor: colors.primary,
   },
   filterText: {
     fontSize: 14,
-    // Color managed dynamically
+    color: colors.gray700,
   },
   activeFilterText: {
+    color: "white",
     fontWeight: "500",
-    // Color managed dynamically
+  },
+  filterIcon: {
+    marginRight: 6,
   },
   listContent: {
     padding: 16,
@@ -549,6 +627,49 @@ const styles = StyleSheet.create({
   },
   emptyButton: {
     marginTop: 16,
+  },
+  // Style mới
+  typeContainer: {
+    flexDirection: "row",
+    marginTop: 8,
+    alignItems: "center",
+  },
+  typeTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  typeText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  storeTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.gray100,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  storeText: {
+    fontSize: 12,
+    color: colors.gray600,
+    marginLeft: 4,
+  },
+  footerLeft: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  footerRight: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
+  footerIcon: {
+    marginRight: 4,
   },
 });
 

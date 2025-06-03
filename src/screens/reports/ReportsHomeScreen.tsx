@@ -226,7 +226,7 @@ const ReportsHomeScreen: React.FC = () => {
 
               <Card style={styles.reportsCard}>
                 {renderReportItem(
-                  "Theo công ty",
+                  "Theo khách hàng",
                   "business-outline",
                   "CompanyReports",
                 )}

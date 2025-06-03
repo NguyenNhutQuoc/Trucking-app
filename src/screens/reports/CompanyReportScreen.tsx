@@ -1,13 +1,10 @@
-// src/screens/reports/CompanyReportsScreen.tsx
+// src/screens/reports/CompanyReportScreen.tsx
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
-  Text,
   StyleSheet,
-  FlatList,
-  ActivityIndicator,
   TouchableOpacity,
-  SafeAreaView,
+  FlatList,
   RefreshControl,
   Alert,
 } from "react-native";
@@ -21,8 +18,11 @@ import { weighingApi } from "@/api/weighing";
 import Header from "@/components/common/Header";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
+import Loading from "@/components/common/Loading";
 import DateRangeSelector from "@/components/reports/DateRangeSelector";
-import colors from "@/constants/colors";
+import ThemedView from "@/components/common/ThemedView";
+import ThemedText from "@/components/common/ThemedText";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import { formatWeight, formatDate } from "@/utils/formatters";
 import { Khachhang } from "@/types/api.types";
 import { ReportsStackScreenProps } from "@/types/navigation.types";
@@ -31,8 +31,9 @@ type NavigationProp = ReportsStackScreenProps<"CompanyReports">["navigation"];
 
 const screenWidth = Dimensions.get("window").width;
 
-const CompanyReportsScreen: React.FC = () => {
+const CompanyReportScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { colors, isDarkMode } = useAppTheme();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -156,53 +157,68 @@ const CompanyReportsScreen: React.FC = () => {
     return (
       <Card style={styles.companyCard}>
         <View style={styles.companyHeader}>
-          <View style={styles.companyIconContainer}>
+          <View
+            style={[
+              styles.companyIconContainer,
+              { backgroundColor: colors.gray100 },
+            ]}
+          >
             <Ionicons
               name="business"
               size={20}
               color={chartColors[index % chartColors.length]}
             />
           </View>
-          <Text style={styles.companyName} numberOfLines={1}>
+          <ThemedText style={styles.companyName} numberOfLines={1}>
             {item.companyName}
-          </Text>
-          <Text style={styles.percentageText}>{percentageOfTotal}%</Text>
+          </ThemedText>
+          <ThemedText style={styles.percentageText} color={colors.primary}>
+            {percentageOfTotal}%
+          </ThemedText>
         </View>
 
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Số lượt cân:</Text>
-            <Text style={styles.statValue}>{item.weighCount} xe</Text>
+            <ThemedText type="subtitle" style={styles.statLabel}>
+              Số lượt cân:
+            </ThemedText>
+            <ThemedText style={styles.statValue}>
+              {item.weighCount} xe
+            </ThemedText>
           </View>
           <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Tổng trọng lượng:</Text>
-            <Text style={styles.statValue}>
+            <ThemedText type="subtitle" style={styles.statLabel}>
+              Tổng trọng lượng:
+            </ThemedText>
+            <ThemedText style={styles.statValue}>
               {formatWeight(item.totalWeight)}
-            </Text>
+            </ThemedText>
           </View>
         </View>
 
         {company && (
-          <View style={styles.companyInfo}>
+          <View
+            style={[styles.companyInfo, { borderTopColor: colors.gray200 }]}
+          >
             {company.diachi && (
-              <Text style={styles.companyDetail}>
+              <ThemedText type="caption" style={styles.companyDetail}>
                 <Ionicons
                   name="location-outline"
                   size={12}
                   color={colors.gray600}
                 />{" "}
                 {company.diachi}
-              </Text>
+              </ThemedText>
             )}
             {company.dienthoai && (
-              <Text style={styles.companyDetail}>
+              <ThemedText type="caption" style={styles.companyDetail}>
                 <Ionicons
                   name="call-outline"
                   size={12}
                   color={colors.gray600}
                 />{" "}
                 {company.dienthoai}
-              </Text>
+              </ThemedText>
             )}
           </View>
         )}
@@ -218,7 +234,7 @@ const CompanyReportsScreen: React.FC = () => {
       return {
         name: item.companyName,
         // Don't include weight value in the name
-        legendFontColor: colors.text,
+        legendFontColor: isDarkMode ? "#f1f1f1" : "#333",
         legendFontSize: 12,
         weight: item.totalWeight,
         count: item.weighCount,
@@ -230,11 +246,12 @@ const CompanyReportsScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Header title="Báo Cáo Theo Công Ty" showBack />
+    <ThemedView useSafeArea>
+      <Header title="Báo Cáo Theo Khách hàng" showBack />
 
       <View style={styles.container}>
         <DateRangeSelector
+          allowFutureDates={true}
           startDate={startDate}
           endDate={endDate}
           onDateRangeChange={handleDateRangeChange}
@@ -243,8 +260,10 @@ const CompanyReportsScreen: React.FC = () => {
 
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
+            <Loading loading={true} />
+            <ThemedText style={styles.loadingText}>
+              Đang tải dữ liệu...
+            </ThemedText>
           </View>
         ) : (
           <FlatList
@@ -256,35 +275,49 @@ const CompanyReportsScreen: React.FC = () => {
                 <Card style={styles.summaryCard}>
                   <View style={styles.summaryRow}>
                     <View style={styles.summaryItem}>
-                      <Text style={styles.summaryLabel}>Tổng xe:</Text>
-                      <Text style={styles.summaryValue}>{totalVehicles}</Text>
+                      <ThemedText type="subtitle" style={styles.summaryLabel}>
+                        Tổng xe:
+                      </ThemedText>
+                      <ThemedText style={styles.summaryValue}>
+                        {totalVehicles}
+                      </ThemedText>
                     </View>
 
-                    <View style={styles.summaryDivider} />
+                    <View
+                      style={[
+                        styles.summaryDivider,
+                        { backgroundColor: colors.gray200 },
+                      ]}
+                    />
 
                     <View style={styles.summaryItem}>
-                      <Text style={styles.summaryLabel}>Tổng trọng lượng:</Text>
-                      <Text style={styles.summaryValue}>
+                      <ThemedText type="subtitle" style={styles.summaryLabel}>
+                        Tổng trọng lượng:
+                      </ThemedText>
+                      <ThemedText style={styles.summaryValue}>
                         {formatWeight(totalWeight, true)}
-                      </Text>
+                      </ThemedText>
                     </View>
                   </View>
                 </Card>
 
                 {companyStats.length > 0 && (
                   <Card style={styles.chartCard}>
-                    <Text style={styles.chartTitle}>
-                      Phân bố trọng lượng theo công ty
-                    </Text>
+                    <ThemedText style={styles.chartTitle}>
+                      Phân bố trọng lượng theo Khách Hàng
+                    </ThemedText>
                     <View style={styles.chartContainer}>
                       <PieChart
                         data={getPieChartData()}
                         width={screenWidth - 60}
                         height={180}
                         chartConfig={{
-                          backgroundGradientFrom: "#fff",
-                          backgroundGradientTo: "#fff",
-                          color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                          backgroundGradientFrom: colors.card,
+                          backgroundGradientTo: colors.card,
+                          color: (opacity = 1) =>
+                            isDarkMode
+                              ? `rgba(255, 255, 255, ${opacity})`
+                              : `rgba(0, 0, 0, ${opacity})`,
                         }}
                         accessor="weight"
                         backgroundColor="transparent"
@@ -303,14 +336,18 @@ const CompanyReportsScreen: React.FC = () => {
                               { backgroundColor: item.color },
                             ]}
                           />
-                          <Text style={styles.legendText}>{item.name}</Text>
+                          <ThemedText style={styles.legendText}>
+                            {item.name}
+                          </ThemedText>
                         </View>
                       ))}
                     </View>
                   </Card>
                 )}
 
-                <Text style={styles.sectionTitle}>Chi tiết theo công ty</Text>
+                <ThemedText type="title" style={styles.sectionTitle}>
+                  Chi tiết theo Khách Hàng
+                </ThemedText>
               </View>
             }
             ListEmptyComponent={
@@ -320,20 +357,34 @@ const CompanyReportsScreen: React.FC = () => {
                   size={48}
                   color={colors.gray400}
                 />
-                <Text style={styles.emptyText}>
+                <ThemedText style={styles.emptyText}>
                   Không có dữ liệu trong khoảng thời gian này
-                </Text>
+                </ThemedText>
               </View>
             }
             contentContainerStyle={styles.listContent}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[colors.primary]}
+                tintColor={colors.primary}
+                progressBackgroundColor={colors.card}
+              />
             }
           />
         )}
       </View>
 
-      <View style={styles.exportContainer}>
+      <View
+        style={[
+          styles.exportContainer,
+          {
+            backgroundColor: colors.background,
+            borderTopColor: colors.gray200,
+          },
+        ]}
+      >
         <Button
           title="Xuất báo cáo"
           variant="primary"
@@ -341,24 +392,17 @@ const CompanyReportsScreen: React.FC = () => {
           fullWidth
         />
       </View>
-    </SafeAreaView>
+    </ThemedView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   container: {
     flex: 1,
   },
   dateRangeSelector: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: colors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray200,
   },
   loadingContainer: {
     flex: 1,
@@ -368,7 +412,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: colors.gray600,
   },
   listContent: {
     padding: 16,
@@ -389,17 +432,14 @@ const styles = StyleSheet.create({
   summaryDivider: {
     width: 1,
     height: "70%",
-    backgroundColor: colors.gray200,
   },
   summaryLabel: {
     fontSize: 14,
-    color: colors.gray600,
     marginBottom: 4,
   },
   summaryValue: {
     fontSize: 18,
     fontWeight: "600",
-    color: colors.text,
   },
   chartCard: {
     marginBottom: 16,
@@ -408,7 +448,6 @@ const styles = StyleSheet.create({
   chartTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
     marginBottom: 8,
   },
   chartContainer: {
@@ -435,12 +474,10 @@ const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: 12,
-    color: colors.text,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
     marginBottom: 12,
   },
   companyCard: {
@@ -455,7 +492,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.gray100,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 10,
@@ -463,13 +499,11 @@ const styles = StyleSheet.create({
   companyName: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
     flex: 1,
   },
   percentageText: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.primary,
   },
   statsContainer: {
     flexDirection: "row",
@@ -481,21 +515,17 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 14,
-    color: colors.gray600,
   },
   statValue: {
     fontSize: 14,
     fontWeight: "500",
-    color: colors.text,
   },
   companyInfo: {
     borderTopWidth: 1,
-    borderTopColor: colors.gray200,
     paddingTop: 10,
   },
   companyDetail: {
     fontSize: 12,
-    color: colors.gray600,
     marginTop: 2,
   },
   emptyContainer: {
@@ -506,7 +536,6 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 16,
     fontSize: 14,
-    color: colors.gray600,
     textAlign: "center",
   },
   exportContainer: {
@@ -515,10 +544,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 16,
-    backgroundColor: colors.background,
     borderTopWidth: 1,
-    borderTopColor: colors.gray200,
   },
 });
 
-export default CompanyReportsScreen;
+export default CompanyReportScreen;

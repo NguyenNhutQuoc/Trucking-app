@@ -33,7 +33,7 @@ const ManagementHomeScreen: React.FC = () => {
     },
     {
       id: "companies",
-      title: "Quản lý công ty",
+      title: "Quản lý Khách Hàng",
       icon: "business-outline",
       color: colors.chartBlue,
       screen: "CompanyList",

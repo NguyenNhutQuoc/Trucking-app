@@ -248,7 +248,7 @@ const WeighingDetailScreen: React.FC = () => {
                   <View style={styles.resultItem}>
                     <ThemedText style={styles.resultLabel}>Đơn giá:</ThemedText>
                     <ThemedText style={styles.resultValue}>
-                      {weighing.dongia.toLocaleString()} VND/tấn
+                      {weighing.dongia.toLocaleString()} VND/kg
                     </ThemedText>
                   </View>
 
@@ -259,8 +259,7 @@ const WeighingDetailScreen: React.FC = () => {
                     <ThemedText
                       style={[styles.resultTotal, { color: colors.success }]}
                     >
-                      {((netWeight / 1000) * weighing.dongia).toLocaleString()}{" "}
-                      VND
+                      {(netWeight * weighing.dongia).toLocaleString()} VND
                     </ThemedText>
                   </View>
                 </>

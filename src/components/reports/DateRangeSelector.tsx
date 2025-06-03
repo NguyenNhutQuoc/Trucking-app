@@ -22,6 +22,8 @@ interface DateRangeSelectorProps {
   endDate: Date;
   onDateRangeChange: (start: Date, end: Date) => void;
   style?: ViewStyle;
+  allowFutureDates?: boolean; // Thêm prop để cho phép chọn ngày tương lai
+  maximumDate?: Date; // Thêm prop để tùy chỉnh ngày tối đa
 }
 
 const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
@@ -29,11 +31,28 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
   endDate,
   onDateRangeChange,
   style,
+  allowFutureDates = false, // Mặc định không cho phép ngày tương lai
+  maximumDate, // Tùy chọn ngày tối đa
 }) => {
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [tempStartDate, setTempStartDate] = useState(startDate);
   const [tempEndDate, setTempEndDate] = useState(endDate);
+
+  // Tính toán ngày tối đa có thể chọn
+  const getMaximumDate = () => {
+    if (maximumDate) {
+      return maximumDate;
+    }
+    if (allowFutureDates) {
+      // Cho phép chọn ngày trong tương lai (ví dụ: 1 năm từ hiện tại)
+      const futureDate = new Date();
+      futureDate.setFullYear(futureDate.getFullYear() + 1);
+      return futureDate;
+    }
+    // Mặc định chỉ cho phép đến ngày hiện tại
+    return new Date();
+  };
 
   // Quick filter options
   const quickFilters = [
@@ -154,7 +173,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
           onChange={(event, date) =>
             handleDateChange(event, date, showStartPicker)
           }
-          maximumDate={new Date()}
+          maximumDate={getMaximumDate()}
         />
       )}
 
@@ -180,7 +199,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
                   mode="date"
                   display="spinner"
                   onChange={(event, date) => date && setTempStartDate(date)}
-                  maximumDate={new Date()}
+                  maximumDate={getMaximumDate()}
                 />
                 <TouchableOpacity
                   style={styles.modalButton}
@@ -214,7 +233,7 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
                   mode="date"
                   display="spinner"
                   onChange={(event, date) => date && setTempEndDate(date)}
-                  maximumDate={new Date()}
+                  maximumDate={getMaximumDate()}
                 />
                 <TouchableOpacity
                   style={styles.modalButton}

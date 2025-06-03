@@ -11,6 +11,7 @@ import {
   Hanghoa,
   Soxe,
   NhanvienWithPermissions,
+  Nhanvien,
 } from "./api.types";
 
 // Auth Navigator
@@ -38,7 +39,7 @@ export type ManagementStackParamList = {
   AddVehicle: { vehicle?: Soxe };
   AddCompany: { company?: Khachhang };
   AddProduct: { product?: Hanghoa | undefined };
-  AddUser: { user?: NhanvienWithPermissions };
+  AddUser: { user?: Nhanvien };
   AddPermissionGroup: { group?: any };
 
   UserPermissions: { user: NhanvienWithPermissions };

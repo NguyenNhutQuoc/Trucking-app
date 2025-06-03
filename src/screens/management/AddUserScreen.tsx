@@ -1,13 +1,11 @@
-// src/screens/management/AddUserScreen.tsx (updated with real API)
+// src/screens/management/AddUserScreen.tsx (updated with dark mode support)
 import React, { useState, useEffect } from "react";
 import {
   View,
-  Text,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  SafeAreaView,
   Alert,
   TouchableOpacity,
 } from "react-native";
@@ -20,7 +18,9 @@ import Header from "@/components/common/Header";
 import Input from "@/components/common/Input";
 import Button from "@/components/common/Button";
 import Loading from "@/components/common/Loading";
-import colors from "@/constants/colors";
+import ThemedView from "@/components/common/ThemedView";
+import ThemedText from "@/components/common/ThemedText";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import { ManagementStackParamList } from "@/types/navigation.types";
 import { NhanvienCreate, NhanvienUpdate, NhomQuyen } from "@/types/api.types";
 
@@ -29,6 +29,7 @@ type AddUserScreenRouteProp = RouteProp<ManagementStackParamList, "AddUser">;
 const AddUserScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<AddUserScreenRouteProp>();
+  const { colors } = useAppTheme();
   const { user } = route.params || {};
   const editMode = !!user;
 
@@ -204,7 +205,7 @@ const AddUserScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <ThemedView useSafeArea>
       <Header
         title={editMode ? "Sửa Người Dùng" : "Thêm Người Dùng Mới"}
         showBack
@@ -274,16 +275,27 @@ const AddUserScreen: React.FC = () => {
             }
           />
 
-          <Text style={styles.sectionTitle}>Nhóm quyền & Trạng thái</Text>
+          <ThemedText style={styles.sectionTitle}>
+            Nhóm quyền & Trạng thái
+          </ThemedText>
 
-          <View style={styles.groupSelector}>
+          <View
+            style={[
+              styles.groupSelector,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.gray200,
+              },
+            ]}
+          >
             {groups.map((group) => (
               <TouchableOpacity
                 key={group.nhomId}
                 style={[
                   styles.groupOption,
-                  formData.nhomId === group.nhomId &&
-                    styles.groupOptionSelected,
+                  formData.nhomId === group.nhomId && {
+                    backgroundColor: colors.primary + "15",
+                  },
                 ]}
                 onPress={() => handleInputChange("nhomId", group.nhomId)}
               >
@@ -300,29 +312,42 @@ const AddUserScreen: React.FC = () => {
                       : colors.gray500
                   }
                 />
-                <Text
+                <ThemedText
                   style={[
                     styles.groupOptionText,
-                    formData.nhomId === group.nhomId &&
-                      styles.groupOptionTextSelected,
+                    formData.nhomId === group.nhomId
+                      ? { fontWeight: "600", color: colors.primary }
+                      : { color: colors.text },
                   ]}
                 >
                   {group.ten}
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
             ))}
             {errors.nhomId && (
-              <Text style={styles.errorText}>{errors.nhomId}</Text>
+              <ThemedText style={styles.errorText} color={colors.error}>
+                {errors.nhomId}
+              </ThemedText>
             )}
           </View>
 
           <View style={styles.switchContainer}>
-            <Text style={styles.switchLabel}>Loại tài khoản:</Text>
-            <View style={styles.switchOptions}>
+            <ThemedText style={styles.switchLabel}>Loại tài khoản:</ThemedText>
+            <View
+              style={[
+                styles.switchOptions,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.gray200,
+                },
+              ]}
+            >
               <TouchableOpacity
                 style={[
                   styles.switchOption,
-                  formData.type === 0 && styles.switchOptionSelected,
+                  formData.type === 0 && {
+                    backgroundColor: colors.primary + "15",
+                  },
                 ]}
                 onPress={() => handleInputChange("type", 0)}
               >
@@ -333,20 +358,29 @@ const AddUserScreen: React.FC = () => {
                   size={20}
                   color={formData.type === 0 ? colors.primary : colors.gray500}
                 />
-                <Text
+                <ThemedText
                   style={[
                     styles.switchOptionText,
-                    formData.type === 0 && styles.switchOptionTextSelected,
+                    formData.type === 0
+                      ? {
+                          fontWeight: "600",
+                          color: colors.primary,
+                        }
+                      : {
+                          color: colors.text,
+                        },
                   ]}
                 >
                   Người dùng thường
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[
                   styles.switchOption,
-                  formData.type === 1 && styles.switchOptionSelected,
+                  formData.type === 1 && {
+                    backgroundColor: colors.primary + "15",
+                  },
                 ]}
                 onPress={() => handleInputChange("type", 1)}
               >
@@ -357,25 +391,42 @@ const AddUserScreen: React.FC = () => {
                   size={20}
                   color={formData.type === 1 ? colors.primary : colors.gray500}
                 />
-                <Text
+                <ThemedText
                   style={[
                     styles.switchOptionText,
-                    formData.type === 1 && styles.switchOptionTextSelected,
+                    formData.type === 1
+                      ? {
+                          fontWeight: "600",
+                          color: colors.primary,
+                        }
+                      : {
+                          color: colors.text,
+                        },
                   ]}
                 >
                   Quản trị viên
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
             </View>
           </View>
 
           <View style={styles.switchContainer}>
-            <Text style={styles.switchLabel}>Trạng thái:</Text>
-            <View style={styles.switchOptions}>
+            <ThemedText style={styles.switchLabel}>Trạng thái:</ThemedText>
+            <View
+              style={[
+                styles.switchOptions,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.gray200,
+                },
+              ]}
+            >
               <TouchableOpacity
                 style={[
                   styles.switchOption,
-                  formData.trangthai === 0 && styles.switchOptionSelected,
+                  formData.trangthai === 0 && {
+                    backgroundColor: colors.primary + "15",
+                  },
                 ]}
                 onPress={() => handleInputChange("trangthai", 0)}
               >
@@ -390,20 +441,29 @@ const AddUserScreen: React.FC = () => {
                     formData.trangthai === 0 ? colors.primary : colors.gray500
                   }
                 />
-                <Text
+                <ThemedText
                   style={[
                     styles.switchOptionText,
-                    formData.trangthai === 0 && styles.switchOptionTextSelected,
+                    formData.trangthai === 0
+                      ? {
+                          fontWeight: "600",
+                          color: colors.primary,
+                        }
+                      : {
+                          color: colors.text,
+                        },
                   ]}
                 >
                   Hoạt động
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[
                   styles.switchOption,
-                  formData.trangthai === 1 && styles.switchOptionSelected,
+                  formData.trangthai === 1 && {
+                    backgroundColor: colors.primary + "15",
+                  },
                 ]}
                 onPress={() => handleInputChange("trangthai", 1)}
               >
@@ -418,14 +478,21 @@ const AddUserScreen: React.FC = () => {
                     formData.trangthai === 1 ? colors.primary : colors.gray500
                   }
                 />
-                <Text
+                <ThemedText
                   style={[
                     styles.switchOptionText,
-                    formData.trangthai === 1 && styles.switchOptionTextSelected,
+                    formData.trangthai === 1
+                      ? {
+                          fontWeight: "600",
+                          color: colors.primary,
+                        }
+                      : {
+                          color: colors.text,
+                        },
                   ]}
                 >
                   Vô hiệu hóa
-                </Text>
+                </ThemedText>
               </TouchableOpacity>
             </View>
           </View>
@@ -447,15 +514,13 @@ const AddUserScreen: React.FC = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+
+      <Loading loading={loading} />
+    </ThemedView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   container: {
     flex: 1,
   },
@@ -469,17 +534,14 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
     marginTop: 20,
     marginBottom: 12,
   },
   groupSelector: {
-    backgroundColor: colors.card,
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: colors.gray200,
   },
   groupOption: {
     flexDirection: "row",
@@ -488,17 +550,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 6,
   },
-  groupOptionSelected: {
-    backgroundColor: colors.primary + "15",
-  },
   groupOptionText: {
     fontSize: 14,
-    color: colors.text,
     marginLeft: 8,
-  },
-  groupOptionTextSelected: {
-    fontWeight: "600",
-    color: colors.primary,
   },
   switchContainer: {
     marginBottom: 16,
@@ -506,16 +560,13 @@ const styles = StyleSheet.create({
   switchLabel: {
     fontSize: 14,
     fontWeight: "500",
-    color: colors.gray700,
     marginBottom: 8,
   },
   switchOptions: {
     flexDirection: "row",
-    backgroundColor: colors.card,
     borderRadius: 8,
     padding: 8,
     borderWidth: 1,
-    borderColor: colors.gray200,
   },
   switchOption: {
     flexDirection: "row",
@@ -525,21 +576,12 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginRight: 8,
   },
-  switchOptionSelected: {
-    backgroundColor: colors.primary + "15",
-  },
   switchOptionText: {
     fontSize: 14,
-    color: colors.text,
     marginLeft: 8,
-  },
-  switchOptionTextSelected: {
-    fontWeight: "600",
-    color: colors.primary,
   },
   errorText: {
     fontSize: 12,
-    color: colors.error,
     marginTop: 4,
     marginLeft: 4,
   },

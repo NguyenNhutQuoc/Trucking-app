@@ -1,14 +1,14 @@
+// Now for CompanyListScreen.tsx with dark mode:
+
 // src/screens/management/CompanyListScreen.tsx
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  SafeAreaView,
-  Alert,
   TextInput,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -18,7 +18,9 @@ import Header from "@/components/common/Header";
 import Card from "@/components/common/Card";
 import Loading from "@/components/common/Loading";
 import Button from "@/components/common/Button";
-import colors from "@/constants/colors";
+import ThemedView from "@/components/common/ThemedView";
+import ThemedText from "@/components/common/ThemedText";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import { Khachhang } from "@/types/api.types";
 import { ManagementStackScreenProps } from "@/types/navigation.types";
 import { formatPhoneNumber } from "@/utils/formatters";
@@ -27,6 +29,7 @@ type NavigationProp = ManagementStackScreenProps<"CompanyList">["navigation"];
 
 const CompanyListScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { colors } = useAppTheme();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -89,7 +92,7 @@ const CompanyListScreen: React.FC = () => {
   const handleAddCompany = () => {
     navigation.navigate({
       name: "AddCompany",
-      params: { company: null },
+      params: { company: undefined },
     });
   };
 
@@ -100,7 +103,7 @@ const CompanyListScreen: React.FC = () => {
   const handleDeleteCompany = (company: Khachhang) => {
     Alert.alert(
       "Xác nhận xóa",
-      `Bạn có chắc chắn muốn xóa công ty "${company.ten}"?`,
+      `Bạn có chắc chắn muốn xóa Khách Hàng "${company.ten}"?`,
       [
         { text: "Hủy", style: "cancel" },
         {
@@ -115,13 +118,13 @@ const CompanyListScreen: React.FC = () => {
                 setCompanies((prevCompanies) =>
                   prevCompanies.filter((c) => c.id !== company.id),
                 );
-                Alert.alert("Thành công", "Xóa công ty thành công");
+                Alert.alert("Thành công", "Xóa Khách Hàng thành công");
               } else {
-                Alert.alert("Lỗi", "Không thể xóa công ty");
+                Alert.alert("Lỗi", "Không thể xóa Khách Hàng");
               }
             } catch (error) {
               console.error("Delete company error:", error);
-              Alert.alert("Lỗi", "Không thể xóa công ty");
+              Alert.alert("Lỗi", "Không thể xóa Khách Hàng");
             } finally {
               setLoading(false);
             }
@@ -135,45 +138,54 @@ const CompanyListScreen: React.FC = () => {
     return (
       <Card style={styles.companyCard}>
         <View style={styles.companyInfo}>
-          <View style={styles.companyIconContainer}>
+          <View
+            style={[
+              styles.companyIconContainer,
+              { backgroundColor: colors.primary + "15" },
+            ]}
+          >
             <Ionicons name="business" size={24} color={colors.primary} />
           </View>
           <View style={styles.companyDetails}>
-            <Text style={styles.companyName}>{item.ten}</Text>
-            <Text style={styles.companyCode}>Mã: {item.ma}</Text>
+            <ThemedText style={styles.companyName}>{item.ten}</ThemedText>
+            <ThemedText type="subtitle" style={styles.companyCode}>
+              Mã: {item.ma}
+            </ThemedText>
             {item.diachi && (
-              <Text style={styles.companyAddress}>
+              <ThemedText type="subtitle" style={styles.companyAddress}>
                 <Ionicons
                   name="location-outline"
                   size={14}
                   color={colors.gray600}
                 />{" "}
                 {item.diachi}
-              </Text>
+              </ThemedText>
             )}
             {item.dienthoai && (
-              <Text style={styles.companyPhone}>
+              <ThemedText type="subtitle" style={styles.companyPhone}>
                 <Ionicons
                   name="call-outline"
                   size={14}
                   color={colors.gray600}
                 />{" "}
                 {formatPhoneNumber(item.dienthoai)}
-              </Text>
+              </ThemedText>
             )}
           </View>
         </View>
 
-        <View style={styles.actionButtons}>
+        <View
+          style={[styles.actionButtons, { borderTopColor: colors.gray200 }]}
+        >
           <TouchableOpacity
-            style={styles.actionButton}
+            style={[styles.actionButton, { backgroundColor: colors.gray100 }]}
             onPress={() => handleEditCompany(item)}
           >
             <Ionicons name="create-outline" size={22} color={colors.primary} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.actionButton}
+            style={[styles.actionButton, { backgroundColor: colors.gray100 }]}
             onPress={() => handleDeleteCompany(item)}
           >
             <Ionicons name="trash-outline" size={22} color={colors.error} />
@@ -184,9 +196,9 @@ const CompanyListScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <ThemedView useSafeArea>
       <Header
-        title="Danh Sách Công Ty"
+        title="Danh Sách Khách Hàng"
         showBack
         rightComponent={
           <TouchableOpacity style={styles.addButton} onPress={handleAddCompany}>
@@ -196,8 +208,21 @@ const CompanyListScreen: React.FC = () => {
       />
 
       <View style={styles.container}>
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
+        <View
+          style={[
+            styles.searchContainer,
+            {
+              backgroundColor: colors.card,
+              borderBottomColor: colors.gray200,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.searchInputContainer,
+              { backgroundColor: colors.gray100 },
+            ]}
+          >
             <Ionicons
               name="search"
               size={20}
@@ -205,8 +230,8 @@ const CompanyListScreen: React.FC = () => {
               style={styles.searchIcon}
             />
             <TextInput
-              style={styles.searchInput}
-              placeholder="Tìm kiếm công ty..."
+              style={[styles.searchInput, { color: colors.text }]}
+              placeholder="Tìm kiếm Khách Hàng..."
               placeholderTextColor={colors.gray500}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -241,13 +266,13 @@ const CompanyListScreen: React.FC = () => {
                     size={48}
                     color={colors.gray400}
                   />
-                  <Text style={styles.emptyText}>
+                  <ThemedText style={styles.emptyText}>
                     {searchQuery
-                      ? "Không tìm thấy công ty nào phù hợp"
-                      : "Chưa có công ty nào được thêm"}
-                  </Text>
+                      ? "Không tìm thấy Khách Hàng nào phù hợp"
+                      : "Chưa có Khách Hàng nào được thêm"}
+                  </ThemedText>
                   <Button
-                    title="Thêm công ty mới"
+                    title="Thêm Khách Hàng mới"
                     onPress={handleAddCompany}
                     variant="primary"
                     size="small"
@@ -261,28 +286,21 @@ const CompanyListScreen: React.FC = () => {
       </View>
 
       <Loading loading={loading && !refreshing} />
-    </SafeAreaView>
+    </ThemedView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   container: {
     flex: 1,
   },
   searchContainer: {
     padding: 16,
-    backgroundColor: colors.card,
     borderBottomWidth: 1,
-    borderBottomColor: colors.gray200,
   },
   searchInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.gray100,
     borderRadius: 8,
     paddingHorizontal: 12,
     height: 40,
@@ -293,7 +311,6 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: colors.text,
     height: "100%",
   },
   listContent: {
@@ -311,7 +328,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: colors.primary + "15",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 16,
@@ -322,22 +338,18 @@ const styles = StyleSheet.create({
   companyName: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.text,
     marginBottom: 4,
   },
   companyCode: {
     fontSize: 14,
-    color: colors.gray600,
     marginBottom: 2,
   },
   companyAddress: {
     fontSize: 14,
-    color: colors.gray700,
     marginBottom: 2,
   },
   companyPhone: {
     fontSize: 14,
-    color: colors.gray700,
   },
   actionButtons: {
     flexDirection: "row",
@@ -345,13 +357,11 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: colors.gray200,
   },
   actionButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.gray100,
     justifyContent: "center",
     alignItems: "center",
     marginLeft: 8,
@@ -366,7 +376,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: colors.gray600,
     textAlign: "center",
     marginVertical: 16,
   },

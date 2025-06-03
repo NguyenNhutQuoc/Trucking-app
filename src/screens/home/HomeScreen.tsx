@@ -1,4 +1,4 @@
-// src/screens/home/HomeScreen.tsx
+// src/screens/home/HomeScreen.tsx - Final Updated with Safe Navigation
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -9,23 +9,31 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { useNavigationHandler } from "@/hooks/useNavigationHandler";
 import { weighingApi } from "@/api/weighing";
 import Header from "@/components/common/Header";
 import Card from "@/components/common/Card";
-import Button from "@/components/common/Button";
 import Loading from "@/components/common/Loading";
 import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
+import SlideMenu from "@/components/common/SliceMenu";
+import UnderDevelopmentModal from "@/components/common/UnderDevelopmentModal";
 import { Phieucan } from "@/types/api.types";
 
 const HomeScreen: React.FC = () => {
-  const navigation = useNavigation();
   const { userInfo } = useAuth();
   const { colors } = useAppTheme();
+  const {
+    safeNavigate,
+    showModalVersion,
+    showModal,
+    currentFeature,
+    currentMessage,
+    closeModal,
+  } = useNavigationHandler();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -34,6 +42,7 @@ const HomeScreen: React.FC = () => {
     totalVehicles: 0,
     totalWeight: 0,
   });
+  const [menuVisible, setMenuVisible] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -90,32 +99,55 @@ const HomeScreen: React.FC = () => {
     return `${(weight / 1000).toFixed(1)} tấn`;
   };
 
+  // Updated navigation handlers with safe navigation
   const handleNewWeighing = () => {
-    // @ts-ignore
-    navigation.navigate("AddEditWeighing");
+    showModalVersion(
+      "Tạo phiếu cân mới",
+      "Chức năng tạo phiếu cân đang được phát triển với giao diện cải tiến. Sẽ bao gồm:\n\n• Quét mã QR biển số xe\n• Tự động điền thông tin từ database\n• Chụp ảnh xe tự động\n• Kết nối trực tiếp với thiết bị cân\n• Xác thực chữ ký điện tử\n\nDự kiến có mặt trong phiên bản 2.0.",
+    );
   };
 
   const handleViewAllWeighings = () => {
-    // @ts-ignore
-    navigation.navigate("WeighingList");
+    safeNavigate("WeighingList", undefined, true, "Danh sách cân");
   };
 
   const handleWeighingPress = (weighing: Phieucan) => {
-    // @ts-ignore
-    navigation.navigate("WeighingDetail", { weighing });
+    safeNavigate("WeighingDetail", { weighing }, true, "Chi tiết phiếu cân");
   };
 
   const handleViewReports = () => {
-    // @ts-ignore
-    navigation.navigate("Reports");
+    safeNavigate("Reports", undefined, true, "Báo cáo hoạt động");
+  };
+
+  const handleManagementPress = () => {
+    safeNavigate("Management", undefined, true, "Quản lý hệ thống");
   };
 
   const handleCompleteWeighing = (weighingId: number) => {
-    // @ts-ignore
-    navigation.navigate("Weighing", {
-      screen: "CompleteWeighing",
-      params: { weighingId },
-    });
+    safeNavigate(
+      "Weighing",
+      {
+        screen: "CompleteWeighing",
+        params: { weighingId },
+      },
+      true,
+      "Hoàn thành cân",
+    );
+  };
+
+  const handleMenuPress = () => {
+    setMenuVisible(true);
+  };
+
+  const handleMenuClose = () => {
+    setMenuVisible(false);
+  };
+
+  const handleNotificationPress = () => {
+    showModalVersion(
+      "Thông báo",
+      "Hệ thống thông báo thông minh đang được phát triển:\n\n• Thông báo phiếu cân mới\n• Cảnh báo quá tải xe\n• Nhắc nhở bảo trì thiết bị\n• Thông báo hết hạn giấy phép\n• Push notification\n• Email notifications\n\nTính năng sẽ được tích hợp trong bản cập nhật tiếp theo.",
+    );
   };
 
   const renderPendingWeighingItem = ({ item }: { item: Phieucan }) => {
@@ -187,8 +219,12 @@ const HomeScreen: React.FC = () => {
       <Header
         title="Trạm A"
         showMenu={true}
+        onMenuPress={handleMenuPress}
         rightComponent={
-          <TouchableOpacity style={styles.headerButton}>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={handleNotificationPress}
+          >
             <Ionicons name="notifications-outline" size={24} color="white" />
           </TouchableOpacity>
         }
@@ -250,6 +286,43 @@ const HomeScreen: React.FC = () => {
               </View>
               <ThemedText style={styles.actionText}>Danh Sách Cân</ThemedText>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                {
+                  backgroundColor: colors.warning + "08",
+                  borderWidth: 1,
+                  borderColor: colors.warning + "30",
+                  borderStyle: "dashed" as const,
+                },
+              ]}
+              onPress={handleNewWeighing}
+            >
+              <View style={styles.devBadgeContainer}>
+                <View
+                  style={[styles.devBadge, { backgroundColor: colors.warning }]}
+                >
+                  <ThemedText style={styles.devBadgeText}>DEV</ThemedText>
+                </View>
+              </View>
+              <View
+                style={[
+                  styles.actionIconContainer,
+                  { backgroundColor: colors.chartGreen + "80" },
+                ]}
+              >
+                <Ionicons name="add-circle" size={28} color="white" />
+              </View>
+              <ThemedText
+                style={[styles.actionText, { color: colors.text + "80" }]}
+              >
+                Tạo Phiếu Mới
+              </ThemedText>
+              <ThemedText style={[styles.devStatus, { color: colors.warning }]}>
+                Đang phát triển
+              </ThemedText>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.actionButtonRow}>
@@ -260,20 +333,21 @@ const HomeScreen: React.FC = () => {
               <View
                 style={[
                   styles.actionIconContainer,
-                  { backgroundColor: colors.chartBlue },
+                  { backgroundColor: colors.chartBlue + "80" },
                 ]}
               >
                 <Ionicons name="bar-chart" size={28} color="white" />
               </View>
-              <ThemedText style={styles.actionText}>Báo Cáo</ThemedText>
+              <ThemedText
+                style={[styles.actionText, { color: colors.text + "80" }]}
+              >
+                Báo Cáo
+              </ThemedText>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: colors.card }]}
-              onPress={() => {
-                // @ts-ignore
-                navigation.navigate("Management");
-              }}
+              onPress={handleManagementPress}
             >
               <View
                 style={[
@@ -353,7 +427,16 @@ const HomeScreen: React.FC = () => {
         </View>
       </ScrollView>
 
+      <SlideMenu visible={menuVisible} onClose={handleMenuClose} />
       <Loading loading={loading} />
+
+      {/* Modal for under development features */}
+      <UnderDevelopmentModal
+        visible={showModal}
+        onClose={closeModal}
+        featureName={currentFeature}
+        message={currentMessage}
+      />
     </ThemedView>
   );
 };
@@ -410,6 +493,30 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    position: "relative",
+  },
+  devBadgeContainer: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    zIndex: 1,
+  },
+  devBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  devBadgeText: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: "white",
+    letterSpacing: 0.5,
+  },
+  devStatus: {
+    fontSize: 10,
+    fontWeight: "500",
+    marginTop: 2,
+    textAlign: "center",
   },
   actionIconContainer: {
     width: 56,

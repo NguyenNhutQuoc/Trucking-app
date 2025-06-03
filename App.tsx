@@ -6,7 +6,7 @@ import { LogBox } from "react-native";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import AppNavigator from "@/navigation/AppNavigator";
-
+import "react-native-gesture-handler";
 // Ignore specific warnings
 LogBox.ignoreLogs([
   "Overwriting fontFamily style attribute preprocessor",
@@ -17,11 +17,11 @@ LogBox.ignoreLogs([
 const App: React.FC = () => {
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <ThemeProvider>
           <AppNavigator />
-        </AuthProvider>
-      </ThemeProvider>
+        </ThemeProvider>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 };

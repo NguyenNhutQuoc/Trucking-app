@@ -22,7 +22,6 @@ module.exports = function (api) {
           },
         },
       ],
-      "react-native-reanimated/plugin",
     ],
   };
 };
@@ -31,6 +30,5 @@ module.exports = function (api) {
 // The module resolver plugin allows you to use custom aliases for directories,
 // making it easier to import components, screens, hooks, contexts, API calls,
 // utilities, constants, types, and assets.
-// Additionally, the react-native-reanimated/plugin is included to enable
 // support for the Reanimated library, which is commonly used for animations
 // in React Native applications.

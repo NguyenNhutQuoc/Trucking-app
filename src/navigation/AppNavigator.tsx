@@ -1,4 +1,4 @@
-// src/navigation/AppNavigator.tsx
+// src/navigation/AppNavigator.tsx - Updated version
 import React from "react";
 import {
   NavigationContainer,
@@ -13,6 +13,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import AuthNavigator from "./AuthNavigator";
 import MainNavigator from "./MainNavigator";
 import Loading from "@/components/common/Loading";
+import NavigationErrorBoundary from "@/components/common/NavigationErrorBoundary";
 
 // Screens
 import WeighingDetailScreen from "@/screens/weighing/WeighingDetailScreen";
@@ -44,31 +45,33 @@ const AppNavigator: React.FC = () => {
   }
 
   return (
-    <NavigationContainer theme={navigationTheme}>
-      <StatusBar style={isDarkMode ? "light" : "dark"} />
-      <Stack.Navigator
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: colors.background },
-        }}
-      >
-        {isAuthenticated ? (
-          <>
-            <Stack.Screen name="Main" component={MainNavigator} />
+    <NavigationErrorBoundary>
+      <NavigationContainer theme={navigationTheme}>
+        <StatusBar style={isDarkMode ? "light" : "dark"} />
+        <Stack.Navigator
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.background },
+          }}
+        >
+          {isAuthenticated ? (
+            <>
+              <Stack.Screen name="Main" component={MainNavigator} />
+              <Stack.Screen
+                name="WeighingDetail"
+                component={WeighingDetailScreen}
+              />
+            </>
+          ) : (
             <Stack.Screen
-              name="WeighingDetail"
-              component={WeighingDetailScreen}
+              name="Auth"
+              component={AuthNavigator}
+              options={{ gestureEnabled: false }}
             />
-          </>
-        ) : (
-          <Stack.Screen
-            name="Auth"
-            component={AuthNavigator}
-            options={{ gestureEnabled: false }}
-          />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </NavigationErrorBoundary>
   );
 };
 

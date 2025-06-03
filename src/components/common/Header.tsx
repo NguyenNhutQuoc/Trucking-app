@@ -48,6 +48,12 @@ const Header: React.FC<HeaderProps> = ({
     }
   };
 
+  const handleMenuPress = () => {
+    if (onMenuPress) {
+      onMenuPress();
+    }
+  };
+
   const headerBgColor = backgroundColor || colors.primary;
 
   return (
@@ -73,7 +79,7 @@ const Header: React.FC<HeaderProps> = ({
           {showMenu && (
             <TouchableOpacity
               style={styles.iconButton}
-              onPress={onMenuPress}
+              onPress={handleMenuPress}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Ionicons name="menu" size={24} color="white" />

@@ -3,6 +3,7 @@ import React, { createContext, useState, useEffect, ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authApi } from "@/api/auth";
 import { LoginRequest } from "@/types/api.types";
+import TokenExpiredModal from "@/components/common/TokenExpireModal";
 
 interface AuthContextType {
   isLoading: boolean;
@@ -11,6 +12,9 @@ interface AuthContextType {
   login: (credentials: LoginRequest) => Promise<boolean>;
   logout: () => Promise<void>;
   checkAuthentication: () => Promise<boolean>;
+  showTokenExpiredModal: boolean;
+  handleTokenExpired: () => void;
+  hideTokenExpiredModal: () => void;
 }
 
 interface UserInfo {
@@ -27,6 +31,9 @@ export const AuthContext = createContext<AuthContextType>({
   login: async () => false,
   logout: async () => {},
   checkAuthentication: async () => false,
+  showTokenExpiredModal: false,
+  handleTokenExpired: () => {},
+  hideTokenExpiredModal: () => {},
 });
 
 interface AuthProviderProps {
@@ -37,6 +44,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [showTokenExpiredModal, setShowTokenExpiredModal] =
+    useState<boolean>(false);
 
   // Kiểm tra trạng thái xác thực khi ứng dụng khởi động
   useEffect(() => {
@@ -61,9 +70,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               setIsAuthenticated(false);
             }
           } else {
-            // Nếu token không hợp lệ, đăng xuất
+            // Nếu token không hợp lệ, hiển thị modal và đăng xuất
             await authApi.logout();
             setIsAuthenticated(false);
+            setShowTokenExpiredModal(true);
           }
         } else {
           // Nếu không có token, đăng xuất
@@ -72,6 +82,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } catch (error) {
         console.error("Bootstrap error:", error);
         setIsAuthenticated(false);
+        // Nếu có lỗi khi kiểm tra token, có thể là do token hết hạn
+        setShowTokenExpiredModal(true);
       } finally {
         setIsLoading(false);
       }
@@ -79,6 +91,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     bootstrapAsync();
   }, []);
+
+  // Hàm xử lý khi token hết hạn
+  const handleTokenExpired = () => {
+    setShowTokenExpiredModal(true);
+    setIsAuthenticated(false);
+    setUserInfo(null);
+    // Xóa token và thông tin user
+    authApi.logout();
+  };
+
+  // Hàm ẩn modal token hết hạn
+  const hideTokenExpiredModal = () => {
+    setShowTokenExpiredModal(false);
+  };
 
   // Đăng nhập
   const login = async (credentials: LoginRequest): Promise<boolean> => {
@@ -89,6 +115,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (response.success) {
         setUserInfo(response.data.user);
         setIsAuthenticated(true);
+        setShowTokenExpiredModal(false); // Ẩn modal nếu đăng nhập thành công
         return true;
       } else {
         return false;
@@ -108,6 +135,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await authApi.logout();
       setUserInfo(null);
       setIsAuthenticated(false);
+      setShowTokenExpiredModal(false);
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
@@ -133,6 +161,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       console.error("Check authentication error:", error);
       setIsAuthenticated(false);
+      setShowTokenExpiredModal(true);
       return false;
     } finally {
       setIsLoading(false);
@@ -146,7 +175,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     checkAuthentication,
+    showTokenExpiredModal,
+    handleTokenExpired,
+    hideTokenExpiredModal,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      <TokenExpiredModal
+        visible={showTokenExpiredModal}
+        onRetryLogin={hideTokenExpiredModal}
+        onClose={hideTokenExpiredModal}
+      />
+    </AuthContext.Provider>
+  );
 };

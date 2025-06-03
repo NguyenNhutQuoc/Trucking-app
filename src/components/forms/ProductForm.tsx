@@ -186,7 +186,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
         />
 
         <Input
-          label="Đơn giá (VND/tấn)"
+          label="Đơn giá (VND/kg)"
           value={formData.dongia?.toString()}
           onChangeText={(text) => {
             const price = formatPriceInput(text);

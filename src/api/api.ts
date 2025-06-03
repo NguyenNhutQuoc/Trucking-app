@@ -1,3 +1,4 @@
+// src/api/api.ts
 import axios, {
   AxiosError,
   AxiosInstance,
@@ -6,6 +7,14 @@ import axios, {
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "@/constants/config";
+
+// Biến để lưu callback khi token hết hạn
+let tokenExpiredCallback: (() => void) | null = null;
+
+// Hàm để đăng ký callback khi token hết hạn
+export const setTokenExpiredCallback = (callback: () => void) => {
+  tokenExpiredCallback = callback;
+};
 
 // Tạo một instance của axios
 const api: AxiosInstance = axios.create({
@@ -46,10 +55,14 @@ api.interceptors.response.use(
       (originalRequest as any)._retry = true;
 
       try {
-        // Có thể thực hiện refresh token tại đây nếu API hỗ trợ
-        // Nếu không hỗ trợ, xóa token và chuyển hướng về trang đăng nhập
+        // Xóa token và chuyển hướng về trang đăng nhập
         await AsyncStorage.removeItem("auth_token");
-        // Chuyển hướng sẽ được xử lý bởi component AuthContext
+        await AsyncStorage.removeItem("user_info");
+
+        // Gọi callback để hiển thị modal token hết hạn
+        if (tokenExpiredCallback) {
+          tokenExpiredCallback();
+        }
 
         return Promise.reject(error);
       } catch (refreshError) {

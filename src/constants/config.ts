@@ -1,7 +1,7 @@
 // src/constants/config.ts
 // API configuration
 export const API_URL =
-  "https://bce1-2402-800-63a3-bbfa-f4e3-dc2-555e-ebc.ngrok-free.app/api/v1"; // Development server
+  "https://9615-2402-800-63a3-bbfa-f4e3-dc2-555e-ebc.ngrok-free.app/api/v1"; // Development server
 // export const API_URL = 'https://api.example.com/api'; // Production server
 
 // App configuration

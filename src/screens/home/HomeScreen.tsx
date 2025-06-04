@@ -96,7 +96,7 @@ const HomeScreen: React.FC = () => {
   };
 
   const formatWeight = (weight: number) => {
-    return `${(weight / 1000).toFixed(1)} tấn`;
+    return `${weight.toFixed(3)} kg`;
   };
 
   // Updated navigation handlers with safe navigation

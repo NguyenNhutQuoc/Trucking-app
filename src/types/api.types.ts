@@ -41,7 +41,7 @@ export interface Phieucan {
   mahang: string;
   loaihang: string;
   ngaycan1: string;
-  ngaycan2?: string;
+  ngaycan2: string;
   tlcan1: number;
   tlcan2?: number;
   xuatnhap: string;

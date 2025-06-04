@@ -5,6 +5,7 @@ import {
   LoginRequest,
   LoginResponse,
   ChangePasswordRequest,
+  Nhanvien,
 } from "@/types/api.types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -134,6 +135,35 @@ export const authApi = {
     } catch (error) {
       console.error("Check authentication error:", error);
       return false;
+    }
+  },
+
+  // api/auth.ts - cần thêm
+  validateUserSession: async (): Promise<{
+    valid: boolean;
+    userExists: boolean;
+    userActive: boolean;
+    permissionsChanged: boolean;
+  }> => {
+    try {
+      const response = await api.post<
+        ApiResponse<{
+          valid: boolean;
+          userExists: boolean;
+          userActive: boolean;
+          permissionsChanged: boolean;
+          user?: Nhanvien;
+        }>
+      >("/auth/validate-session");
+
+      return response.data.data;
+    } catch (error) {
+      return {
+        valid: false,
+        userExists: false,
+        userActive: false,
+        permissionsChanged: false,
+      };
     }
   },
 };

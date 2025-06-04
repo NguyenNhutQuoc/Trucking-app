@@ -3,15 +3,14 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   StyleSheet,
-  TouchableOpacity,
   FlatList,
   RefreshControl,
   Alert,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { BarChart } from "react-native-chart-kit";
-import { Dimensions } from "react-native";
 
 import { productApi } from "@/api/product";
 import { weighingApi } from "@/api/weighing";
@@ -20,6 +19,7 @@ import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import Loading from "@/components/common/Loading";
 import DateRangeSelector from "@/components/reports/DateRangeSelector";
+import ViewModeToggle from "@/components/common/ViewModeToogle";
 import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
 import { useAppTheme } from "@/hooks/useAppTheme";
@@ -28,6 +28,8 @@ import { Hanghoa } from "@/types/api.types";
 import { ReportsStackScreenProps } from "@/types/navigation.types";
 
 type NavigationProp = ReportsStackScreenProps<"ProductReports">["navigation"];
+type ViewMode = "list" | "grid";
+
 const screenWidth = Dimensions.get("window").width;
 
 const ProductReportScreen: React.FC = () => {
@@ -45,8 +47,9 @@ const ProductReportScreen: React.FC = () => {
   const [totalWeight, setTotalWeight] = useState(0);
   const [totalVehicles, setTotalVehicles] = useState(0);
   const [totalValue, setTotalValue] = useState(0);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
-  // Chart data
+  // Chart colors
   const chartColors = [
     colors.chartBlue,
     colors.chartGreen,
@@ -87,11 +90,9 @@ const ProductReportScreen: React.FC = () => {
 
   const loadWeightStatistics = async () => {
     try {
-      // Format dates for API
       const formattedStartDate = startDate.toISOString();
       const formattedEndDate = endDate.toISOString();
 
-      // Make sure we have product data loaded first
       let productData = products;
       if (productData.length === 0) {
         const productResponse = await productApi.getAllProducts();
@@ -111,12 +112,10 @@ const ProductReportScreen: React.FC = () => {
         setTotalWeight(stats.totalWeight);
         setTotalVehicles(stats.totalVehicles);
 
-        // Sort products by weight in descending order
         const sortedProductStats = [...stats.byProduct].sort(
           (a, b) => b.totalWeight - a.totalWeight,
         );
 
-        // Calculate total value
         const totalValue = sortedProductStats.reduce((acc, item) => {
           return acc + item.totalPrice;
         }, 0);
@@ -139,16 +138,92 @@ const ProductReportScreen: React.FC = () => {
     setEndDate(end);
   };
 
-  const renderProductItem = ({ item, index }: { item: any; index: number }) => {
+  const toggleViewMode = () => {
+    setViewMode(viewMode === "list" ? "grid" : "list");
+  };
+
+  // Grid Item Component
+  const renderGridItem = ({ item, index }: { item: any; index: number }) => {
     const product = products.find((p) => p.ten === item.productName);
     const percentageOfTotal =
       totalWeight > 0
         ? ((item.totalWeight / totalWeight) * 100).toFixed(1)
         : "0";
 
-    // Calculate total value if we have the unit price
     const unitPrice = product ? product.dongia : 0;
-    const totalValue = (item.totalWeight / 1000) * unitPrice;
+    const totalValue = item.totalWeight * unitPrice;
+
+    return (
+      <View style={styles.gridItem}>
+        <Card style={styles.gridCard}>
+          <View style={styles.gridHeader}>
+            <View
+              style={[
+                styles.gridIconContainer,
+                {
+                  backgroundColor:
+                    chartColors[index % chartColors.length] + "20",
+                },
+              ]}
+            >
+              <Ionicons
+                name="cube"
+                size={18}
+                color={chartColors[index % chartColors.length]}
+              />
+            </View>
+            <View style={styles.gridPercentageContainer}>
+              <ThemedText
+                style={styles.gridPercentageText}
+                color={colors.primary}
+              >
+                {percentageOfTotal}%
+              </ThemedText>
+            </View>
+            <View style={styles.gridStatItem}>
+              <ThemedText type="caption" style={styles.gridStatLabel}>
+                Trọng lượng
+              </ThemedText>
+              <ThemedText style={styles.gridStatValue} numberOfLines={1}>
+                {formatWeight(item.totalWeight, true)}
+              </ThemedText>
+            </View>
+            {product && unitPrice > 0 && (
+              <View style={styles.gridStatItem}>
+                <ThemedText type="caption" style={styles.gridStatLabel}>
+                  Thành tiền
+                </ThemedText>
+                <ThemedText
+                  style={styles.gridValueText}
+                  color={colors.success}
+                  numberOfLines={1}
+                >
+                  {formatCurrency(totalValue)}
+                </ThemedText>
+              </View>
+            )}
+          </View>
+
+          {product && (
+            <ThemedText type="caption" style={styles.gridProductCode}>
+              Mã: {product.ma}
+            </ThemedText>
+          )}
+        </Card>
+      </View>
+    );
+  };
+
+  // List Item Component
+  const renderListItem = ({ item, index }: { item: any; index: number }) => {
+    const product = products.find((p) => p.ten === item.productName);
+    const percentageOfTotal =
+      totalWeight > 0
+        ? ((item.totalWeight / totalWeight) * 100).toFixed(1)
+        : "0";
+
+    const unitPrice = product ? product.dongia : 0;
+    const totalValue = item.totalWeight * unitPrice;
 
     return (
       <Card style={styles.productCard}>
@@ -195,14 +270,14 @@ const ProductReportScreen: React.FC = () => {
             </View>
           </View>
 
-          {product && (
+          {product && unitPrice > 0 && (
             <View style={styles.statRow}>
               <View style={styles.statItem}>
                 <ThemedText type="subtitle" style={styles.statLabel}>
                   Đơn giá:
                 </ThemedText>
                 <ThemedText style={styles.statValue}>
-                  {formatCurrency(product.dongia)}/tấn
+                  {formatCurrency(product.dongia)}/kg
                 </ThemedText>
               </View>
               <View style={styles.statItem}>
@@ -231,7 +306,6 @@ const ProductReportScreen: React.FC = () => {
   };
 
   const getBarChartData = () => {
-    // Take top 7 products for the chart
     const topProducts = productStats.slice(0, 7);
 
     return {
@@ -242,7 +316,7 @@ const ProductReportScreen: React.FC = () => {
       ),
       datasets: [
         {
-          data: topProducts.map((item) => item.totalWeight / 1000), // Convert to tons
+          data: topProducts.map((item) => item.totalWeight),
           colors: topProducts.map(
             (_, index) => () => chartColors[index % chartColors.length],
           ),
@@ -251,150 +325,167 @@ const ProductReportScreen: React.FC = () => {
     };
   };
 
-  return (
-    <ThemedView useSafeArea>
-      <Header title="Báo Cáo Theo Hàng Hóa" showBack />
+  const renderEmptyComponent = () => (
+    <View style={styles.emptyContainer}>
+      <Ionicons name="analytics-outline" size={48} color={colors.gray400} />
+      <ThemedText style={styles.emptyText}>
+        Không có dữ liệu trong khoảng thời gian này
+      </ThemedText>
+    </View>
+  );
 
-      <View style={styles.container}>
+  const renderListHeader = () => (
+    <>
+      {/* Date Range Selector */}
+      <View style={styles.dateRangeSelectorContainer}>
         <DateRangeSelector
           allowFutureDates={true}
           startDate={startDate}
           endDate={endDate}
           onDateRangeChange={handleDateRangeChange}
-          style={styles.dateRangeSelector}
         />
-
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <Loading loading={true} />
-            <ThemedText style={styles.loadingText}>
-              Đang tải dữ liệu...
-            </ThemedText>
-          </View>
-        ) : (
-          <FlatList
-            data={productStats}
-            renderItem={renderProductItem}
-            keyExtractor={(item, index) => index.toString()}
-            ListHeaderComponent={
-              <View>
-                <Card style={styles.summaryCard}>
-                  <View style={styles.summaryRow}>
-                    <View style={styles.summaryItem}>
-                      <ThemedText type="subtitle" style={styles.summaryLabel}>
-                        Tổng xe:
-                      </ThemedText>
-                      <ThemedText style={styles.summaryValue}>
-                        {totalVehicles}
-                      </ThemedText>
-                    </View>
-
-                    <View
-                      style={[
-                        styles.summaryDivider,
-                        { backgroundColor: colors.gray200 },
-                      ]}
-                    />
-
-                    <View style={styles.summaryItem}>
-                      <ThemedText type="subtitle" style={styles.summaryLabel}>
-                        Tổng trọng lượng:
-                      </ThemedText>
-                      <ThemedText style={styles.summaryValue}>
-                        {formatWeight(totalWeight, true)}
-                      </ThemedText>
-                    </View>
-                  </View>
-
-                  <View
-                    style={[
-                      styles.totalValueContainer,
-                      { borderTopColor: colors.gray200 },
-                    ]}
-                  >
-                    <ThemedText type="subtitle" style={styles.totalValueLabel}>
-                      Tổng giá trị:
-                    </ThemedText>
-                    <ThemedText
-                      style={styles.totalValueText}
-                      color={colors.success}
-                    >
-                      {formatCurrency(totalValue)}
-                    </ThemedText>
-                  </View>
-                </Card>
-
-                {productStats.length > 0 && (
-                  <Card style={styles.chartCard}>
-                    <ThemedText style={styles.chartTitle}>
-                      Phân bố trọng lượng theo hàng hóa (tấn)
-                    </ThemedText>
-                    <View style={styles.chartContainer}>
-                      <BarChart
-                        data={getBarChartData()}
-                        width={screenWidth - 40}
-                        height={200}
-                        yAxisLabel=""
-                        yAxisSuffix="t"
-                        chartConfig={{
-                          backgroundColor: colors.card,
-                          backgroundGradientFrom: colors.card,
-                          backgroundGradientTo: colors.card,
-                          decimalPlaces: 1,
-                          color: (opacity = 1) =>
-                            isDarkMode
-                              ? `rgba(255, 255, 255, ${opacity})`
-                              : `rgba(0, 0, 0, ${opacity})`,
-                          labelColor: (opacity = 1) =>
-                            isDarkMode
-                              ? `rgba(255, 255, 255, ${opacity})`
-                              : `rgba(0, 0, 0, ${opacity})`,
-                          style: {
-                            borderRadius: 16,
-                          },
-                          barPercentage: 0.8,
-                        }}
-                        style={{
-                          marginVertical: 8,
-                          borderRadius: 16,
-                        }}
-                        fromZero
-                      />
-                    </View>
-                  </Card>
-                )}
-
-                <ThemedText type="title" style={styles.sectionTitle}>
-                  Chi tiết theo hàng hóa
-                </ThemedText>
-              </View>
-            }
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Ionicons
-                  name="analytics-outline"
-                  size={48}
-                  color={colors.gray400}
-                />
-                <ThemedText style={styles.emptyText}>
-                  Không có dữ liệu trong khoảng thời gian này
-                </ThemedText>
-              </View>
-            }
-            contentContainerStyle={styles.listContent}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={[colors.primary]}
-                tintColor={colors.primary}
-                progressBackgroundColor={colors.card}
-              />
-            }
-          />
-        )}
       </View>
 
+      {/* Summary Card */}
+      <Card style={styles.summaryCard}>
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryItem}>
+            <ThemedText type="subtitle" style={styles.summaryLabel}>
+              Tổng xe:
+            </ThemedText>
+            <ThemedText style={styles.summaryValue}>{totalVehicles}</ThemedText>
+          </View>
+
+          <View
+            style={[styles.summaryDivider, { backgroundColor: colors.gray200 }]}
+          />
+
+          <View style={styles.summaryItem}>
+            <ThemedText type="subtitle" style={styles.summaryLabel}>
+              Tổng trọng lượng:
+            </ThemedText>
+            <ThemedText style={styles.summaryValue}>
+              {formatWeight(totalWeight, true)}
+            </ThemedText>
+          </View>
+        </View>
+
+        <View
+          style={[
+            styles.totalValueContainer,
+            { borderTopColor: colors.gray200 },
+          ]}
+        >
+          <ThemedText type="subtitle" style={styles.totalValueLabel}>
+            Tổng giá trị:
+          </ThemedText>
+          <ThemedText style={styles.totalValueText} color={colors.success}>
+            {formatCurrency(totalValue)}
+          </ThemedText>
+        </View>
+      </Card>
+
+      {/* Chart Card */}
+      {productStats.length > 0 && (
+        <Card style={styles.chartCard}>
+          <ThemedText style={styles.chartTitle}>
+            Phân bố trọng lượng theo hàng hóa (kg)
+          </ThemedText>
+          <View style={styles.chartContainer}>
+            <BarChart
+              data={getBarChartData()}
+              width={screenWidth - 40}
+              height={200}
+              yAxisLabel=""
+              yAxisSuffix="t"
+              chartConfig={{
+                backgroundColor: colors.card,
+                backgroundGradientFrom: colors.card,
+                backgroundGradientTo: colors.card,
+                decimalPlaces: 1,
+                color: (opacity = 1) =>
+                  isDarkMode
+                    ? `rgba(255, 255, 255, ${opacity})`
+                    : `rgba(0, 0, 0, ${opacity})`,
+                labelColor: (opacity = 1) =>
+                  isDarkMode
+                    ? `rgba(255, 255, 255, ${opacity})`
+                    : `rgba(0, 0, 0, ${opacity})`,
+                style: {
+                  borderRadius: 16,
+                },
+                barPercentage: 0.8,
+              }}
+              style={{
+                marginVertical: 8,
+                borderRadius: 16,
+              }}
+              fromZero
+            />
+          </View>
+        </Card>
+      )}
+
+      {/* Section Title */}
+      <ThemedText type="title" style={styles.sectionTitle}>
+        Chi tiết theo hàng hóa ({productStats.length})
+      </ThemedText>
+    </>
+  );
+
+  if (loading) {
+    return (
+      <ThemedView useSafeArea>
+        <Header
+          title="Báo Cáo Theo Hàng Hóa"
+          showBack
+          rightComponent={
+            <ViewModeToggle viewMode={viewMode} onToggle={toggleViewMode} />
+          }
+        />
+        <View style={styles.loadingContainer}>
+          <Loading loading={true} />
+          <ThemedText style={styles.loadingText}>
+            Đang tải dữ liệu...
+          </ThemedText>
+        </View>
+      </ThemedView>
+    );
+  }
+
+  return (
+    <ThemedView useSafeArea>
+      <Header
+        title="Báo Cáo Theo Hàng Hóa"
+        showBack
+        rightComponent={
+          <ViewModeToggle viewMode={viewMode} onToggle={toggleViewMode} />
+        }
+      />
+
+      <FlatList
+        key={viewMode}
+        data={productStats}
+        renderItem={viewMode === "grid" ? renderGridItem : renderListItem}
+        keyExtractor={(item, index) => `${viewMode}-${index}`}
+        numColumns={viewMode === "grid" ? 2 : 1}
+        columnWrapperStyle={viewMode === "grid" ? styles.gridRow : undefined}
+        ListHeaderComponent={renderListHeader}
+        ListEmptyComponent={renderEmptyComponent}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+            progressBackgroundColor={colors.card}
+          />
+        }
+      />
+
+      {/* Export Button */}
       <View
         style={[
           styles.exportContainer,
@@ -416,13 +507,6 @@ const ProductReportScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  dateRangeSelector: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -433,9 +517,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   listContent: {
-    padding: 16,
-    paddingBottom: 80,
+    paddingHorizontal: 16,
+    paddingBottom: 100,
   },
+  dateRangeSelectorContainer: {
+    paddingVertical: 12,
+  },
+
+  // Summary Card Styles
   summaryCard: {
     marginBottom: 16,
   },
@@ -474,6 +563,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
   },
+
+  // Chart Card Styles
   chartCard: {
     marginBottom: 16,
     padding: 16,
@@ -492,6 +583,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginBottom: 12,
   },
+
+  // List Item Styles
   productCard: {
     marginBottom: 12,
   },
@@ -545,6 +638,71 @@ const styles = StyleSheet.create({
   productCode: {
     fontSize: 12,
   },
+
+  // Grid Styles
+  gridRow: {
+    justifyContent: "space-between",
+  },
+  gridItem: {
+    width: "48%",
+    marginBottom: 12,
+  },
+  gridCard: {
+    height: 180,
+  },
+  gridHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  gridIconContainer: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  gridPercentageContainer: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  gridPercentageText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  gridProductName: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 8,
+    minHeight: 32,
+  },
+  gridStats: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  gridStatItem: {
+    marginBottom: 4,
+  },
+  gridStatLabel: {
+    fontSize: 11,
+    marginBottom: 2,
+  },
+  gridStatValue: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  gridValueText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  gridProductCode: {
+    fontSize: 10,
+    marginTop: 4,
+  },
+
+  // Common Styles
   emptyContainer: {
     alignItems: "center",
     justifyContent: "center",

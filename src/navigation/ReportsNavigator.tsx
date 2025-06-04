@@ -8,6 +8,7 @@ import ProductReportsScreen from "@/screens/reports/ProductReportScreen";
 import VehicleReportsScreen from "@/screens/reports/VehicleReportScreen";
 import DateRangeReportsScreen from "@/screens/reports/DataRangeReportScreen";
 import CustomReportScreen from "@/screens/reports/CustomReportScreen";
+import PhieuCanDetailScreen from "@/screens/reports/PhieuCanDetailScreen";
 import { ReportsStackParamList } from "@/types/navigation.types";
 
 const Stack = createNativeStackNavigator<ReportsStackParamList>();
@@ -28,6 +29,11 @@ const ReportsNavigator: React.FC = () => {
         component={DateRangeReportsScreen}
       />
       <Stack.Screen name="CustomReport" component={CustomReportScreen} />
+      <Stack.Screen
+        name="PhieucanDetail"
+        component={PhieuCanDetailScreen}
+        initialParams={{ phieucanSTT: 0 }} // Default value, can be overridden
+      />
     </Stack.Navigator>
   );
 };

@@ -8,7 +8,8 @@ import {
   RefreshControl,
   TextInput,
   ScrollView,
-  Text,
+  Modal,
+  SafeAreaView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -23,28 +24,45 @@ import ThemedText from "@/components/common/ThemedText";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { Phieucan } from "@/types/api.types";
 import { formatWeight } from "@/utils/formatters";
-import colors from "@/constants/colors";
 
-// Cập nhật type FilterState để bao gồm các trạng thái lọc mới
+// Types
 type FilterState =
   | "all"
   | "completed"
   | "pending"
   | "today"
   | "import"
-  | "export";
+  | "export"
+  | "yesterday"
+  | "thisWeek"
+  | "thisMonth";
+
+type ViewMode = "list" | "table";
+
+interface FilterOptions {
+  sortBy: "date" | "weight" | "vehicle" | "status";
+  sortOrder: "asc" | "desc";
+}
 
 const WeighingListScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useAppTheme();
 
+  // State
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [weighings, setWeighings] = useState<Phieucan[]>([]);
   const [filteredWeighings, setFilteredWeighings] = useState<Phieucan[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterState>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
+    sortBy: "date",
+    sortOrder: "desc",
+  });
 
+  // Effects
   useFocusEffect(
     useCallback(() => {
       loadData();
@@ -53,9 +71,9 @@ const WeighingListScreen: React.FC = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [weighings, activeFilter, searchQuery]);
+  }, [weighings, activeFilter, searchQuery, filterOptions]);
 
-  // Hàm lấy màu dựa trên loại nhập/xuất
+  // Helper Functions
   const getImportExportColor = (type: string): string => {
     switch (type.toLowerCase()) {
       case "nhập":
@@ -67,12 +85,32 @@ const WeighingListScreen: React.FC = () => {
     }
   };
 
+  const getStatusColor = (weighing: Phieucan) => {
+    if (weighing.uploadStatus === 1) {
+      return colors.error;
+    }
+    if (weighing.ngaycan2) {
+      return colors.success;
+    }
+    return colors.warning;
+  };
+
+  const getStatusText = (weighing: Phieucan) => {
+    if (weighing.uploadStatus === 1) {
+      return "Hủy";
+    }
+    if (weighing.ngaycan2) {
+      return "Hoàn thành";
+    }
+    return "Đang chờ";
+  };
+
+  // Data Functions
   const loadData = async () => {
     try {
       setLoading(true);
       const response = await weighingApi.getAllWeighings();
       if (response.success) {
-        // Sort by date descending
         const sortedWeighings = response.data.sort((a, b) => {
           return (
             new Date(b.ngaycan1).getTime() - new Date(a.ngaycan1).getTime()
@@ -112,6 +150,28 @@ const WeighingListScreen: React.FC = () => {
         const itemDate = new Date(item.ngaycan1).toISOString().split("T")[0];
         return itemDate === today;
       });
+    } else if (activeFilter === "yesterday") {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split("T")[0];
+      result = result.filter((item) => {
+        const itemDate = new Date(item.ngaycan1).toISOString().split("T")[0];
+        return itemDate === yesterdayStr;
+      });
+    } else if (activeFilter === "thisWeek") {
+      const now = new Date();
+      const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+      result = result.filter((item) => {
+        const itemDate = new Date(item.ngaycan1);
+        return itemDate >= startOfWeek;
+      });
+    } else if (activeFilter === "thisMonth") {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      result = result.filter((item) => {
+        const itemDate = new Date(item.ngaycan1);
+        return itemDate >= startOfMonth;
+      });
     } else if (activeFilter === "import") {
       result = result.filter((item) => item.xuatnhap.toLowerCase() === "nhập");
     } else if (activeFilter === "export") {
@@ -130,9 +190,35 @@ const WeighingListScreen: React.FC = () => {
       );
     }
 
+    // Apply sorting
+    result.sort((a, b) => {
+      let comparison = 0;
+
+      switch (filterOptions.sortBy) {
+        case "date":
+          comparison =
+            new Date(a.ngaycan1).getTime() - new Date(b.ngaycan1).getTime();
+          break;
+        case "weight":
+          comparison = a.tlcan1 - b.tlcan1;
+          break;
+        case "vehicle":
+          comparison = a.soxe.localeCompare(b.soxe);
+          break;
+        case "status":
+          const aStatus = a.ngaycan2 ? 2 : 1;
+          const bStatus = b.ngaycan2 ? 2 : 1;
+          comparison = aStatus - bStatus;
+          break;
+      }
+
+      return filterOptions.sortOrder === "desc" ? -comparison : comparison;
+    });
+
     setFilteredWeighings(result);
   };
 
+  // Event Handlers
   const handleFilterChange = (filter: FilterState) => {
     setActiveFilter(filter);
   };
@@ -147,28 +233,98 @@ const WeighingListScreen: React.FC = () => {
     navigation.navigate("AddEditWeighing");
   };
 
-  const getStatusColor = (weighing: Phieucan) => {
-    if (weighing.uploadStatus === 1) {
-      return colors.error; // Cancelled
-    }
-    if (weighing.ngaycan2) {
-      return colors.success; // Completed
-    }
-    return colors.warning; // Pending
+  // Table Header Component
+  const TableHeader = () => (
+    <View style={[styles.tableHeader, { backgroundColor: colors.gray100 }]}>
+      <ThemedText style={[styles.tableHeaderCell, styles.vehicleColumn]}>
+        Xe
+      </ThemedText>
+      <ThemedText style={[styles.tableHeaderCell, styles.ticketColumn]}>
+        Phiếu
+      </ThemedText>
+      <ThemedText style={[styles.tableHeaderCell, styles.dateColumn]}>
+        Ngày
+      </ThemedText>
+      <ThemedText style={[styles.tableHeaderCell, styles.weightColumn]}>
+        TL Vào
+      </ThemedText>
+      <ThemedText style={[styles.tableHeaderCell, styles.weightColumn]}>
+        TL Ra
+      </ThemedText>
+      <ThemedText style={[styles.tableHeaderCell, styles.statusColumn]}>
+        Trạng thái
+      </ThemedText>
+    </View>
+  );
+
+  // Table Row Component
+  const renderTableRow = ({
+    item,
+    index,
+  }: {
+    item: Phieucan;
+    index: number;
+  }) => {
+    const statusColor = getStatusColor(item);
+    const statusText = getStatusText(item);
+    const importExportColor = getImportExportColor(item.xuatnhap);
+
+    const date = new Date(item.ngaycan1);
+    const dateString = date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+    });
+
+    return (
+      <TouchableOpacity
+        style={[
+          styles.tableRow,
+          {
+            backgroundColor: index % 2 === 0 ? colors.card : colors.gray50,
+            borderLeftColor: importExportColor,
+          },
+        ]}
+        onPress={() => handleWeighingPress(item)}
+      >
+        <ThemedText
+          style={[styles.tableCell, styles.vehicleColumn]}
+          numberOfLines={1}
+        >
+          {item.soxe}
+        </ThemedText>
+        <ThemedText
+          style={[styles.tableCell, styles.ticketColumn]}
+          numberOfLines={1}
+        >
+          #{item.sophieu}
+        </ThemedText>
+        <ThemedText
+          style={[styles.tableCell, styles.dateColumn]}
+          numberOfLines={1}
+        >
+          {dateString}
+        </ThemedText>
+        <ThemedText
+          style={[styles.tableCell, styles.weightColumn]}
+          numberOfLines={1}
+        >
+          {Math.round(item.tlcan1)}kg
+        </ThemedText>
+        <ThemedText
+          style={[styles.tableCell, styles.weightColumn]}
+          numberOfLines={1}
+        >
+          {item.tlcan2 ? `${Math.round(item.tlcan2)}kg` : "-"}
+        </ThemedText>
+        <View style={styles.statusColumn}>
+          <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+        </View>
+      </TouchableOpacity>
+    );
   };
 
-  const getStatusText = (weighing: Phieucan) => {
-    if (weighing.uploadStatus === 1) {
-      return "Hủy";
-    }
-    if (weighing.ngaycan2) {
-      return "Hoàn thành";
-    }
-    return "Đang chờ";
-  };
-
-  // Cập nhật renderWeighingItem
-  const renderWeighingItem = ({ item }: { item: Phieucan }) => {
+  // List Item Component (existing)
+  const renderListItem = ({ item }: { item: Phieucan }) => {
     const statusColor = getStatusColor(item);
     const statusText = getStatusText(item);
     const importExportColor = getImportExportColor(item.xuatnhap);
@@ -184,7 +340,6 @@ const WeighingListScreen: React.FC = () => {
       minute: "2-digit",
     });
 
-    // Calculate net weight if both weights exist
     const netWeight = item.ngaycan2
       ? Math.abs((item.tlcan2 ?? 0) - item.tlcan1)
       : null;
@@ -267,13 +422,19 @@ const WeighingListScreen: React.FC = () => {
               </ThemedText>
             </View>
             {item.kho && (
-              <View style={styles.storeTag}>
+              <View
+                style={[styles.storeTag, { backgroundColor: colors.gray100 }]}
+              >
                 <Ionicons
                   name="home-outline"
                   size={12}
                   color={colors.gray600}
                 />
-                <ThemedText style={styles.storeText}>{item.kho}</ThemedText>
+                <ThemedText
+                  style={[styles.storeText, { color: colors.gray600 }]}
+                >
+                  {item.kho}
+                </ThemedText>
               </View>
             )}
           </View>
@@ -302,6 +463,206 @@ const WeighingListScreen: React.FC = () => {
           </View>
         </View>
       </Card>
+    );
+  };
+
+  const FilterModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={showFilterModal}
+      onRequestClose={() => setShowFilterModal(false)}
+    >
+      <View style={styles.modalBackdrop}>
+        <View
+          style={[styles.filterModalContent, { backgroundColor: colors.card }]}
+        >
+          <View
+            style={[
+              styles.filterModalHeader,
+              { borderBottomColor: colors.gray200 },
+            ]}
+          >
+            <ThemedText style={styles.filterModalTitle}>Sắp xếp</ThemedText>
+            <TouchableOpacity onPress={() => setShowFilterModal(false)}>
+              <Ionicons name="close" size={24} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.filterModalBody}>
+            {/* Sort Options */}
+            <View style={styles.filterSection}>
+              <ThemedText style={styles.filterSectionTitle}>
+                Sắp xếp theo
+              </ThemedText>
+              {[
+                { key: "date", label: "Ngày" },
+                { key: "weight", label: "Trọng lượng" },
+                { key: "vehicle", label: "Biển số xe" },
+                { key: "status", label: "Trạng thái" },
+              ].map((option) => (
+                <TouchableOpacity
+                  key={option.key}
+                  style={[
+                    styles.filterOptionRow,
+                    {
+                      backgroundColor:
+                        filterOptions.sortBy === option.key
+                          ? colors.primary + "10"
+                          : "transparent",
+                    },
+                  ]}
+                  onPress={() =>
+                    setFilterOptions((prev) => ({
+                      ...prev,
+                      sortBy: option.key as any,
+                    }))
+                  }
+                >
+                  <ThemedText style={styles.filterOptionRowText}>
+                    {option.label}
+                  </ThemedText>
+                  {filterOptions.sortBy === option.key && (
+                    <Ionicons
+                      name="checkmark"
+                      size={20}
+                      color={colors.primary}
+                    />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Sort Order */}
+            <View style={styles.filterSection}>
+              <ThemedText style={styles.filterSectionTitle}>Thứ tự</ThemedText>
+              {[
+                { key: "desc", label: "Giảm dần" },
+                { key: "asc", label: "Tăng dần" },
+              ].map((option) => (
+                <TouchableOpacity
+                  key={option.key}
+                  style={[
+                    styles.filterOptionRow,
+                    {
+                      backgroundColor:
+                        filterOptions.sortOrder === option.key
+                          ? colors.primary + "10"
+                          : "transparent",
+                    },
+                  ]}
+                  onPress={() =>
+                    setFilterOptions((prev) => ({
+                      ...prev,
+                      sortOrder: option.key as any,
+                    }))
+                  }
+                >
+                  <ThemedText style={styles.filterOptionRowText}>
+                    {option.label}
+                  </ThemedText>
+                  {filterOptions.sortOrder === option.key && (
+                    <Ionicons
+                      name="checkmark"
+                      size={20}
+                      color={colors.primary}
+                    />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+
+          <View
+            style={[
+              styles.filterModalFooter,
+              { borderTopColor: colors.gray200 },
+            ]}
+          >
+            <Button
+              title="Đặt lại"
+              variant="outline"
+              onPress={() => {
+                setFilterOptions({
+                  sortBy: "date",
+                  sortOrder: "desc",
+                });
+              }}
+              contentStyle={styles.filterResetButton}
+            />
+            <Button
+              title="Áp dụng"
+              onPress={() => setShowFilterModal(false)}
+              contentStyle={styles.filterApplyButton}
+            />
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const ScrollableFilter: React.FC<{
+    activeFilter: FilterState;
+    onFilterChange: (filter: FilterState) => void;
+  }> = ({ activeFilter, onFilterChange }) => {
+    const filters: { key: FilterState; label: string; icon?: string }[] = [
+      { key: "all", label: "Tất cả", icon: "list-outline" },
+      { key: "pending", label: "Đang chờ", icon: "time-outline" },
+      {
+        key: "completed",
+        label: "Hoàn thành",
+        icon: "checkmark-circle-outline",
+      },
+      { key: "import", label: "Nhập", icon: "arrow-down-outline" },
+      { key: "export", label: "Xuất", icon: "arrow-up-outline" },
+      { key: "today", label: "Hôm nay", icon: "calendar-outline" },
+      { key: "yesterday", label: "Hôm qua", icon: "calendar-outline" },
+      { key: "thisWeek", label: "Tuần này", icon: "calendar-outline" },
+      { key: "thisMonth", label: "Tháng này", icon: "calendar-outline" },
+    ];
+
+    return (
+      <View style={styles.filtersContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {filters.map((filter) => (
+            <TouchableOpacity
+              key={filter.key}
+              style={[
+                styles.filterTab,
+                {
+                  backgroundColor:
+                    activeFilter === filter.key
+                      ? colors.primary
+                      : "transparent",
+                },
+              ]}
+              onPress={() => onFilterChange(filter.key)}
+            >
+              {filter.icon && (
+                <Ionicons
+                  name={filter.icon as any}
+                  size={14}
+                  color={
+                    activeFilter === filter.key ? colors.white : colors.text
+                  }
+                  style={styles.filterIcon}
+                />
+              )}
+              <ThemedText
+                style={[
+                  styles.filterText,
+                  {
+                    color:
+                      activeFilter === filter.key ? colors.white : colors.text,
+                  },
+                ]}
+              >
+                {filter.label}
+              </ThemedText>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
     );
   };
 
@@ -348,8 +709,20 @@ const WeighingListScreen: React.FC = () => {
 
           <TouchableOpacity
             style={[styles.filterButton, { backgroundColor: colors.gray100 }]}
+            onPress={() => setShowFilterModal(true)}
           >
             <Ionicons name="options-outline" size={20} color={colors.gray700} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.viewModeButton, { backgroundColor: colors.gray100 }]}
+            onPress={() => setViewMode(viewMode === "list" ? "table" : "list")}
+          >
+            <Ionicons
+              name={viewMode === "list" ? "grid-outline" : "list-outline"}
+              size={20}
+              color={colors.gray700}
+            />
           </TouchableOpacity>
         </View>
 
@@ -362,111 +735,82 @@ const WeighingListScreen: React.FC = () => {
           />
         </View>
 
-        <FlatList
-          data={filteredWeighings}
-          renderItem={renderWeighingItem}
-          keyExtractor={(item) => item.stt.toString()}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[colors.primary]}
-              tintColor={colors.primary}
+        {viewMode === "table" ? (
+          <View style={styles.tableContainer}>
+            <TableHeader />
+            <FlatList
+              data={filteredWeighings}
+              renderItem={renderTableRow}
+              keyExtractor={(item) => item.stt.toString()}
+              contentContainerStyle={styles.tableContent}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  colors={[colors.primary]}
+                  tintColor={colors.primary}
+                />
+              }
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Ionicons
+                    name="document-text-outline"
+                    size={48}
+                    color={colors.gray400}
+                  />
+                  <ThemedText style={styles.emptyText}>
+                    {searchQuery
+                      ? "Không tìm thấy kết quả phù hợp"
+                      : "Không có phiếu cân nào"}
+                  </ThemedText>
+                </View>
+              }
             />
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons
-                name="document-text-outline"
-                size={48}
-                color={colors.gray400}
+          </View>
+        ) : (
+          <FlatList
+            data={filteredWeighings}
+            renderItem={renderListItem}
+            keyExtractor={(item) => item.stt.toString()}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[colors.primary]}
+                tintColor={colors.primary}
               />
-              <ThemedText style={styles.emptyText}>
-                {searchQuery
-                  ? "Không tìm thấy kết quả phù hợp"
-                  : "Không có phiếu cân nào"}
-              </ThemedText>
-              <Button
-                title="Tạo phiếu cân mới"
-                onPress={handleNewWeighing}
-                variant="primary"
-                size="small"
-                contentStyle={styles.emptyButton}
-              />
-            </View>
-          }
-        />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Ionicons
+                  name="document-text-outline"
+                  size={48}
+                  color={colors.gray400}
+                />
+                <ThemedText style={styles.emptyText}>
+                  {searchQuery
+                    ? "Không tìm thấy kết quả phù hợp"
+                    : "Không có phiếu cân nào"}
+                </ThemedText>
+                <Button
+                  title="Tạo phiếu cân mới"
+                  onPress={handleNewWeighing}
+                  variant="primary"
+                  size="small"
+                  contentStyle={styles.emptyButton}
+                />
+              </View>
+            }
+          />
+        )}
       </View>
 
+      <FilterModal />
       <Loading loading={loading} />
     </ThemedView>
-  );
-};
-
-// Cập nhật component ScrollableFilter
-interface ScrollableFilterProps {
-  activeFilter: FilterState;
-  onFilterChange: (filter: FilterState) => void;
-}
-
-const ScrollableFilter: React.FC<ScrollableFilterProps> = ({
-  activeFilter,
-  onFilterChange,
-}) => {
-  const { colors } = useAppTheme();
-
-  const filters: { key: FilterState; label: string; icon?: string }[] = [
-    { key: "all", label: "Tất cả", icon: "list-outline" },
-    { key: "pending", label: "Đang chờ", icon: "time-outline" },
-    { key: "completed", label: "Hoàn thành", icon: "checkmark-circle-outline" },
-    { key: "import", label: "Nhập", icon: "arrow-down-outline" },
-    { key: "export", label: "Xuất", icon: "arrow-up-outline" },
-    { key: "today", label: "Hôm nay", icon: "calendar-outline" },
-  ];
-
-  return (
-    <View style={styles.filtersContainer}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {filters.map((filter) => (
-          <TouchableOpacity
-            key={filter.key}
-            style={[
-              styles.filterTab,
-              activeFilter === filter.key
-                ? {
-                    backgroundColor: colors.primary,
-                  }
-                : {
-                    backgroundColor: "transparent",
-                  },
-            ]}
-            onPress={() => onFilterChange(filter.key)}
-          >
-            {filter.icon && (
-              <Ionicons
-                name={filter.icon as any}
-                size={14}
-                color={activeFilter === filter.key ? colors.white : colors.text}
-                style={styles.filterIcon}
-              />
-            )}
-            <ThemedText
-              style={[
-                styles.filterText,
-                {
-                  color:
-                    activeFilter === filter.key ? colors.white : colors.text,
-                },
-              ]}
-            >
-              {filter.label}
-            </ThemedText>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
   );
 };
 
@@ -479,6 +823,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderBottomWidth: 1,
+    alignItems: "center",
   },
   searchInputContainer: {
     flex: 1,
@@ -504,6 +849,14 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 8,
   },
+  viewModeButton: {
+    marginLeft: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+  },
   filterTabsContainer: {
     paddingTop: 8,
   },
@@ -518,22 +871,68 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginRight: 8,
     borderRadius: 20,
-    backgroundColor: colors.gray100,
-  },
-  activeFilterTab: {
-    backgroundColor: colors.primary,
   },
   filterText: {
     fontSize: 14,
-    color: colors.gray700,
-  },
-  activeFilterText: {
-    color: "white",
-    fontWeight: "500",
   },
   filterIcon: {
     marginRight: 6,
   },
+
+  // Table Styles
+  tableContainer: {
+    flex: 1,
+  },
+  tableHeader: {
+    flexDirection: "row",
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+  },
+  tableHeaderCell: {
+    fontWeight: "600",
+    fontSize: 12,
+    textAlign: "center",
+  },
+  tableRow: {
+    flexDirection: "row",
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderBottomWidth: 0.5,
+    borderLeftWidth: 3,
+    alignItems: "center",
+  },
+  tableCell: {
+    fontSize: 12,
+    textAlign: "center",
+  },
+  vehicleColumn: {
+    flex: 2,
+  },
+  ticketColumn: {
+    flex: 1.5,
+  },
+  dateColumn: {
+    flex: 1.5,
+  },
+  weightColumn: {
+    flex: 1.5,
+  },
+  statusColumn: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statusDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  tableContent: {
+    paddingBottom: 20,
+  },
+
+  // List Item Styles
   listContent: {
     padding: 16,
     paddingBottom: 32,
@@ -612,23 +1011,6 @@ const styles = StyleSheet.create({
   customerName: {
     fontSize: 14,
   },
-  addButton: {
-    padding: 4,
-  },
-  emptyContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 32,
-  },
-  emptyText: {
-    fontSize: 16,
-    textAlign: "center",
-    marginVertical: 16,
-  },
-  emptyButton: {
-    marginTop: 16,
-  },
-  // Style mới
   typeContainer: {
     flexDirection: "row",
     marginTop: 8,
@@ -647,14 +1029,12 @@ const styles = StyleSheet.create({
   storeTag: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.gray100,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
   },
   storeText: {
     fontSize: 12,
-    color: colors.gray600,
     marginLeft: 4,
   },
   footerLeft: {
@@ -670,6 +1050,83 @@ const styles = StyleSheet.create({
   },
   footerIcon: {
     marginRight: 4,
+  },
+
+  // Filter Modal Styles
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  filterModalContent: {
+    width: "100%",
+    maxWidth: 400,
+    borderRadius: 16,
+    maxHeight: "80%",
+  },
+  filterModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+  },
+  filterModalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  filterModalBody: {
+    maxHeight: 400,
+    padding: 20,
+  },
+  filterSection: {
+    marginBottom: 24,
+  },
+  filterSectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 12,
+  },
+  filterOptionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  filterOptionRowText: {
+    fontSize: 16,
+  },
+  filterModalFooter: {
+    flexDirection: "row",
+    padding: 20,
+    borderTopWidth: 1,
+    gap: 12,
+  },
+  filterResetButton: {
+    flex: 1,
+  },
+  filterApplyButton: {
+    flex: 1,
+  },
+
+  // Common Styles
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 32,
+  },
+  emptyText: {
+    fontSize: 16,
+    textAlign: "center",
+    marginVertical: 16,
+  },
+  emptyButton: {
+    marginTop: 16,
   },
 });
 

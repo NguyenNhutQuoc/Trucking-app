@@ -4,15 +4,14 @@ import {
   View,
   StyleSheet,
   FlatList,
-  ActivityIndicator,
   TouchableOpacity,
   RefreshControl,
   Alert,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { LineChart } from "react-native-chart-kit";
-import { Dimensions } from "react-native";
 
 import { vehicleApi } from "@/api/vehicle";
 import { weighingApi } from "@/api/weighing";
@@ -21,6 +20,7 @@ import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import Loading from "@/components/common/Loading";
 import DateRangeSelector from "@/components/reports/DateRangeSelector";
+import ViewModeToggle from "@/components/common/ViewModeToogle";
 import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
 import { useAppTheme } from "@/hooks/useAppTheme";
@@ -29,6 +29,8 @@ import { Soxe } from "@/types/api.types";
 import { ReportsStackScreenProps } from "@/types/navigation.types";
 
 type NavigationProp = ReportsStackScreenProps<"VehicleReports">["navigation"];
+type ViewMode = "list" | "grid" | "table";
+
 const screenWidth = Dimensions.get("window").width;
 
 const VehicleReportsScreen: React.FC = () => {
@@ -46,6 +48,7 @@ const VehicleReportsScreen: React.FC = () => {
   const [totalWeight, setTotalWeight] = useState(0);
   const [totalVehicles, setTotalVehicles] = useState(0);
   const [averageWeight, setAverageWeight] = useState(0);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   // Sort options
   const [sortBy, setSortBy] = useState<"count" | "weight">("weight");
@@ -81,7 +84,6 @@ const VehicleReportsScreen: React.FC = () => {
 
   const loadWeightStatistics = async () => {
     try {
-      // Format dates for API
       const formattedStartDate = startDate.toISOString();
       const formattedEndDate = endDate.toISOString();
 
@@ -95,7 +97,6 @@ const VehicleReportsScreen: React.FC = () => {
         setTotalWeight(stats.totalWeight);
         setTotalVehicles(stats.totalVehicles);
 
-        // Sort vehicles based on selected criteria
         const sortedVehicleStats =
           sortBy === "weight"
             ? [...stats.byVehicle].sort((a, b) => b.totalWeight - a.totalWeight)
@@ -103,7 +104,6 @@ const VehicleReportsScreen: React.FC = () => {
 
         setVehicleStats(sortedVehicleStats);
 
-        // Calculate overall average weight per vehicle
         if (stats.totalVehicles > 0) {
           setAverageWeight(stats.totalWeight / stats.totalVehicles);
         }
@@ -124,10 +124,19 @@ const VehicleReportsScreen: React.FC = () => {
     setEndDate(end);
   };
 
+  const toggleViewMode = () => {
+    if (viewMode === "list") {
+      setViewMode("grid");
+    } else if (viewMode === "grid") {
+      setViewMode("table");
+    } else {
+      setViewMode("list");
+    }
+  };
+
   const toggleSortBy = () => {
     setSortBy(sortBy === "weight" ? "count" : "weight");
 
-    // Re-sort the data
     const newSorted = [...vehicleStats].sort((a, b) => {
       if (sortBy === "weight") {
         return b.weighCount - a.weighCount;
@@ -139,14 +148,184 @@ const VehicleReportsScreen: React.FC = () => {
     setVehicleStats(newSorted);
   };
 
-  const renderVehicleItem = ({ item, index }: { item: any; index: number }) => {
+  // Table Header Component
+  const TableHeader = () => (
+    <View style={[styles.tableHeader, { backgroundColor: colors.gray100 }]}>
+      <ThemedText style={[styles.tableHeaderCell, styles.vehicleColumn]}>
+        Số xe
+      </ThemedText>
+      <ThemedText style={[styles.tableHeaderCell, styles.countColumn]}>
+        Lượt cân
+      </ThemedText>
+      <ThemedText style={[styles.tableHeaderCell, styles.weightColumn]}>
+        Tổng TL
+      </ThemedText>
+      <ThemedText style={[styles.tableHeaderCell, styles.avgColumn]}>
+        TL TB
+      </ThemedText>
+      <ThemedText style={[styles.tableHeaderCell, styles.efficiencyColumn]}>
+        Hiệu suất
+      </ThemedText>
+    </View>
+  );
+
+  // Table Row Component
+  const renderTableRow = ({ item, index }: { item: any; index: number }) => {
     const vehicle = vehicles.find((v) => v.soxe === item.vehicleNumber);
     const percentageOfTotal =
       totalWeight > 0
         ? ((item.totalWeight / totalWeight) * 100).toFixed(1)
         : "0";
 
-    // Calculate efficiency compared to average
+    const efficiencyPercentage =
+      averageWeight > 0 ? (item.averageWeight / averageWeight) * 100 : 100;
+
+    const efficiencyColor =
+      efficiencyPercentage > 110
+        ? colors.success
+        : efficiencyPercentage < 90
+          ? colors.error
+          : colors.primary;
+
+    return (
+      <View
+        style={[
+          styles.tableRow,
+          {
+            backgroundColor: index % 2 === 0 ? colors.card : colors.gray50,
+          },
+        ]}
+      >
+        <View style={[styles.tableCell, styles.vehicleColumn]}>
+          <ThemedText numberOfLines={1} style={styles.tableCellText}>
+            {item.vehicleNumber}
+          </ThemedText>
+          <ThemedText numberOfLines={1} style={styles.tablePercentageText}>
+            {percentageOfTotal}%
+          </ThemedText>
+        </View>
+        <ThemedText
+          style={[styles.tableCell, styles.countColumn, styles.tableCellText]}
+          numberOfLines={1}
+        >
+          {item.weighCount}
+        </ThemedText>
+        <ThemedText
+          style={[styles.tableCell, styles.weightColumn, styles.tableCellText]}
+          numberOfLines={1}
+        >
+          {formatWeight(item.totalWeight, true)}
+        </ThemedText>
+        <ThemedText
+          style={[styles.tableCell, styles.avgColumn, styles.tableCellText]}
+          numberOfLines={1}
+        >
+          {formatWeight(item.averageWeight, true)}
+        </ThemedText>
+        <ThemedText
+          style={[
+            styles.tableCell,
+            styles.efficiencyColumn,
+            styles.tableCellText,
+            { color: efficiencyColor },
+          ]}
+          numberOfLines={1}
+        >
+          {Math.round(efficiencyPercentage)}%
+        </ThemedText>
+      </View>
+    );
+  };
+
+  // Grid Item Component
+  const renderGridItem = ({ item, index }: { item: any; index: number }) => {
+    const vehicle = vehicles.find((v) => v.soxe === item.vehicleNumber);
+    const percentageOfTotal =
+      totalWeight > 0
+        ? ((item.totalWeight / totalWeight) * 100).toFixed(1)
+        : "0";
+
+    const efficiencyPercentage =
+      averageWeight > 0 ? (item.averageWeight / averageWeight) * 100 : 100;
+
+    const efficiencyColor =
+      efficiencyPercentage > 110
+        ? colors.success
+        : efficiencyPercentage < 90
+          ? colors.error
+          : colors.primary;
+
+    return (
+      <View style={styles.gridItem}>
+        <Card style={styles.gridCard}>
+          <View style={styles.gridHeader}>
+            <View
+              style={[
+                styles.gridIconContainer,
+                { backgroundColor: colors.primary + "15" },
+              ]}
+            >
+              <Ionicons name="car" size={18} color={colors.primary} />
+            </View>
+            <View style={styles.gridPercentageContainer}>
+              <ThemedText
+                style={styles.gridPercentageText}
+                color={colors.primary}
+              >
+                {percentageOfTotal}%
+              </ThemedText>
+            </View>
+          </View>
+
+          <ThemedText style={styles.gridVehicleNumber} numberOfLines={1}>
+            {item.vehicleNumber}
+          </ThemedText>
+
+          <View style={styles.gridStats}>
+            <View style={styles.gridStatItem}>
+              <ThemedText type="caption" style={styles.gridStatLabel}>
+                Số lượt cân
+              </ThemedText>
+              <ThemedText style={styles.gridStatValue}>
+                {item.weighCount}
+              </ThemedText>
+            </View>
+            <View style={styles.gridStatItem}>
+              <ThemedText type="caption" style={styles.gridStatLabel}>
+                Trọng lượng
+              </ThemedText>
+              <ThemedText style={styles.gridStatValue} numberOfLines={1}>
+                {formatWeight(item.totalWeight, true)}
+              </ThemedText>
+            </View>
+            <View style={styles.gridStatItem}>
+              <ThemedText type="caption" style={styles.gridStatLabel}>
+                Hiệu suất
+              </ThemedText>
+              <ThemedText style={styles.gridStatValue} color={efficiencyColor}>
+                {Math.round(efficiencyPercentage)}%
+              </ThemedText>
+            </View>
+          </View>
+
+          {vehicle && (
+            <ThemedText type="caption" style={styles.gridVehicleInfo}>
+              TL xe: {formatWeight(vehicle.trongluong)}
+            </ThemedText>
+          )}
+        </Card>
+      </View>
+    );
+  };
+
+  // List Item Component
+  const renderListItem = ({ item, index }: { item: any; index: number }) => {
+    const vehicle = vehicles.find((v) => v.soxe === item.vehicleNumber);
+    const percentageOfTotal =
+      totalWeight > 0
+        ? ((item.totalWeight / totalWeight) * 100).toFixed(1)
+        : "0";
+
     const efficiencyPercentage =
       averageWeight > 0 ? (item.averageWeight / averageWeight) * 100 : 100;
 
@@ -241,190 +420,224 @@ const VehicleReportsScreen: React.FC = () => {
   };
 
   const getVehicleTrendData = () => {
-    // Get top 5 vehicles by weight
     const topVehicles = vehicleStats.slice(0, 5);
 
-    // For a line chart, use the count for each of the top vehicles
     return {
       labels: topVehicles.map((item) => item.vehicleNumber.substring(0, 7)),
       datasets: [
         {
-          data: topVehicles.map((item) => item.averageWeight / 1000), // Convert to tons
+          data: topVehicles.map((item) => item.averageWeight),
           color: () => colors.primary,
           strokeWidth: 2,
         },
       ],
-      legend: ["Trọng lượng TB (tấn)"],
+      legend: ["Trọng lượng TB (kg)"],
     };
   };
 
-  return (
-    <ThemedView useSafeArea>
-      <Header title="Báo Cáo Theo Xe" showBack />
+  const renderEmptyComponent = () => (
+    <View style={styles.emptyContainer}>
+      <Ionicons name="analytics-outline" size={48} color={colors.gray400} />
+      <ThemedText style={styles.emptyText}>
+        Không có dữ liệu trong khoảng thời gian này
+      </ThemedText>
+    </View>
+  );
 
-      <View style={styles.container}>
+  const renderListHeader = () => (
+    <>
+      {/* Date Range Selector */}
+      <View style={styles.dateRangeSelectorContainer}>
         <DateRangeSelector
           allowFutureDates={true}
           startDate={startDate}
           endDate={endDate}
           onDateRangeChange={handleDateRangeChange}
-          style={styles.dateRangeSelector}
         />
-
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <Loading loading={true} />
-            <ThemedText style={styles.loadingText}>
-              Đang tải dữ liệu...
-            </ThemedText>
-          </View>
-        ) : (
-          <FlatList
-            data={vehicleStats}
-            renderItem={renderVehicleItem}
-            keyExtractor={(item, index) => index.toString()}
-            ListHeaderComponent={
-              <View>
-                <Card style={styles.summaryCard}>
-                  <View style={styles.summaryRow}>
-                    <View style={styles.summaryItem}>
-                      <ThemedText type="subtitle" style={styles.summaryLabel}>
-                        Tổng xe:
-                      </ThemedText>
-                      <ThemedText style={styles.summaryValue}>
-                        {totalVehicles}
-                      </ThemedText>
-                    </View>
-
-                    <View
-                      style={[
-                        styles.summaryDivider,
-                        { backgroundColor: colors.gray200 },
-                      ]}
-                    />
-
-                    <View style={styles.summaryItem}>
-                      <ThemedText type="subtitle" style={styles.summaryLabel}>
-                        Tổng trọng lượng:
-                      </ThemedText>
-                      <ThemedText style={styles.summaryValue}>
-                        {formatWeight(totalWeight, true)}
-                      </ThemedText>
-                    </View>
-                  </View>
-
-                  <View
-                    style={[
-                      styles.averageContainer,
-                      { borderTopColor: colors.gray200 },
-                    ]}
-                  >
-                    <ThemedText type="subtitle" style={styles.averageLabel}>
-                      Trọng lượng TB/xe:
-                    </ThemedText>
-                    <ThemedText
-                      style={styles.averageValue}
-                      color={colors.primary}
-                    >
-                      {formatWeight(averageWeight)}
-                    </ThemedText>
-                  </View>
-                </Card>
-
-                {vehicleStats.length > 0 && (
-                  <Card style={styles.chartCard}>
-                    <ThemedText style={styles.chartTitle}>
-                      Trọng lượng trung bình theo xe (tấn)
-                    </ThemedText>
-                    <View style={styles.chartContainer}>
-                      <LineChart
-                        data={getVehicleTrendData()}
-                        width={screenWidth - 40}
-                        height={200}
-                        yAxisSuffix="t"
-                        chartConfig={{
-                          backgroundColor: colors.card,
-                          backgroundGradientFrom: colors.card,
-                          backgroundGradientTo: colors.card,
-                          decimalPlaces: 1,
-                          color: (opacity = 1) =>
-                            `rgba(92, 124, 250, ${opacity})`,
-                          labelColor: (opacity = 1) =>
-                            isDarkMode
-                              ? `rgba(255, 255, 255, ${opacity})`
-                              : `rgba(0, 0, 0, ${opacity})`,
-                          style: {
-                            borderRadius: 16,
-                          },
-                          propsForDots: {
-                            r: "6",
-                            strokeWidth: "2",
-                            stroke: colors.primary,
-                          },
-                        }}
-                        style={{
-                          marginVertical: 8,
-                          borderRadius: 16,
-                        }}
-                        bezier
-                      />
-                    </View>
-                  </Card>
-                )}
-
-                <View style={styles.sortContainer}>
-                  <ThemedText type="title" style={styles.sectionTitle}>
-                    Chi tiết theo xe
-                  </ThemedText>
-                  <TouchableOpacity
-                    style={[
-                      styles.sortButton,
-                      { backgroundColor: colors.gray100 },
-                    ]}
-                    onPress={toggleSortBy}
-                  >
-                    <ThemedText
-                      style={styles.sortButtonText}
-                      color={colors.primary}
-                    >
-                      Sắp xếp theo:{" "}
-                      {sortBy === "weight" ? "Trọng lượng" : "Số lượt cân"}
-                    </ThemedText>
-                    <Ionicons
-                      name="swap-vertical"
-                      size={18}
-                      color={colors.primary}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            }
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Ionicons
-                  name="analytics-outline"
-                  size={48}
-                  color={colors.gray400}
-                />
-                <ThemedText style={styles.emptyText}>
-                  Không có dữ liệu trong khoảng thời gian này
-                </ThemedText>
-              </View>
-            }
-            contentContainerStyle={styles.listContent}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={[colors.primary]}
-                tintColor={colors.primary}
-                progressBackgroundColor={colors.card}
-              />
-            }
-          />
-        )}
       </View>
 
+      {/* Summary Card */}
+      <Card style={styles.summaryCard}>
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryItem}>
+            <ThemedText type="subtitle" style={styles.summaryLabel}>
+              Tổng xe:
+            </ThemedText>
+            <ThemedText style={styles.summaryValue}>{totalVehicles}</ThemedText>
+          </View>
+
+          <View
+            style={[styles.summaryDivider, { backgroundColor: colors.gray200 }]}
+          />
+
+          <View style={styles.summaryItem}>
+            <ThemedText type="subtitle" style={styles.summaryLabel}>
+              Tổng trọng lượng:
+            </ThemedText>
+            <ThemedText style={styles.summaryValue}>
+              {formatWeight(totalWeight, true)}
+            </ThemedText>
+          </View>
+        </View>
+
+        <View
+          style={[styles.averageContainer, { borderTopColor: colors.gray200 }]}
+        >
+          <ThemedText type="subtitle" style={styles.averageLabel}>
+            Trọng lượng TB/xe:
+          </ThemedText>
+          <ThemedText style={styles.averageValue} color={colors.primary}>
+            {formatWeight(averageWeight)}
+          </ThemedText>
+        </View>
+      </Card>
+
+      {/* Chart Card */}
+      {vehicleStats.length > 0 && (
+        <Card style={styles.chartCard}>
+          <ThemedText style={styles.chartTitle}>
+            Trọng lượng trung bình theo xe (kg)
+          </ThemedText>
+          <View style={styles.chartContainer}>
+            <LineChart
+              data={getVehicleTrendData()}
+              width={screenWidth - 40}
+              height={200}
+              yAxisSuffix="t"
+              chartConfig={{
+                backgroundColor: colors.card,
+                backgroundGradientFrom: colors.card,
+                backgroundGradientTo: colors.card,
+                decimalPlaces: 1,
+                color: (opacity = 1) => `rgba(92, 124, 250, ${opacity})`,
+                labelColor: (opacity = 1) =>
+                  isDarkMode
+                    ? `rgba(255, 255, 255, ${opacity})`
+                    : `rgba(0, 0, 0, ${opacity})`,
+                style: {
+                  borderRadius: 16,
+                },
+                propsForDots: {
+                  r: "6",
+                  strokeWidth: "2",
+                  stroke: colors.primary,
+                },
+              }}
+              style={{
+                marginVertical: 8,
+                borderRadius: 16,
+              }}
+              bezier
+            />
+          </View>
+        </Card>
+      )}
+
+      {/* Sort Container */}
+      <View style={styles.sortContainer}>
+        <ThemedText type="title" style={styles.sectionTitle}>
+          Chi tiết theo xe ({vehicleStats.length})
+        </ThemedText>
+        <TouchableOpacity
+          style={[styles.sortButton, { backgroundColor: colors.gray100 }]}
+          onPress={toggleSortBy}
+        >
+          <ThemedText style={styles.sortButtonText} color={colors.primary}>
+            Sắp xếp theo: {sortBy === "weight" ? "Trọng lượng" : "Số lượt cân"}
+          </ThemedText>
+          <Ionicons name="swap-vertical" size={18} color={colors.primary} />
+        </TouchableOpacity>
+      </View>
+    </>
+  );
+
+  const getViewModeIcon = () => {
+    switch (viewMode) {
+      case "list":
+        return "grid-outline";
+      case "grid":
+        return "list-outline";
+      case "table":
+        return "apps-outline";
+      default:
+        return "grid-outline";
+    }
+  };
+
+  if (loading) {
+    return (
+      <ThemedView useSafeArea>
+        <Header
+          title="Báo Cáo Theo Xe"
+          showBack
+          rightComponent={
+            <TouchableOpacity onPress={toggleViewMode}>
+              <Ionicons name={getViewModeIcon()} size={24} color="white" />
+            </TouchableOpacity>
+          }
+        />
+        <View style={styles.loadingContainer}>
+          <Loading loading={true} />
+          <ThemedText style={styles.loadingText}>
+            Đang tải dữ liệu...
+          </ThemedText>
+        </View>
+      </ThemedView>
+    );
+  }
+
+  return (
+    <ThemedView useSafeArea>
+      <Header
+        title="Báo Cáo Theo Xe"
+        showBack
+        rightComponent={
+          <TouchableOpacity onPress={toggleViewMode}>
+            <Ionicons name={getViewModeIcon()} size={24} color="white" />
+          </TouchableOpacity>
+        }
+      />
+
+      <FlatList
+        key={viewMode}
+        data={vehicleStats}
+        renderItem={
+          viewMode === "table"
+            ? renderTableRow
+            : viewMode === "grid"
+              ? renderGridItem
+              : renderListItem
+        }
+        keyExtractor={(item, index) => `${viewMode}-${index}`}
+        numColumns={viewMode === "grid" ? 2 : 1}
+        columnWrapperStyle={viewMode === "grid" ? styles.gridRow : undefined}
+        ListHeaderComponent={
+          viewMode === "table" ? (
+            <>
+              {renderListHeader()}
+              <TableHeader />
+            </>
+          ) : (
+            renderListHeader
+          )
+        }
+        ListEmptyComponent={renderEmptyComponent}
+        contentContainerStyle={
+          viewMode === "table" ? styles.tableContent : styles.listContent
+        }
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+            progressBackgroundColor={colors.card}
+          />
+        }
+      />
+
+      {/* Export Button */}
       <View
         style={[
           styles.exportContainer,
@@ -449,10 +662,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  dateRangeSelector: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -463,9 +672,83 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   listContent: {
-    padding: 16,
-    paddingBottom: 80,
+    paddingHorizontal: 16,
+    paddingBottom: 100,
   },
+  dateRangeSelectorContainer: {
+    paddingVertical: 12,
+  },
+
+  // Table Styles
+  tableContainer: {
+    flex: 1,
+  },
+  tableHeader: {
+    flexDirection: "row",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    backgroundColor: "transparent",
+  },
+  tableHeaderCell: {
+    fontWeight: "600",
+    fontSize: 14,
+    textAlign: "center",
+  },
+  tableRow: {
+    flexDirection: "row",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 0.5,
+    alignItems: "center",
+    minHeight: 60,
+  },
+  tableCell: {
+    fontSize: 14,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  tableCellText: {
+    fontSize: 14,
+    fontWeight: "500",
+    textAlign: "center",
+  },
+  tablePercentageText: {
+    fontSize: 12,
+    marginTop: 2,
+    opacity: 0.7,
+    textAlign: "center",
+  },
+  vehicleColumn: {
+    flex: 2,
+    justifyContent: "center",
+  },
+  countColumn: {
+    flex: 1.5,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  weightColumn: {
+    flex: 2,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avgColumn: {
+    flex: 2,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  efficiencyColumn: {
+    flex: 1.5,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  tableContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+  },
+
+  // Summary Card Styles
   summaryCard: {
     marginBottom: 16,
   },
@@ -504,6 +787,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
   },
+
+  // Chart Card Styles
   chartCard: {
     marginBottom: 16,
     padding: 16,
@@ -517,6 +802,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginVertical: 8,
   },
+
+  // Sort Container
   sortContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -538,6 +825,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+
+  // List Item Styles
   vehicleCard: {
     marginBottom: 12,
   },
@@ -597,6 +886,66 @@ const styles = StyleSheet.create({
   vehicleInfoText: {
     fontSize: 12,
   },
+
+  // Grid Styles
+  gridRow: {
+    justifyContent: "space-between",
+  },
+  gridItem: {
+    width: "48%",
+    marginBottom: 12,
+  },
+  gridCard: {
+    height: 170,
+  },
+  gridHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  gridIconContainer: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  gridPercentageContainer: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  gridPercentageText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  gridVehicleNumber: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  gridStats: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  gridStatItem: {
+    marginBottom: 4,
+  },
+  gridStatLabel: {
+    fontSize: 11,
+    marginBottom: 2,
+  },
+  gridStatValue: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  gridVehicleInfo: {
+    fontSize: 10,
+    marginTop: 4,
+  },
+
+  // Common Styles
   emptyContainer: {
     alignItems: "center",
     justifyContent: "center",
@@ -616,5 +965,4 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
 });
-
 export default VehicleReportsScreen;

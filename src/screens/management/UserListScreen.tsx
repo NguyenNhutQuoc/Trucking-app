@@ -151,7 +151,7 @@ const UserListScreen: React.FC = () => {
 
   const renderUserItem = ({ item }: { item: Nhanvien }) => {
     const isAdmin = item.type === 1;
-    const isActive = item.trangthai === 0;
+    const isActive = item.trangthai === 1;
 
     return (
       <Card style={styles.userCard}>

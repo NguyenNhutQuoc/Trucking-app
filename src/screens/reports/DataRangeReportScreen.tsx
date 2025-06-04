@@ -1,4 +1,3 @@
-// src/screens/reports/DateRangeReportsScreen.tsx
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
@@ -8,17 +7,18 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { LineChart } from "react-native-chart-kit";
-import { Dimensions } from "react-native";
 
 import { weighingApi } from "@/api/weighing";
 import Header from "@/components/common/Header";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import DateRangeSelector from "@/components/reports/DateRangeSelector";
+import ViewModeToggle from "@/components/common/ViewModeToogle";
 import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
 import { useAppTheme } from "@/hooks/useAppTheme";
@@ -26,6 +26,8 @@ import { formatWeight, formatDate } from "@/utils/formatters";
 import { ReportsStackScreenProps } from "@/types/navigation.types";
 
 type NavigationProp = ReportsStackScreenProps<"DateRangeReports">["navigation"];
+type ViewMode = "list" | "grid";
+
 const screenWidth = Dimensions.get("window").width;
 
 interface DailyData {
@@ -50,6 +52,7 @@ const DateRangeReportsScreen: React.FC = () => {
   const [totalVehicles, setTotalVehicles] = useState(0);
   const [averageDailyWeight, setAverageDailyWeight] = useState(0);
   const [averageDailyVehicles, setAverageDailyVehicles] = useState(0);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   // Chart view options
   const [chartType, setChartType] = useState<"weight" | "count">("weight");
@@ -74,7 +77,6 @@ const DateRangeReportsScreen: React.FC = () => {
 
   const loadWeightStatistics = async () => {
     try {
-      // Format dates for API
       const formattedStartDate = startDate.toISOString();
       const formattedEndDate = endDate.toISOString();
 
@@ -88,9 +90,7 @@ const DateRangeReportsScreen: React.FC = () => {
         setTotalWeight(stats.totalWeight);
         setTotalVehicles(stats.totalVehicles);
 
-        // Process daily data
         const processedDailyData = stats.byDay.map((day: any) => {
-          // Convert date format to display format
           const dateObj = new Date(day.date);
           const formattedDate = formatDate(day.date);
 
@@ -100,14 +100,12 @@ const DateRangeReportsScreen: React.FC = () => {
           };
         });
 
-        // Sort by date ascending
         processedDailyData.sort((a: any, b: any) => {
           return new Date(a.date).getTime() - new Date(b.date).getTime();
         });
 
         setDailyData(processedDailyData);
 
-        // Calculate averages
         if (processedDailyData.length > 0) {
           setAverageDailyWeight(stats.totalWeight / processedDailyData.length);
           setAverageDailyVehicles(
@@ -131,12 +129,16 @@ const DateRangeReportsScreen: React.FC = () => {
     setEndDate(end);
   };
 
+  const toggleViewMode = () => {
+    setViewMode(viewMode === "list" ? "grid" : "list");
+  };
+
   const toggleChartType = () => {
     setChartType(chartType === "weight" ? "count" : "weight");
   };
 
-  const renderDayItem = ({ item }: { item: DailyData }) => {
-    // Calculate percentage of average
+  // Grid Item Component
+  const renderGridItem = ({ item }: { item: DailyData }) => {
     const weightPercentage =
       averageDailyWeight > 0
         ? (item.totalWeight / averageDailyWeight) * 100
@@ -147,7 +149,91 @@ const DateRangeReportsScreen: React.FC = () => {
         ? (item.weighCount / averageDailyVehicles) * 100
         : 0;
 
-    // Determine color based on how far from average
+    const getPerformanceColor = (percentage: number) => {
+      if (percentage >= 120) return colors.success;
+      if (percentage <= 80) return colors.error;
+      return colors.text;
+    };
+
+    const averageWeightPerTrip =
+      item.weighCount > 0 ? item.totalWeight / item.weighCount : 0;
+
+    return (
+      <View style={styles.gridItem}>
+        <Card style={styles.gridCard}>
+          <View style={styles.gridHeader}>
+            <View
+              style={[
+                styles.gridIconContainer,
+                { backgroundColor: colors.primary + "15" },
+              ]}
+            >
+              <Ionicons name="calendar" size={16} color={colors.primary} />
+            </View>
+          </View>
+
+          <ThemedText style={styles.gridDateText} numberOfLines={1}>
+            {item.formattedDate}
+          </ThemedText>
+
+          <View style={styles.gridStats}>
+            <View style={styles.gridStatItem}>
+              <ThemedText type="caption" style={styles.gridStatLabel}>
+                Số lượt cân
+              </ThemedText>
+              <ThemedText
+                style={styles.gridStatValue}
+                color={getPerformanceColor(countPercentage)}
+              >
+                {item.weighCount}
+              </ThemedText>
+              <ThemedText type="caption" style={styles.gridPercentageText}>
+                {countPercentage > 0 ? Math.round(countPercentage) : 0}% TB
+              </ThemedText>
+            </View>
+
+            <View style={styles.gridStatItem}>
+              <ThemedText type="caption" style={styles.gridStatLabel}>
+                Trọng lượng
+              </ThemedText>
+              <ThemedText
+                style={styles.gridStatValue}
+                color={getPerformanceColor(weightPercentage)}
+                numberOfLines={1}
+              >
+                {formatWeight(item.totalWeight, true)}
+              </ThemedText>
+              <ThemedText type="caption" style={styles.gridPercentageText}>
+                {weightPercentage > 0 ? Math.round(weightPercentage) : 0}% TB
+              </ThemedText>
+            </View>
+
+            <View style={styles.gridStatItem}>
+              <ThemedText type="caption" style={styles.gridStatLabel}>
+                TB/lượt cân
+              </ThemedText>
+              <ThemedText style={styles.gridStatValue} numberOfLines={1}>
+                {formatWeight(averageWeightPerTrip, true)}
+              </ThemedText>
+            </View>
+          </View>
+        </Card>
+      </View>
+    );
+  };
+
+  // List Item Component
+  const renderListItem = ({ item }: { item: DailyData }) => {
+    const weightPercentage =
+      averageDailyWeight > 0
+        ? (item.totalWeight / averageDailyWeight) * 100
+        : 0;
+
+    const countPercentage =
+      averageDailyVehicles > 0
+        ? (item.weighCount / averageDailyVehicles) * 100
+        : 0;
+
     const getPerformanceColor = (percentage: number) => {
       if (percentage >= 120) return colors.success;
       if (percentage <= 80) return colors.error;
@@ -213,18 +299,16 @@ const DateRangeReportsScreen: React.FC = () => {
   };
 
   const getChartData = () => {
-    // Get the last 14 days (or fewer if less data available)
     const chartData = dailyData.slice(-14);
 
-    // Determine what data to display based on chart type
     const dataValues =
       chartType === "weight"
-        ? chartData.map((item) => item.totalWeight / 1000) // Convert to tons
+        ? chartData.map((item) => item.totalWeight)
         : chartData.map((item) => item.weighCount);
 
     const chartTitle =
       chartType === "weight"
-        ? "Tổng trọng lượng theo ngày (tấn)"
+        ? "Tổng trọng lượng theo ngày (kg)"
         : "Số lượt cân theo ngày";
 
     const yAxisSuffix = chartType === "weight" ? "t" : "";
@@ -243,199 +327,207 @@ const DateRangeReportsScreen: React.FC = () => {
             strokeWidth: 2,
           },
         ],
-        legend: [chartType === "weight" ? "Trọng lượng (tấn)" : "Số lượt cân"],
+        legend: [chartType === "weight" ? "Trọng lượng (kg)" : "Số lượt cân"],
       },
       chartTitle,
       yAxisSuffix,
     };
   };
 
-  return (
-    <ThemedView useSafeArea>
-      <Header title="Báo Cáo Theo Thời Gian" showBack />
+  const renderEmptyComponent = () => (
+    <View style={styles.emptyContainer}>
+      <Ionicons name="analytics-outline" size={48} color={colors.gray400} />
+      <ThemedText style={styles.emptyText}>
+        Không có dữ liệu trong khoảng thời gian này
+      </ThemedText>
+    </View>
+  );
 
-      <View style={styles.container}>
+  const renderListHeader = () => (
+    <>
+      {/* Date Range Selector */}
+      <View style={styles.dateRangeSelectorContainer}>
         <DateRangeSelector
-          allowFutureDates={true} // Không cho phép chọn ngày tương lai
+          allowFutureDates={false}
           startDate={startDate}
           endDate={endDate}
           onDateRangeChange={handleDateRangeChange}
-          style={styles.dateRangeSelector}
         />
-
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <ThemedText style={styles.loadingText}>
-              Đang tải dữ liệu...
-            </ThemedText>
-          </View>
-        ) : (
-          <FlatList
-            data={dailyData}
-            renderItem={renderDayItem}
-            keyExtractor={(item) => item.date}
-            ListHeaderComponent={
-              <View>
-                <Card style={styles.summaryCard}>
-                  <View style={styles.summaryRow}>
-                    <View style={styles.summaryItem}>
-                      <ThemedText type="subtitle" style={styles.summaryLabel}>
-                        Tổng xe:
-                      </ThemedText>
-                      <ThemedText style={styles.summaryValue}>
-                        {totalVehicles}
-                      </ThemedText>
-                    </View>
-
-                    <View
-                      style={[
-                        styles.summaryDivider,
-                        { backgroundColor: colors.gray200 },
-                      ]}
-                    />
-
-                    <View style={styles.summaryItem}>
-                      <ThemedText type="subtitle" style={styles.summaryLabel}>
-                        Tổng trọng lượng:
-                      </ThemedText>
-                      <ThemedText style={styles.summaryValue}>
-                        {formatWeight(totalWeight, true)}
-                      </ThemedText>
-                    </View>
-                  </View>
-
-                  <View
-                    style={[
-                      styles.averagesContainer,
-                      { borderTopColor: colors.gray200 },
-                    ]}
-                  >
-                    <View style={styles.averageItem}>
-                      <ThemedText type="subtitle" style={styles.averageLabel}>
-                        TB xe/ngày:
-                      </ThemedText>
-                      <ThemedText
-                        style={styles.averageValue}
-                        color={colors.primary}
-                      >
-                        {averageDailyVehicles.toFixed(1)}
-                      </ThemedText>
-                    </View>
-
-                    <View
-                      style={[
-                        styles.summaryDivider,
-                        { backgroundColor: colors.gray200 },
-                      ]}
-                    />
-
-                    <View style={styles.averageItem}>
-                      <ThemedText type="subtitle" style={styles.averageLabel}>
-                        TB trọng lượng/ngày:
-                      </ThemedText>
-                      <ThemedText
-                        style={styles.averageValue}
-                        color={colors.primary}
-                      >
-                        {formatWeight(averageDailyWeight, true)}
-                      </ThemedText>
-                    </View>
-                  </View>
-                </Card>
-
-                {dailyData.length > 0 && (
-                  <Card style={styles.chartCard}>
-                    <View style={styles.chartHeader}>
-                      <ThemedText style={styles.chartTitle}>
-                        {getChartData().chartTitle}
-                      </ThemedText>
-                      <TouchableOpacity
-                        style={[
-                          styles.chartToggleButton,
-                          { backgroundColor: colors.gray100 },
-                        ]}
-                        onPress={toggleChartType}
-                      >
-                        <Ionicons
-                          name={chartType === "weight" ? "bar-chart" : "scale"}
-                          size={20}
-                          color={colors.primary}
-                        />
-                      </TouchableOpacity>
-                    </View>
-                    <View style={styles.chartContainer}>
-                      <LineChart
-                        data={getChartData().chartData}
-                        width={screenWidth - 40}
-                        height={220}
-                        yAxisSuffix={getChartData().yAxisSuffix}
-                        chartConfig={{
-                          backgroundColor: colors.card,
-                          backgroundGradientFrom: colors.card,
-                          backgroundGradientTo: colors.card,
-                          decimalPlaces: chartType === "weight" ? 1 : 0,
-                          color: (opacity = 1) =>
-                            isDarkMode
-                              ? `rgba(255, 255, 255, ${opacity})`
-                              : `rgba(0, 0, 0, ${opacity})`,
-                          labelColor: (opacity = 1) =>
-                            isDarkMode
-                              ? `rgba(255, 255, 255, ${opacity})`
-                              : `rgba(0, 0, 0, ${opacity})`,
-                          style: {
-                            borderRadius: 16,
-                          },
-                          propsForDots: {
-                            r: "5",
-                            strokeWidth: "2",
-                            stroke:
-                              chartType === "weight"
-                                ? colors.chartBlue
-                                : colors.chartGreen,
-                          },
-                        }}
-                        style={{
-                          marginVertical: 8,
-                          borderRadius: 16,
-                        }}
-                        bezier
-                      />
-                    </View>
-                  </Card>
-                )}
-
-                <ThemedText type="title" style={styles.sectionTitle}>
-                  Chi tiết theo ngày
-                </ThemedText>
-              </View>
-            }
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Ionicons
-                  name="analytics-outline"
-                  size={48}
-                  color={colors.gray400}
-                />
-                <ThemedText style={styles.emptyText}>
-                  Không có dữ liệu trong khoảng thời gian này
-                </ThemedText>
-              </View>
-            }
-            contentContainerStyle={styles.listContent}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={[colors.primary]}
-                tintColor={colors.primary}
-                progressBackgroundColor={colors.card}
-              />
-            }
-          />
-        )}
       </View>
 
+      {/* Summary Card */}
+      <Card style={styles.summaryCard}>
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryItem}>
+            <ThemedText type="subtitle" style={styles.summaryLabel}>
+              Tổng xe:
+            </ThemedText>
+            <ThemedText style={styles.summaryValue}>{totalVehicles}</ThemedText>
+          </View>
+
+          <View
+            style={[styles.summaryDivider, { backgroundColor: colors.gray200 }]}
+          />
+
+          <View style={styles.summaryItem}>
+            <ThemedText type="subtitle" style={styles.summaryLabel}>
+              Tổng trọng lượng:
+            </ThemedText>
+            <ThemedText style={styles.summaryValue}>
+              {formatWeight(totalWeight, true)}
+            </ThemedText>
+          </View>
+        </View>
+
+        <View
+          style={[styles.averagesContainer, { borderTopColor: colors.gray200 }]}
+        >
+          <View style={styles.averageItem}>
+            <ThemedText type="subtitle" style={styles.averageLabel}>
+              TB xe/ngày:
+            </ThemedText>
+            <ThemedText style={styles.averageValue} color={colors.primary}>
+              {averageDailyVehicles.toFixed(1)}
+            </ThemedText>
+          </View>
+
+          <View
+            style={[styles.summaryDivider, { backgroundColor: colors.gray200 }]}
+          />
+
+          <View style={styles.averageItem}>
+            <ThemedText type="subtitle" style={styles.averageLabel}>
+              TB trọng lượng/ngày:
+            </ThemedText>
+            <ThemedText style={styles.averageValue} color={colors.primary}>
+              {formatWeight(averageDailyWeight, true)}
+            </ThemedText>
+          </View>
+        </View>
+      </Card>
+
+      {/* Chart Card */}
+      {dailyData.length > 0 && (
+        <Card style={styles.chartCard}>
+          <View style={styles.chartHeader}>
+            <ThemedText style={styles.chartTitle}>
+              {getChartData().chartTitle}
+            </ThemedText>
+            <TouchableOpacity
+              style={[
+                styles.chartToggleButton,
+                { backgroundColor: colors.gray100 },
+              ]}
+              onPress={toggleChartType}
+            >
+              <Ionicons
+                name={chartType === "weight" ? "bar-chart" : "scale"}
+                size={20}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.chartContainer}>
+            <LineChart
+              data={getChartData().chartData}
+              width={screenWidth - 40}
+              height={220}
+              yAxisSuffix={getChartData().yAxisSuffix}
+              chartConfig={{
+                backgroundColor: colors.card,
+                backgroundGradientFrom: colors.card,
+                backgroundGradientTo: colors.card,
+                decimalPlaces: chartType === "weight" ? 1 : 0,
+                color: (opacity = 1) =>
+                  isDarkMode
+                    ? `rgba(255, 255, 255, ${opacity})`
+                    : `rgba(0, 0, 0, ${opacity})`,
+                labelColor: (opacity = 1) =>
+                  isDarkMode
+                    ? `rgba(255, 255, 255, ${opacity})`
+                    : `rgba(0, 0, 0, ${opacity})`,
+                style: {
+                  borderRadius: 16,
+                },
+                propsForDots: {
+                  r: "5",
+                  strokeWidth: "2",
+                  stroke:
+                    chartType === "weight"
+                      ? colors.chartBlue
+                      : colors.chartGreen,
+                },
+              }}
+              style={{
+                marginVertical: 8,
+                borderRadius: 16,
+              }}
+              bezier
+            />
+          </View>
+        </Card>
+      )}
+
+      {/* Section Title */}
+      <ThemedText type="title" style={styles.sectionTitle}>
+        Chi tiết theo ngày ({dailyData.length})
+      </ThemedText>
+    </>
+  );
+
+  if (loading) {
+    return (
+      <ThemedView useSafeArea>
+        <Header
+          title="Báo Cáo Theo Thời Gian"
+          showBack
+          rightComponent={
+            <ViewModeToggle viewMode={viewMode} onToggle={toggleViewMode} />
+          }
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <ThemedText style={styles.loadingText}>
+            Đang tải dữ liệu...
+          </ThemedText>
+        </View>
+      </ThemedView>
+    );
+  }
+
+  return (
+    <ThemedView useSafeArea>
+      <Header
+        title="Báo Cáo Theo Thời Gian"
+        showBack
+        rightComponent={
+          <ViewModeToggle viewMode={viewMode} onToggle={toggleViewMode} />
+        }
+      />
+
+      <FlatList
+        key={viewMode} // Force re-render when switching view modes
+        data={dailyData}
+        renderItem={viewMode === "grid" ? renderGridItem : renderListItem}
+        keyExtractor={(item) => `${viewMode}-${item.date}`}
+        numColumns={viewMode === "grid" ? 2 : 1}
+        columnWrapperStyle={viewMode === "grid" ? styles.gridRow : undefined}
+        ListHeaderComponent={renderListHeader}
+        ListEmptyComponent={renderEmptyComponent}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+            progressBackgroundColor={colors.card}
+          />
+        }
+      />
+
+      {/* Export Button */}
       <View
         style={[
           styles.exportContainer,
@@ -457,13 +549,6 @@ const DateRangeReportsScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  dateRangeSelector: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -474,9 +559,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   listContent: {
-    padding: 16,
-    paddingBottom: 80,
+    paddingHorizontal: 16,
+    paddingBottom: 100, // Extra space for export button
   },
+  dateRangeSelectorContainer: {
+    paddingVertical: 12,
+  },
+
+  // Summary Card Styles
   summaryCard: {
     marginBottom: 16,
   },
@@ -520,6 +610,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+
+  // Chart Card Styles
   chartCard: {
     marginBottom: 16,
     padding: 16,
@@ -546,6 +638,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginBottom: 12,
   },
+
+  // List Item Styles
   dayCard: {
     marginBottom: 12,
   },
@@ -597,6 +691,57 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginTop: 4,
   },
+
+  // Grid Styles
+  gridRow: {
+    justifyContent: "space-between",
+  },
+  gridItem: {
+    width: "48%",
+    marginBottom: 12,
+  },
+  gridCard: {
+    height: 180,
+  },
+  gridHeader: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  gridIconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  gridDateText: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  gridStats: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  gridStatItem: {
+    marginBottom: 6,
+  },
+  gridStatLabel: {
+    fontSize: 11,
+    marginBottom: 2,
+  },
+  gridStatValue: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  gridPercentageText: {
+    fontSize: 10,
+    marginTop: 1,
+  },
+
+  // Common Styles
   emptyContainer: {
     alignItems: "center",
     justifyContent: "center",

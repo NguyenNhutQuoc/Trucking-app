@@ -1,5 +1,3 @@
-// Now for CompanyListScreen.tsx with dark mode:
-
 // src/screens/management/CompanyListScreen.tsx
 import React, { useState, useEffect, useCallback } from "react";
 import {
@@ -26,6 +24,7 @@ import { ManagementStackScreenProps } from "@/types/navigation.types";
 import { formatPhoneNumber } from "@/utils/formatters";
 
 type NavigationProp = ManagementStackScreenProps<"CompanyList">["navigation"];
+type ViewMode = "list" | "table";
 
 const CompanyListScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -36,6 +35,7 @@ const CompanyListScreen: React.FC = () => {
   const [companies, setCompanies] = useState<Khachhang[]>([]);
   const [filteredCompanies, setFilteredCompanies] = useState<Khachhang[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   useFocusEffect(
     useCallback(() => {
@@ -114,7 +114,6 @@ const CompanyListScreen: React.FC = () => {
               setLoading(true);
               const response = await customerApi.deleteCustomer(company.id);
               if (response.success) {
-                // Cập nhật danh sách sau khi xóa thành công
                 setCompanies((prevCompanies) =>
                   prevCompanies.filter((c) => c.id !== company.id),
                 );
@@ -134,6 +133,98 @@ const CompanyListScreen: React.FC = () => {
     );
   };
 
+  const toggleViewMode = () => {
+    setViewMode(viewMode === "list" ? "table" : "list");
+  };
+
+  // Table Header Component
+  const TableHeader = () => (
+    <View style={[styles.tableHeader, { backgroundColor: colors.gray100 }]}>
+      <ThemedText style={[styles.tableHeaderCell, styles.nameColumn]}>
+        Tên khách hàng
+      </ThemedText>
+      <ThemedText style={[styles.tableHeaderCell, styles.codeColumn]}>
+        Mã
+      </ThemedText>
+      <ThemedText style={[styles.tableHeaderCell, styles.phoneColumn]}>
+        Điện thoại
+      </ThemedText>
+      <ThemedText style={[styles.tableHeaderCell, styles.actionColumn]}>
+        Thao tác
+      </ThemedText>
+    </View>
+  );
+
+  // Table Row Component
+  const renderTableRow = ({
+    item,
+    index,
+  }: {
+    item: Khachhang;
+    index: number;
+  }) => {
+    return (
+      <View
+        style={[
+          styles.tableRow,
+          {
+            backgroundColor: index % 2 === 0 ? colors.card : colors.gray50,
+          },
+        ]}
+      >
+        <View style={[styles.tableCell, styles.nameColumn]}>
+          <ThemedText numberOfLines={2} style={styles.tableCellText}>
+            {item.ten}
+          </ThemedText>
+          {item.diachi && (
+            <ThemedText numberOfLines={1} style={styles.tableAddressText}>
+              {item.diachi}
+            </ThemedText>
+          )}
+        </View>
+        <ThemedText
+          style={[styles.tableCell, styles.codeColumn]}
+          numberOfLines={1}
+        >
+          {item.ma}
+        </ThemedText>
+        <ThemedText
+          style={[styles.tableCell, styles.phoneColumn]}
+          numberOfLines={1}
+        >
+          {item.dienthoai ? formatPhoneNumber(item.dienthoai) : "-"}
+        </ThemedText>
+        <View style={[styles.tableCell, styles.actionColumn]}>
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                { backgroundColor: colors.primary + "20" },
+              ]}
+              onPress={() => handleEditCompany(item)}
+            >
+              <Ionicons
+                name="create-outline"
+                size={16}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                { backgroundColor: colors.error + "20" },
+              ]}
+              onPress={() => handleDeleteCompany(item)}
+            >
+              <Ionicons name="trash-outline" size={16} color={colors.error} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  // List Item Component
   const renderCompanyItem = ({ item }: { item: Khachhang }) => {
     return (
       <Card style={styles.companyCard}>
@@ -175,17 +266,23 @@ const CompanyListScreen: React.FC = () => {
         </View>
 
         <View
-          style={[styles.actionButtons, { borderTopColor: colors.gray200 }]}
+          style={[styles.cardActionButtons, { borderTopColor: colors.gray200 }]}
         >
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.gray100 }]}
+            style={[
+              styles.cardActionButton,
+              { backgroundColor: colors.gray100 },
+            ]}
             onPress={() => handleEditCompany(item)}
           >
             <Ionicons name="create-outline" size={22} color={colors.primary} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.gray100 }]}
+            style={[
+              styles.cardActionButton,
+              { backgroundColor: colors.gray100 },
+            ]}
             onPress={() => handleDeleteCompany(item)}
           >
             <Ionicons name="trash-outline" size={22} color={colors.error} />
@@ -246,43 +343,88 @@ const CompanyListScreen: React.FC = () => {
               </TouchableOpacity>
             ) : null}
           </View>
+
+          <TouchableOpacity
+            style={[styles.viewModeButton, { backgroundColor: colors.gray100 }]}
+            onPress={toggleViewMode}
+          >
+            <Ionicons
+              name={viewMode === "list" ? "grid-outline" : "list-outline"}
+              size={20}
+              color={colors.gray700}
+            />
+          </TouchableOpacity>
         </View>
 
-        <FlatList
-          data={filteredCompanies}
-          renderItem={renderCompanyItem}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContent}
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              {loading ? (
-                <Loading loading />
-              ) : (
-                <>
-                  <Ionicons
-                    name="business-outline"
-                    size={48}
-                    color={colors.gray400}
-                  />
-                  <ThemedText style={styles.emptyText}>
-                    {searchQuery
-                      ? "Không tìm thấy Khách Hàng nào phù hợp"
-                      : "Chưa có Khách Hàng nào được thêm"}
-                  </ThemedText>
-                  <Button
-                    title="Thêm Khách Hàng mới"
-                    onPress={handleAddCompany}
-                    variant="primary"
-                    size="small"
-                    contentStyle={styles.emptyButton}
-                  />
-                </>
-              )}
-            </View>
-          }
-        />
+        {viewMode === "table" ? (
+          <View style={styles.tableContainer}>
+            <TableHeader />
+            <FlatList
+              data={filteredCompanies}
+              renderItem={renderTableRow}
+              keyExtractor={(item) => item.id.toString()}
+              contentContainerStyle={styles.tableContent}
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  {loading ? (
+                    <Loading loading />
+                  ) : (
+                    <>
+                      <Ionicons
+                        name="business-outline"
+                        size={48}
+                        color={colors.gray400}
+                      />
+                      <ThemedText style={styles.emptyText}>
+                        {searchQuery
+                          ? "Không tìm thấy Khách Hàng nào phù hợp"
+                          : "Chưa có Khách Hàng nào được thêm"}
+                      </ThemedText>
+                    </>
+                  )}
+                </View>
+              }
+            />
+          </View>
+        ) : (
+          <FlatList
+            data={filteredCompanies}
+            renderItem={renderCompanyItem}
+            keyExtractor={(item) => item.id.toString()}
+            contentContainerStyle={styles.listContent}
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                {loading ? (
+                  <Loading loading />
+                ) : (
+                  <>
+                    <Ionicons
+                      name="business-outline"
+                      size={48}
+                      color={colors.gray400}
+                    />
+                    <ThemedText style={styles.emptyText}>
+                      {searchQuery
+                        ? "Không tìm thấy Khách Hàng nào phù hợp"
+                        : "Chưa có Khách Hàng nào được thêm"}
+                    </ThemedText>
+                    <Button
+                      title="Thêm Khách Hàng mới"
+                      onPress={handleAddCompany}
+                      variant="primary"
+                      size="small"
+                      contentStyle={styles.emptyButton}
+                    />
+                  </>
+                )}
+              </View>
+            }
+          />
+        )}
       </View>
 
       <Loading loading={loading && !refreshing} />
@@ -295,10 +437,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   searchContainer: {
-    padding: 16,
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderBottomWidth: 1,
+    alignItems: "center",
   },
   searchInputContainer: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     borderRadius: 8,
@@ -313,6 +459,80 @@ const styles = StyleSheet.create({
     fontSize: 16,
     height: "100%",
   },
+  viewModeButton: {
+    marginLeft: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+  },
+
+  // Table Styles
+  tableContainer: {
+    flex: 1,
+  },
+  tableHeader: {
+    flexDirection: "row",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+  },
+  tableHeaderCell: {
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  tableRow: {
+    flexDirection: "row",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 0.5,
+    alignItems: "flex-start",
+    minHeight: 60,
+  },
+  tableCell: {
+    fontSize: 14,
+    justifyContent: "center",
+  },
+  tableCellText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  tableAddressText: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  nameColumn: {
+    flex: 3,
+  },
+  codeColumn: {
+    flex: 1.5,
+    textAlign: "center",
+  },
+  phoneColumn: {
+    flex: 2,
+    textAlign: "center",
+  },
+  actionColumn: {
+    flex: 1.5,
+    alignItems: "center",
+  },
+  actionButtons: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  actionButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  tableContent: {
+    paddingBottom: 20,
+  },
+
+  // List Item Styles
   listContent: {
     padding: 16,
     paddingBottom: 32,
@@ -351,14 +571,14 @@ const styles = StyleSheet.create({
   companyPhone: {
     fontSize: 14,
   },
-  actionButtons: {
+  cardActionButtons: {
     flexDirection: "row",
     justifyContent: "flex-end",
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
   },
-  actionButton: {
+  cardActionButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -366,6 +586,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginLeft: 8,
   },
+
+  // Common Styles
   addButton: {
     padding: 4,
   },

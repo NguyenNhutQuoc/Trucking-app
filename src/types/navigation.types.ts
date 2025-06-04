@@ -73,6 +73,7 @@ export type ReportsStackParamList = {
   VehicleReports: undefined;
   DateRangeReports: undefined;
   CustomReport: undefined;
+  PhieucanDetail: { phieucanSTT: number }; // Added for CustomReport navigation
 };
 
 // Root Navigator
@@ -80,7 +81,10 @@ export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Main: NavigatorScreenParams<MainTabParamList>;
   AddEditWeighing: { weighing?: Phieucan };
-  WeighingDetail: { weighing: Phieucan };
+  WeighingDetail: {
+    weighing: Phieucan;
+    weighingId: number;
+  }; // Updated to support both params
   AddEditVehicle: { vehicle?: Soxe };
   AddEditDriver: { driver?: any };
   AddEditCompany: { company?: Khachhang };
@@ -89,6 +93,10 @@ export type RootStackParamList = {
   Weighing: NavigatorScreenParams<WeighingStackParamList>;
   Settings: NavigatorScreenParams<SettingsStackParamList>;
   Reports: NavigatorScreenParams<ReportsStackParamList>;
+  PhieucanDetail: {
+    phieucanSTT?: number;
+    weighing?: Phieucan;
+  }; // Added as root route for flexible navigation
 };
 
 // Helper Screen Props

@@ -3,15 +3,15 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   StyleSheet,
-  TouchableOpacity,
   FlatList,
+  TouchableOpacity,
   RefreshControl,
   Alert,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { PieChart } from "react-native-chart-kit";
-import { Dimensions } from "react-native";
 
 import { customerApi } from "@/api/customer";
 import { weighingApi } from "@/api/weighing";
@@ -20,14 +20,16 @@ import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import Loading from "@/components/common/Loading";
 import DateRangeSelector from "@/components/reports/DateRangeSelector";
+import ViewModeToggle from "@/components/common/ViewModeToogle";
 import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
 import { useAppTheme } from "@/hooks/useAppTheme";
-import { formatWeight, formatDate } from "@/utils/formatters";
+import { formatWeight } from "@/utils/formatters";
 import { Khachhang } from "@/types/api.types";
 import { ReportsStackScreenProps } from "@/types/navigation.types";
 
 type NavigationProp = ReportsStackScreenProps<"CompanyReports">["navigation"];
+type ViewMode = "list" | "grid" | "table";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -45,8 +47,9 @@ const CompanyReportScreen: React.FC = () => {
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [totalWeight, setTotalWeight] = useState(0);
   const [totalVehicles, setTotalVehicles] = useState(0);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
-  // Chart data
+  // Chart colors
   const chartColors = [
     colors.chartBlue,
     colors.chartGreen,
@@ -89,7 +92,6 @@ const CompanyReportScreen: React.FC = () => {
 
   const loadWeightStatistics = async () => {
     try {
-      // Format dates for API
       const formattedStartDate = startDate.toISOString();
       const formattedEndDate = endDate.toISOString();
 
@@ -103,31 +105,9 @@ const CompanyReportScreen: React.FC = () => {
         setTotalWeight(stats.totalWeight);
         setTotalVehicles(stats.totalVehicles);
 
-        // Sort companies by weight in descending order
         const sortedCompanyStats = [...stats.byCompany].sort(
           (a, b) => b.totalWeight - a.totalWeight,
         );
-
-        // Process for chart - take top 5, group the rest as "Others"
-        const topCompanies = sortedCompanyStats.slice(0, 5);
-        const otherCompanies = sortedCompanyStats.slice(5);
-
-        if (otherCompanies.length > 0) {
-          const otherWeight = otherCompanies.reduce(
-            (sum, company) => sum + company.totalWeight,
-            0,
-          );
-          const otherCount = otherCompanies.reduce(
-            (sum, company) => sum + company.weighCount,
-            0,
-          );
-
-          topCompanies.push({
-            companyName: "Khác",
-            totalWeight: otherWeight,
-            weighCount: otherCount,
-          });
-        }
 
         setCompanyStats(sortedCompanyStats);
       }
@@ -147,7 +127,169 @@ const CompanyReportScreen: React.FC = () => {
     setEndDate(end);
   };
 
-  const renderCompanyItem = ({ item, index }: { item: any; index: number }) => {
+  const toggleViewMode = () => {
+    if (viewMode === "list") {
+      setViewMode("grid");
+    } else if (viewMode === "grid") {
+      setViewMode("table");
+    } else {
+      setViewMode("list");
+    }
+  };
+
+  // Table Header Component
+  const TableHeader = () => (
+    <View style={[styles.tableHeader, { backgroundColor: colors.gray100 }]}>
+      <ThemedText style={[styles.tableHeaderCell, styles.companyColumn]}>
+        Khách hàng
+      </ThemedText>
+      <ThemedText style={[styles.tableHeaderCell, styles.countColumn]}>
+        Lượt cân
+      </ThemedText>
+      <ThemedText style={[styles.tableHeaderCell, styles.weightColumn]}>
+        Tổng TL
+      </ThemedText>
+      <ThemedText style={[styles.tableHeaderCell, styles.percentColumn]}>
+        Tỷ lệ %
+      </ThemedText>
+    </View>
+  );
+
+  // Table Row Component
+  const renderTableRow = ({ item, index }: { item: any; index: number }) => {
+    const company = companies.find((c) => c.ten === item.companyName);
+    const percentageOfTotal =
+      totalWeight > 0
+        ? ((item.totalWeight / totalWeight) * 100).toFixed(1)
+        : "0";
+
+    return (
+      <View
+        style={[
+          styles.tableRow,
+          {
+            backgroundColor: index % 2 === 0 ? colors.card : colors.gray50,
+          },
+        ]}
+      >
+        <View style={[styles.tableCell, styles.companyColumn]}>
+          <ThemedText numberOfLines={2} style={styles.tableCellText}>
+            {item.companyName}
+          </ThemedText>
+          {company?.diachi && (
+            <ThemedText numberOfLines={1} style={styles.tableAddressText}>
+              {company.diachi}
+            </ThemedText>
+          )}
+        </View>
+        <ThemedText
+          style={[styles.tableCell, styles.countColumn, styles.tableCellText]}
+          numberOfLines={1}
+        >
+          {item.weighCount}
+        </ThemedText>
+        <ThemedText
+          style={[styles.tableCell, styles.weightColumn, styles.tableCellText]}
+          numberOfLines={1}
+        >
+          {formatWeight(item.totalWeight, true)}
+        </ThemedText>
+        <ThemedText
+          style={[
+            styles.tableCell,
+            styles.percentColumn,
+            styles.tableCellText,
+            { color: colors.primary },
+          ]}
+          numberOfLines={1}
+        >
+          {percentageOfTotal}%
+        </ThemedText>
+      </View>
+    );
+  };
+
+  // Grid Item Component
+  const renderGridItem = ({ item, index }: { item: any; index: number }) => {
+    const company = companies.find((c) => c.ten === item.companyName);
+    const percentageOfTotal =
+      totalWeight > 0
+        ? ((item.totalWeight / totalWeight) * 100).toFixed(1)
+        : "0";
+
+    return (
+      <View style={styles.gridItem}>
+        <Card style={styles.gridCard}>
+          <View style={styles.gridHeader}>
+            <View
+              style={[
+                styles.gridIconContainer,
+                {
+                  backgroundColor:
+                    chartColors[index % chartColors.length] + "20",
+                },
+              ]}
+            >
+              <Ionicons
+                name="business"
+                size={18}
+                color={chartColors[index % chartColors.length]}
+              />
+            </View>
+            <View style={styles.gridPercentageContainer}>
+              <ThemedText
+                style={styles.gridPercentageText}
+                color={colors.primary}
+              >
+                {percentageOfTotal}%
+              </ThemedText>
+            </View>
+          </View>
+
+          <ThemedText style={styles.gridCompanyName} numberOfLines={2}>
+            {item.companyName}
+          </ThemedText>
+
+          <View style={styles.gridStats}>
+            <View style={styles.gridStatItem}>
+              <ThemedText type="caption" style={styles.gridStatLabel}>
+                Số lượt cân
+              </ThemedText>
+              <ThemedText style={styles.gridStatValue}>
+                {item.weighCount}
+              </ThemedText>
+            </View>
+            <View style={styles.gridStatItem}>
+              <ThemedText type="caption" style={styles.gridStatLabel}>
+                Trọng lượng
+              </ThemedText>
+              <ThemedText style={styles.gridStatValue} numberOfLines={1}>
+                {formatWeight(item.totalWeight, true)}
+              </ThemedText>
+            </View>
+          </View>
+
+          {company?.diachi && (
+            <ThemedText
+              type="caption"
+              style={styles.gridAddress}
+              numberOfLines={1}
+            >
+              <Ionicons
+                name="location-outline"
+                size={10}
+                color={colors.gray600}
+              />{" "}
+              {company.diachi}
+            </ThemedText>
+          )}
+        </Card>
+      </View>
+    );
+  };
+
+  // List Item Component
+  const renderListItem = ({ item, index }: { item: any; index: number }) => {
     const company = companies.find((c) => c.ten === item.companyName);
     const percentageOfTotal =
       totalWeight > 0
@@ -229,11 +371,12 @@ const CompanyReportScreen: React.FC = () => {
   const getPieChartData = () => {
     if (companyStats.length === 0) return [];
 
-    // Take top 5 for the chart
     const data = companyStats.slice(0, 6).map((item, index) => {
       return {
-        name: item.companyName,
-        // Don't include weight value in the name
+        name:
+          item.companyName.length > 12
+            ? item.companyName.substring(0, 12) + "..."
+            : item.companyName,
         legendFontColor: isDarkMode ? "#f1f1f1" : "#333",
         legendFontSize: 12,
         weight: item.totalWeight,
@@ -245,137 +388,188 @@ const CompanyReportScreen: React.FC = () => {
     return data;
   };
 
-  return (
-    <ThemedView useSafeArea>
-      <Header title="Báo Cáo Theo Khách hàng" showBack />
+  const renderEmptyComponent = () => (
+    <View style={styles.emptyContainer}>
+      <Ionicons name="analytics-outline" size={48} color={colors.gray400} />
+      <ThemedText style={styles.emptyText}>
+        Không có dữ liệu trong khoảng thời gian này
+      </ThemedText>
+    </View>
+  );
 
-      <View style={styles.container}>
+  const renderListHeader = () => (
+    <>
+      {/* Date Range Selector */}
+      <View style={styles.dateRangeSelectorContainer}>
         <DateRangeSelector
           allowFutureDates={true}
           startDate={startDate}
           endDate={endDate}
           onDateRangeChange={handleDateRangeChange}
-          style={styles.dateRangeSelector}
         />
-
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <Loading loading={true} />
-            <ThemedText style={styles.loadingText}>
-              Đang tải dữ liệu...
-            </ThemedText>
-          </View>
-        ) : (
-          <FlatList
-            data={companyStats}
-            renderItem={renderCompanyItem}
-            keyExtractor={(item, index) => index.toString()}
-            ListHeaderComponent={
-              <View>
-                <Card style={styles.summaryCard}>
-                  <View style={styles.summaryRow}>
-                    <View style={styles.summaryItem}>
-                      <ThemedText type="subtitle" style={styles.summaryLabel}>
-                        Tổng xe:
-                      </ThemedText>
-                      <ThemedText style={styles.summaryValue}>
-                        {totalVehicles}
-                      </ThemedText>
-                    </View>
-
-                    <View
-                      style={[
-                        styles.summaryDivider,
-                        { backgroundColor: colors.gray200 },
-                      ]}
-                    />
-
-                    <View style={styles.summaryItem}>
-                      <ThemedText type="subtitle" style={styles.summaryLabel}>
-                        Tổng trọng lượng:
-                      </ThemedText>
-                      <ThemedText style={styles.summaryValue}>
-                        {formatWeight(totalWeight, true)}
-                      </ThemedText>
-                    </View>
-                  </View>
-                </Card>
-
-                {companyStats.length > 0 && (
-                  <Card style={styles.chartCard}>
-                    <ThemedText style={styles.chartTitle}>
-                      Phân bố trọng lượng theo Khách Hàng
-                    </ThemedText>
-                    <View style={styles.chartContainer}>
-                      <PieChart
-                        data={getPieChartData()}
-                        width={screenWidth - 60}
-                        height={180}
-                        chartConfig={{
-                          backgroundGradientFrom: colors.card,
-                          backgroundGradientTo: colors.card,
-                          color: (opacity = 1) =>
-                            isDarkMode
-                              ? `rgba(255, 255, 255, ${opacity})`
-                              : `rgba(0, 0, 0, ${opacity})`,
-                        }}
-                        accessor="weight"
-                        backgroundColor="transparent"
-                        paddingLeft="0"
-                        absolute
-                      />
-                    </View>
-
-                    {/* Custom legend */}
-                    <View style={styles.customLegendContainer}>
-                      {getPieChartData().map((item, index) => (
-                        <View key={index} style={styles.legendItem}>
-                          <View
-                            style={[
-                              styles.legendColorBox,
-                              { backgroundColor: item.color },
-                            ]}
-                          />
-                          <ThemedText style={styles.legendText}>
-                            {item.name}
-                          </ThemedText>
-                        </View>
-                      ))}
-                    </View>
-                  </Card>
-                )}
-
-                <ThemedText type="title" style={styles.sectionTitle}>
-                  Chi tiết theo Khách Hàng
-                </ThemedText>
-              </View>
-            }
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Ionicons
-                  name="analytics-outline"
-                  size={48}
-                  color={colors.gray400}
-                />
-                <ThemedText style={styles.emptyText}>
-                  Không có dữ liệu trong khoảng thời gian này
-                </ThemedText>
-              </View>
-            }
-            contentContainerStyle={styles.listContent}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={[colors.primary]}
-                tintColor={colors.primary}
-                progressBackgroundColor={colors.card}
-              />
-            }
-          />
-        )}
       </View>
 
+      {/* Summary Card */}
+      <Card style={styles.summaryCard}>
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryItem}>
+            <ThemedText type="subtitle" style={styles.summaryLabel}>
+              Tổng xe:
+            </ThemedText>
+            <ThemedText style={styles.summaryValue}>{totalVehicles}</ThemedText>
+          </View>
+
+          <View
+            style={[styles.summaryDivider, { backgroundColor: colors.gray200 }]}
+          />
+
+          <View style={styles.summaryItem}>
+            <ThemedText type="subtitle" style={styles.summaryLabel}>
+              Tổng trọng lượng:
+            </ThemedText>
+            <ThemedText style={styles.summaryValue}>
+              {formatWeight(totalWeight, true)}
+            </ThemedText>
+          </View>
+        </View>
+      </Card>
+
+      {/* Chart Card */}
+      {companyStats.length > 0 && (
+        <Card style={styles.chartCard}>
+          <ThemedText style={styles.chartTitle}>
+            Phân bố trọng lượng theo Khách Hàng
+          </ThemedText>
+          <View style={styles.chartContainer}>
+            <PieChart
+              data={getPieChartData()}
+              width={screenWidth - 60}
+              height={180}
+              chartConfig={{
+                backgroundGradientFrom: colors.card,
+                backgroundGradientTo: colors.card,
+                color: (opacity = 1) =>
+                  isDarkMode
+                    ? `rgba(255, 255, 255, ${opacity})`
+                    : `rgba(0, 0, 0, ${opacity})`,
+              }}
+              accessor="weight"
+              backgroundColor="transparent"
+              paddingLeft="0"
+              absolute
+            />
+          </View>
+
+          <View style={styles.customLegendContainer}>
+            {getPieChartData().map((item, index) => (
+              <View key={index} style={styles.legendItem}>
+                <View
+                  style={[
+                    styles.legendColorBox,
+                    { backgroundColor: item.color },
+                  ]}
+                />
+                <ThemedText style={styles.legendText}>{item.name}</ThemedText>
+              </View>
+            ))}
+          </View>
+        </Card>
+      )}
+
+      {/* Section Title */}
+      <ThemedText type="title" style={styles.sectionTitle}>
+        Chi tiết theo Khách Hàng ({companyStats.length})
+      </ThemedText>
+    </>
+  );
+
+  const getViewModeIcon = () => {
+    switch (viewMode) {
+      case "list":
+        return "grid-outline";
+      case "grid":
+        return "list-outline";
+      case "table":
+        return "apps-outline";
+      default:
+        return "grid-outline";
+    }
+  };
+
+  if (loading) {
+    return (
+      <ThemedView useSafeArea>
+        <Header
+          title="Báo Cáo Theo Khách hàng"
+          showBack
+          rightComponent={
+            <TouchableOpacity onPress={toggleViewMode}>
+              <Ionicons name={getViewModeIcon()} size={24} color="white" />
+            </TouchableOpacity>
+          }
+        />
+        <View style={styles.loadingContainer}>
+          <Loading loading={true} />
+          <ThemedText style={styles.loadingText}>
+            Đang tải dữ liệu...
+          </ThemedText>
+        </View>
+      </ThemedView>
+    );
+  }
+
+  return (
+    <ThemedView useSafeArea>
+      <Header
+        title="Báo Cáo Theo Khách hàng"
+        showBack
+        rightComponent={
+          <TouchableOpacity onPress={toggleViewMode}>
+            <Ionicons name={getViewModeIcon()} size={24} color="white" />
+          </TouchableOpacity>
+        }
+      />
+
+      <FlatList
+        key={viewMode}
+        data={companyStats}
+        renderItem={
+          viewMode === "table"
+            ? renderTableRow
+            : viewMode === "grid"
+              ? renderGridItem
+              : renderListItem
+        }
+        keyExtractor={(item, index) => `${viewMode}-${index}`}
+        numColumns={viewMode === "grid" ? 2 : 1}
+        columnWrapperStyle={viewMode === "grid" ? styles.gridRow : undefined}
+        ListHeaderComponent={
+          viewMode === "table" ? (
+            <>
+              {renderListHeader()}
+              <TableHeader />
+            </>
+          ) : (
+            renderListHeader
+          )
+        }
+        ListEmptyComponent={renderEmptyComponent}
+        contentContainerStyle={
+          viewMode === "table" ? styles.tableContent : styles.listContent
+        }
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+            progressBackgroundColor={colors.card}
+          />
+        }
+      />
+
+      {/* Export Button */}
       <View
         style={[
           styles.exportContainer,
@@ -397,13 +591,6 @@ const CompanyReportScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  dateRangeSelector: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -414,9 +601,75 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   listContent: {
-    padding: 16,
-    paddingBottom: 80,
+    paddingHorizontal: 16,
+    paddingBottom: 100,
   },
+  dateRangeSelectorContainer: {
+    paddingVertical: 12,
+  },
+
+  // Table Styles
+  tableContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+  },
+  tableHeader: {
+    flexDirection: "row",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    backgroundColor: "transparent",
+  },
+  tableHeaderCell: {
+    fontWeight: "600",
+    fontSize: 14,
+    textAlign: "center",
+  },
+  tableRow: {
+    flexDirection: "row",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 0.5,
+    alignItems: "center",
+    minHeight: 60,
+  },
+  tableCell: {
+    fontSize: 14,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  tableCellText: {
+    fontSize: 14,
+    fontWeight: "500",
+    textAlign: "center",
+  },
+  tableAddressText: {
+    fontSize: 12,
+    marginTop: 2,
+    opacity: 0.7,
+    textAlign: "center",
+  },
+  companyColumn: {
+    flex: 3,
+    justifyContent: "center",
+  },
+  countColumn: {
+    flex: 1.5,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  weightColumn: {
+    flex: 2,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  percentColumn: {
+    flex: 1.5,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  // Summary Card Styles
   summaryCard: {
     marginBottom: 16,
   },
@@ -441,6 +694,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
   },
+
+  // Chart Card Styles
   chartCard: {
     marginBottom: 16,
     padding: 16,
@@ -480,6 +735,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginBottom: 12,
   },
+
+  // List Item Styles
   companyCard: {
     marginBottom: 12,
   },
@@ -528,6 +785,67 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
+
+  // Grid Styles
+  gridRow: {
+    justifyContent: "space-between",
+  },
+  gridItem: {
+    width: "48%",
+    marginBottom: 12,
+  },
+  gridCard: {
+    height: 160,
+  },
+  gridHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  gridIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  gridPercentageContainer: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  gridPercentageText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  gridCompanyName: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 8,
+    minHeight: 32,
+  },
+  gridStats: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  gridStatItem: {
+    marginBottom: 4,
+  },
+  gridStatLabel: {
+    fontSize: 11,
+    marginBottom: 2,
+  },
+  gridStatValue: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  gridAddress: {
+    fontSize: 10,
+    marginTop: 4,
+  },
+
+  // Common Styles
   emptyContainer: {
     alignItems: "center",
     justifyContent: "center",

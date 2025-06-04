@@ -29,7 +29,7 @@ export const formatTime = (dateString: string): string => {
 };
 
 /**
- * Định dạng trọng lượng (kg hoặc tấn)
+ * Định dạng trọng lượng (kg)
  * @param weight Trọng lượng (kg)
  * @param useAbbreviation Sử dụng viết tắt (true: kg, false: kilogram)
  */
@@ -38,8 +38,8 @@ export const formatWeight = (
   useAbbreviation = true,
 ): string => {
   if (weight >= 1000) {
-    const tons = weight / 1000;
-    return `${tons.toLocaleString("vi-VN", { maximumFractionDigits: 2 })} ${useAbbreviation ? "tấn" : "tấn"}`;
+    const tons = weight;
+    return `${tons.toLocaleString("vi-VN", { maximumFractionDigits: 2 })} ${useAbbreviation ? "kg" : "kg"}`;
   }
 
   return `${weight.toLocaleString("vi-VN")} ${useAbbreviation ? "kg" : "kilogram"}`;

@@ -1,6 +1,6 @@
 // src/constants/config.ts
 // API configuration
-export const API_URL = "https://truck-weighing-system.vercel.app/api/v1"; // Development server
+export const API_URL = "truck-weighing-system.vercel.app/api/v1"; // Development server
 // export const API_URL = 'https://api.example.com/api'; // Production server
 
 // App configuration

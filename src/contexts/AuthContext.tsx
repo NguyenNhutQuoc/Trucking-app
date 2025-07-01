@@ -111,7 +111,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       const response = await authApi.login(credentials);
-
+      console.log("Login response:", response);
       if (response.success) {
         setUserInfo(response.data.user);
         setIsAuthenticated(true);

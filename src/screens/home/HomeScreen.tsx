@@ -291,10 +291,11 @@ const HomeScreen: React.FC = () => {
               style={[
                 styles.actionButton,
                 {
-                  backgroundColor: colors.warning + "08",
+                  backgroundColor: colors.card,
                   borderWidth: 1,
-                  borderColor: colors.warning + "30",
                   borderStyle: "dashed" as const,
+                  borderColor: colors.warning,
+                  opacity: 0.8,
                 },
               ]}
               onPress={handleNewWeighing}
@@ -333,14 +334,12 @@ const HomeScreen: React.FC = () => {
               <View
                 style={[
                   styles.actionIconContainer,
-                  { backgroundColor: colors.chartBlue + "80" },
+                  { backgroundColor: colors.chartBlue },
                 ]}
               >
                 <Ionicons name="bar-chart" size={28} color="white" />
               </View>
-              <ThemedText
-                style={[styles.actionText, { color: colors.text + "80" }]}
-              >
+              <ThemedText style={[styles.actionText, { color: colors.text }]}>
                 Báo Cáo
               </ThemedText>
             </TouchableOpacity>

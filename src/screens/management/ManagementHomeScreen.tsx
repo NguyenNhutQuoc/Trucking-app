@@ -133,14 +133,13 @@ const ManagementHomeScreen: React.FC = () => {
         style={[
           styles.menuItem,
           {
-            backgroundColor: isDevelopment
-              ? colors.warning + "08"
-              : colors.card,
+            backgroundColor: colors.card,
           },
           isDevelopment && {
             borderWidth: 1,
-            borderColor: colors.warning + "30",
+            borderColor: colors.warning,
             borderStyle: "dashed",
+            opacity: 0.8,
           },
         ]}
         onPress={() => handleMenuPress(item)}

@@ -1,8 +1,9 @@
 // src/constants/config.ts
 // API configuration
-export const API_URL = "truck-weighing-system.vercel.app/api/v1"; // Development server
+export const API_URL =
+  "https://17f7-2402-800-63a3-dce1-bfb1-5ec2-ff24-e86.ngrok-free.app/api/v1"; // Development server
 // export const API_URL = 'https://api.example.com/api'; // Production server
-
+console.log("API URL:", API_URL);
 // App configuration
 export const APP_NAME = "Quản Lý Cân Xe";
 export const APP_VERSION = "1.0.0";

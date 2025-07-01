@@ -21,6 +21,7 @@ export const authApi = {
     credentials: LoginRequest,
   ): Promise<ApiResponse<LoginResponse["data"]>> => {
     try {
+      console.log("Attempting to login with credentials:", credentials);
       const response = await api.post<LoginResponse>(
         "/auth/login",
         credentials,
@@ -40,7 +41,7 @@ export const authApi = {
 
       return response.data;
     } catch (error: any) {
-      console.log(error);
+      console.log(error.message);
       console.error("Login error:", error);
       throw error;
     }

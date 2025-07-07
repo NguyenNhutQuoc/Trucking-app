@@ -1,77 +1,132 @@
 // src/api/api.ts
-import axios, {
-  AxiosError,
-  AxiosInstance,
-  InternalAxiosRequestConfig,
-} from "axios";
-
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_URL } from "@/constants/config";
+import { API_URL, API_TIMEOUT } from "@/constants/config";
 
-// Biến để lưu callback khi token hết hạn
-let tokenExpiredCallback: (() => void) | null = null;
+// ✅ FIX: Declare global interface for React Native
+declare global {
+  var handleSessionExpired: (() => void) | undefined;
+}
 
-// Hàm để đăng ký callback khi token hết hạn
-export const setTokenExpiredCallback = (callback: () => void) => {
-  tokenExpiredCallback = callback;
-};
-
-// Tạo một instance của axios
+// Create axios instance
 const api: AxiosInstance = axios.create({
   baseURL: API_URL,
-  timeout: 10000,
+  timeout: API_TIMEOUT,
   headers: {
     "Content-Type": "application/json",
-    Accept: "application/json",
   },
 });
 
+// ✅ THAY ĐỔI: Request interceptor để thêm session token
 api.interceptors.request.use(
-  async (
-    config: InternalAxiosRequestConfig,
-  ): Promise<InternalAxiosRequestConfig> => {
-    const token = await AsyncStorage.getItem("auth_token");
+  async (config: import("axios").InternalAxiosRequestConfig) => {
+    try {
+      // ✅ THAY ĐỔI: Lấy session token thay vì auth token
+      const sessionToken = await AsyncStorage.getItem("session_token");
 
-    if (token) {
-      config.headers.set("Authorization", `Bearer ${token}`);
+      if (sessionToken && config.headers) {
+        // ✅ THAY ĐỔI: Sử dụng session token
+        config.headers["X-Session-Token"] = sessionToken;
+        // Hoặc có thể dùng Authorization header tùy theo backend
+        // config.headers['Authorization'] = `Bearer ${sessionToken}`;
+      }
+
+      // Log request for debugging
+      console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
+      if (config.data) {
+        console.log("Request Data:", config.data);
+      }
+
+      return config;
+    } catch (error) {
+      console.error("Request interceptor error:", error);
+      return config;
     }
-
-    return config;
   },
-  (error: AxiosError) => Promise.reject(error),
+  (error) => {
+    console.error("Request interceptor error:", error);
+    return Promise.reject(error);
+  },
 );
 
-// Interceptor cho response
+// ✅ THAY ĐỔI: Response interceptor để handle session expired
 api.interceptors.response.use(
-  (response) => {
-    // Xử lý response thành công
+  (response: AxiosResponse) => {
+    // Log successful responses
+    console.log(`API Response: ${response.status} ${response.config.url}`);
+
+    // ✅ THAY ĐỔI: Kiểm tra tenant info trong response
+    if (response.data?.data?.tenantInfo) {
+      console.log("Tenant Info:", response.data.data.tenantInfo);
+    }
+
     return response;
   },
-  async (error: AxiosError) => {
-    const originalRequest = error.config;
+  async (error) => {
+    console.error("API Error:", error.response?.status, error.response?.data);
 
-    // Nếu lỗi 401 (Unauthorized) và chưa thử refresh token
-    if (error.response?.status === 401 && !(originalRequest as any)._retry) {
-      (originalRequest as any)._retry = true;
+    // ✅ THAY ĐỔI: Handle session expired (401)
+    if (error.response?.status === 401) {
+      console.log("Session expired, clearing local storage...");
 
       try {
-        // Xóa token và chuyển hướng về trang đăng nhập
-        await AsyncStorage.removeItem("auth_token");
-        await AsyncStorage.removeItem("user_info");
+        // Clear session data
+        await AsyncStorage.removeItem("session_token");
+        await AsyncStorage.removeItem("tenant_info");
 
-        // Gọi callback để hiển thị modal token hết hạn
-        if (tokenExpiredCallback) {
-          tokenExpiredCallback();
+        // ✅ FIX: Safely call global handler
+        if (typeof global !== "undefined" && global.handleSessionExpired) {
+          global.handleSessionExpired();
         }
-
-        return Promise.reject(error);
-      } catch (refreshError) {
-        return Promise.reject(refreshError);
+      } catch (clearError) {
+        console.error("Error clearing session data:", clearError);
       }
+    }
+
+    // ✅ THAY ĐỔI: Handle tenant connection errors
+    if (error.response?.data?.errorCode === "DB_CONNECTION_FAILED") {
+      console.error("Tenant database connection failed");
+      // Handle specific tenant connection errors
     }
 
     return Promise.reject(error);
   },
 );
+
+// ✅ FIX: Helper function để set session expired handler
+export const setSessionExpiredHandler = (handler: () => void) => {
+  if (typeof global !== "undefined") {
+    global.handleSessionExpired = handler;
+  }
+};
+
+// ✅ THAY ĐỔI: Helper function để get current session info
+export const getCurrentSessionInfo = async () => {
+  try {
+    const sessionToken = await AsyncStorage.getItem("session_token");
+    const tenantInfo = await AsyncStorage.getItem("tenant_info");
+
+    return {
+      sessionToken,
+      tenantInfo: tenantInfo ? JSON.parse(tenantInfo) : null,
+    };
+  } catch (error) {
+    console.error("Error getting session info:", error);
+    return {
+      sessionToken: null,
+      tenantInfo: null,
+    };
+  }
+};
+
+// ✅ THAY ĐỔI: Helper function để clear session
+export const clearSession = async () => {
+  try {
+    await AsyncStorage.removeItem("session_token");
+    await AsyncStorage.removeItem("tenant_info");
+  } catch (error) {
+    console.error("Error clearing session:", error);
+  }
+};
 
 export default api;

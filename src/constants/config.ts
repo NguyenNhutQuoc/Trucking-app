@@ -1,7 +1,7 @@
 // src/constants/config.ts
 // API configuration
 export const API_URL =
-  "https://17f7-2402-800-63a3-dce1-bfb1-5ec2-ff24-e86.ngrok-free.app/api/v1"; // Development server
+  "https://f45d-2402-800-62b4-bda7-15c1-6542-fad9-77c5.ngrok-free.app/api/v1"; // Development server
 // export const API_URL = 'https://api.example.com/api'; // Production server
 console.log("API URL:", API_URL);
 // App configuration
@@ -38,4 +38,12 @@ export const CACHE_EXPIRY = {
   CUSTOMER_LIST: 30 * 60 * 1000, // 30 minutes
   PRODUCT_LIST: 30 * 60 * 1000, // 30 minutes
   VEHICLE_LIST: 30 * 60 * 1000, // 30 minutes
+};
+
+// API timeout settings
+export const API_TIMEOUT = 15000; // 15 seconds
+// Retry settings
+export const API_RETRY = {
+  MAX_RETRIES: 3,
+  RETRY_DELAY: 2000, // 2 seconds
 };

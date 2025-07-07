@@ -49,6 +49,24 @@ const colors = {
   gray700: "#495057",
   gray800: "#343A40",
   gray900: "#212529",
+
+  // Surface colors
+  surface: "#FFFFFF",
+  surfaceVariant: "#F8F9FA",
+  surfaceDark: "#F1F3F5",
+  surfaceLight: "#E9ECEF",
+  surfaceBorder: "#E9ECEF",
+  surfaceText: "#212529",
+  surfaceTextSecondary: "#868E96",
+  surfaceTextDisabled: "#CED4DA",
+  surfaceBorderLight: "#F1F3F5",
+  surfaceBorderDark: "#343A40",
+  surfaceBorderVariant: "#DEE2E6",
+  surfaceBackground: "#F8F9FA",
+  surfaceBackgroundDark: "#F1F3F5",
+  surfaceBackgroundLight: "#E9ECEF",
+  surfaceBackgroundVariant: "#DEE2E6",
+  surfaceBackgroundText: "#212529",
 };
 
 export default colors;

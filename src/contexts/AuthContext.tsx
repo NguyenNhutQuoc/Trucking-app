@@ -1,193 +1,367 @@
 // src/contexts/AuthContext.tsx
-import React, { createContext, useState, useEffect, ReactNode } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
+import { Alert } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { authApi } from "@/api/auth";
-import { LoginRequest } from "@/types/api.types";
-import TokenExpiredModal from "@/components/common/TokenExpireModal";
+import { stationApi } from "@/api/station";
+import {
+  TenantLoginRequest,
+  AuthState,
+  TenantInfo,
+  Nhanvien,
+  LoginRequest,
+  KhachHang,
+} from "@/types/api.types";
 
-interface AuthContextType {
-  isLoading: boolean;
+// ✅ THAY ĐỔI: Updated context interface
+export interface AuthContextType {
+  // New multi-tenant methods
+  tenantLogin: (credentials: TenantLoginRequest) => Promise<{
+    success: boolean;
+    data?: {
+      sessionToken: string;
+      khachHang: any;
+      tramCans: any[];
+    };
+  }>;
+  selectStation: (sessionToken: string, tramCanId: number) => Promise<boolean>;
+  switchStation: (tramCanId: number) => Promise<boolean>;
+  getMyStations: () => Promise<any[]>;
+
+  // State
   isAuthenticated: boolean;
-  userInfo: UserInfo | null;
+  isLoading: boolean;
+  sessionToken: string | null;
+  tenantInfo: TenantInfo | null;
+
+  // Legacy methods (for backward compatibility)
   login: (credentials: LoginRequest) => Promise<boolean>;
   logout: () => Promise<void>;
-  checkAuthentication: () => Promise<boolean>;
-  showTokenExpiredModal: boolean;
+  userInfo: Nhanvien | null;
+
+  // Session management
+  validateSession: () => Promise<boolean>;
   handleTokenExpired: () => void;
+  showTokenExpiredModal: boolean;
   hideTokenExpiredModal: () => void;
 }
 
-interface UserInfo {
-  nvId: string;
-  tenNV: string;
-  type: number;
-  nhomId: number;
-}
-
-export const AuthContext = createContext<AuthContextType>({
-  isLoading: true,
-  isAuthenticated: false,
-  userInfo: null,
-  login: async () => false,
-  logout: async () => {},
-  checkAuthentication: async () => false,
-  showTokenExpiredModal: false,
-  handleTokenExpired: () => {},
-  hideTokenExpiredModal: () => {},
-});
+export const AuthContext = createContext<AuthContextType | undefined>(
+  undefined,
+);
 
 interface AuthProviderProps {
   children: ReactNode;
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-  const [showTokenExpiredModal, setShowTokenExpiredModal] =
-    useState<boolean>(false);
+  const [authState, setAuthState] = useState<AuthState>({
+    isAuthenticated: false,
+    isLoading: true,
+    sessionToken: null,
+    tenantInfo: null,
+    userInfo: null,
+  });
 
-  // Kiểm tra trạng thái xác thực khi ứng dụng khởi động
+  const [showTokenExpiredModal, setShowTokenExpiredModal] = useState(false);
+
+  // ✅ THAY ĐỔI: Updated bootstrap logic
   useEffect(() => {
     const bootstrapAsync = async () => {
       try {
-        // Kiểm tra xem có token trong AsyncStorage không
-        const token = await AsyncStorage.getItem("auth_token");
+        setAuthState((prev) => ({ ...prev, isLoading: true }));
 
-        if (token) {
-          // Nếu có token, kiểm tra tính hợp lệ
-          const isTokenValid = await authApi.validateToken();
+        // Check for existing session
+        const sessionToken = await authApi.getSessionToken();
+        const tenantInfo = await authApi.getTenantInfo();
 
-          if (isTokenValid) {
-            // Nếu token hợp lệ, lấy thông tin người dùng
-            const user = await authApi.getCurrentUser();
-            if (user) {
-              setUserInfo(user);
-              setIsAuthenticated(true);
-            } else {
-              // Nếu không có thông tin người dùng, đăng xuất
-              await authApi.logout();
-              setIsAuthenticated(false);
-            }
+        if (sessionToken && tenantInfo) {
+          // Validate existing session
+          const isSessionValid = await authApi.validateToken();
+
+          if (isSessionValid) {
+            // Valid session - set authenticated state
+            setAuthState({
+              isAuthenticated: true,
+              isLoading: false,
+              sessionToken,
+              tenantInfo,
+              userInfo: {
+                id: tenantInfo.khachHang.id,
+                username: tenantInfo.khachHang.maKhachHang,
+              } as Nhanvien,
+            });
           } else {
-            // Nếu token không hợp lệ, hiển thị modal và đăng xuất
+            // Invalid session - clear and show expired modal
             await authApi.logout();
-            setIsAuthenticated(false);
+            setAuthState({
+              isAuthenticated: false,
+              isLoading: false,
+              sessionToken: null,
+              tenantInfo: null,
+              userInfo: null,
+            });
             setShowTokenExpiredModal(true);
           }
         } else {
-          // Nếu không có token, đăng xuất
-          setIsAuthenticated(false);
+          // No existing session
+          setAuthState({
+            isAuthenticated: false,
+            isLoading: false,
+            sessionToken: null,
+            tenantInfo: null,
+            userInfo: null,
+          });
         }
       } catch (error) {
         console.error("Bootstrap error:", error);
-        setIsAuthenticated(false);
-        // Nếu có lỗi khi kiểm tra token, có thể là do token hết hạn
+        setAuthState({
+          isAuthenticated: false,
+          isLoading: false,
+          sessionToken: null,
+          tenantInfo: null,
+          userInfo: null,
+        });
         setShowTokenExpiredModal(true);
-      } finally {
-        setIsLoading(false);
       }
     };
 
     bootstrapAsync();
   }, []);
 
-  // Hàm xử lý khi token hết hạn
-  const handleTokenExpired = () => {
-    setShowTokenExpiredModal(true);
-    setIsAuthenticated(false);
-    setUserInfo(null);
-    // Xóa token và thông tin user
-    authApi.logout();
+  // ✅ NEW: Tenant login (step 1)
+  const tenantLogin = async (credentials: TenantLoginRequest) => {
+    try {
+      const response = await authApi.tenantLogin(credentials);
+
+      if (response.success) {
+        return {
+          success: true,
+          data: response.data,
+        };
+      } else {
+        return { success: false };
+      }
+    } catch (error) {
+      console.error("Tenant login error:", error);
+      return { success: false };
+    }
   };
 
-  // Hàm ẩn modal token hết hạn
-  const hideTokenExpiredModal = () => {
-    setShowTokenExpiredModal(false);
+  // ✅ NEW: Station selection (step 2)
+  const selectStation = async (
+    sessionToken: string,
+    tramCanId: number,
+  ): Promise<boolean> => {
+    try {
+      const response = await authApi.selectStation({ sessionToken, tramCanId });
+
+      if (response.success) {
+        // Update auth state with final session
+        const newTenantInfo: TenantInfo = {
+          khachHang: response.data.khachHang as KhachHang,
+          selectedStation: response.data.selectedStation,
+        };
+
+        setAuthState({
+          isAuthenticated: true,
+          isLoading: false,
+          sessionToken: response.data.sessionToken,
+          tenantInfo: newTenantInfo,
+          userInfo: {
+            id: response.data.khachHang.maKhachHang || 0,
+            username: response.data.khachHang.maKhachHang,
+          } as Nhanvien,
+        });
+
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Station selection error:", error);
+      return false;
+    }
   };
 
-  // Đăng nhập
+  // ✅ LEGACY: Backward compatibility login
   const login = async (credentials: LoginRequest): Promise<boolean> => {
     try {
-      setIsLoading(true);
-      const response = await authApi.login(credentials);
-      console.log("Login response:", response);
-      if (response.success) {
-        setUserInfo(response.data.user);
-        setIsAuthenticated(true);
-        setShowTokenExpiredModal(false); // Ẩn modal nếu đăng nhập thành công
-        return true;
-      } else {
-        return false;
+      // Convert old login to new tenant login
+      const tenantCredentials: TenantLoginRequest = {
+        maKhachHang: credentials.username,
+        password: credentials.password,
+      };
+
+      const loginResult = await tenantLogin(tenantCredentials);
+
+      if (loginResult.success && loginResult.data) {
+        // If only one station, auto-select it
+        if (loginResult.data.tramCans.length === 1) {
+          return await selectStation(
+            loginResult.data.sessionToken,
+            loginResult.data.tramCans[0].id,
+          );
+        } else {
+          // Multiple stations - need to navigate to selection screen
+          // This will be handled by the LoginScreen component
+          return false; // Return false to indicate additional step needed
+        }
       }
+      return false;
     } catch (error) {
       console.error("Login error:", error);
       return false;
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // Đăng xuất
+  // ✅ UPDATED: Logout
   const logout = async (): Promise<void> => {
     try {
-      setIsLoading(true);
       await authApi.logout();
-      setUserInfo(null);
-      setIsAuthenticated(false);
-      setShowTokenExpiredModal(false);
+      setAuthState({
+        isAuthenticated: false,
+        isLoading: false,
+        sessionToken: null,
+        tenantInfo: null,
+        userInfo: null,
+      });
     } catch (error) {
       console.error("Logout error:", error);
-    } finally {
-      setIsLoading(false);
+      // Even if API call fails, clear local state
+      setAuthState({
+        isAuthenticated: false,
+        isLoading: false,
+        sessionToken: null,
+        tenantInfo: null,
+        userInfo: null,
+      });
     }
   };
 
-  // Kiểm tra trạng thái xác thực
-  const checkAuthentication = async (): Promise<boolean> => {
+  // ✅ NEW: Session validation
+  const validateSession = async (): Promise<boolean> => {
     try {
-      setIsLoading(true);
-      const isLoggedIn = await authApi.isAuthenticated();
-      if (isLoggedIn) {
-        const user = await authApi.getCurrentUser();
-        if (user) {
-          setUserInfo(user);
-          setIsAuthenticated(true);
-          return true;
-        }
+      return await authApi.validateToken();
+    } catch (error) {
+      console.error("Session validation error:", error);
+      return false;
+    }
+  };
+
+  // ✅ NEW: Handle token expired
+  const handleTokenExpired = () => {
+    setShowTokenExpiredModal(true);
+    setAuthState({
+      isAuthenticated: false,
+      isLoading: false,
+      sessionToken: null,
+      tenantInfo: null,
+      userInfo: null,
+    });
+    authApi.logout();
+  };
+
+  // ✅ NEW: Station switching
+  const switchStation = async (tramCanId: number): Promise<boolean> => {
+    try {
+      const response = await stationApi.switchStation(tramCanId);
+
+      if (response.success) {
+        // Update auth state with new station info
+        const newTenantInfo = {
+          khachHang: response.data.khachHang,
+          selectedStation: response.data.selectedStation,
+        };
+
+        setAuthState((prev) => ({
+          ...prev,
+          sessionToken: response.data.sessionToken,
+          tenantInfo: newTenantInfo,
+          userInfo: {
+            ...prev.userInfo,
+            id: response.data.khachHang.maKhachHang || 0,
+            username: response.data.khachHang.maKhachHang,
+          } as Nhanvien,
+        }));
+
+        return true;
       }
-      setIsAuthenticated(false);
       return false;
     } catch (error) {
-      console.error("Check authentication error:", error);
-      setIsAuthenticated(false);
-      setShowTokenExpiredModal(true);
+      console.error("Station switching error:", error);
       return false;
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const value = {
-    isLoading,
-    isAuthenticated,
-    userInfo,
-    login,
-    logout,
-    checkAuthentication,
-    showTokenExpiredModal,
-    handleTokenExpired,
-    hideTokenExpiredModal,
+  // ✅ NEW: Get station list
+  const getMyStations = async () => {
+    try {
+      const response = await stationApi.getMyStations();
+      return response.success ? response.data : [];
+    } catch (error) {
+      console.error("Get my stations error:", error);
+      return [];
+    }
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-      <TokenExpiredModal
-        visible={showTokenExpiredModal}
-        onRetryLogin={hideTokenExpiredModal}
-        onClose={hideTokenExpiredModal}
-      />
-    </AuthContext.Provider>
+  const contextValue = React.useMemo<AuthContextType>(
+    () => ({
+      // New multi-tenant methods
+      tenantLogin,
+      selectStation,
+      switchStation,
+      getMyStations,
+
+      // State
+      isAuthenticated: authState.isAuthenticated,
+      isLoading: authState.isLoading,
+      sessionToken: authState.sessionToken,
+      tenantInfo: authState.tenantInfo,
+
+      // Legacy methods
+      login,
+      logout,
+      userInfo: authState.userInfo,
+
+      // Session management
+      validateSession,
+      handleTokenExpired,
+      showTokenExpiredModal,
+      hideTokenExpiredModal: () => setShowTokenExpiredModal(false),
+    }),
+    [
+      tenantLogin,
+      selectStation,
+      switchStation,
+      getMyStations,
+      authState.isAuthenticated,
+      authState.isLoading,
+      authState.sessionToken,
+      authState.tenantInfo,
+      login,
+      logout,
+      authState.userInfo,
+      validateSession,
+      handleTokenExpired,
+      showTokenExpiredModal,
+    ],
   );
+
+  return (
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
+  );
+};
+
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 };

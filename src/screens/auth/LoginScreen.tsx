@@ -25,33 +25,43 @@ import { APP_NAME, APP_VERSION } from "@/constants/config";
 
 const LoginScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { login } = useAuth();
+  const { tenantLogin } = useAuth(); // ✅ Sử dụng tenantLogin
   const { colors, isDarkMode } = useAppTheme();
 
-  const [username, setUsername] = useState("");
+  // ✅ Thay đổi từ username → maKhachHang
+  const [maKhachHang, setMaKhachHang] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({
-    username: "",
+    maKhachHang: "",
     password: "",
   });
 
   const validateInputs = () => {
     let isValid = true;
     const newErrors = {
-      username: "",
+      maKhachHang: "",
       password: "",
     };
 
-    // Validate username
-    if (!username.trim()) {
-      newErrors.username = "Vui lòng nhập tên đăng nhập";
+    // ✅ Validate mã khách hàng
+    if (!maKhachHang.trim()) {
+      newErrors.maKhachHang = "Vui lòng nhập mã khách hàng";
+      isValid = false;
+    } else if (maKhachHang.length > 20) {
+      newErrors.maKhachHang = "Mã khách hàng không được vượt quá 20 ký tự";
+      isValid = false;
+    } else if (!/^[A-Za-z0-9]+$/.test(maKhachHang)) {
+      newErrors.maKhachHang = "Mã khách hàng chỉ được chứa chữ cái và số";
       isValid = false;
     }
 
     // Validate password
     if (!password.trim()) {
       newErrors.password = "Vui lòng nhập mật khẩu";
+      isValid = false;
+    } else if (password.length < 6) {
+      newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
       isValid = false;
     }
 
@@ -64,22 +74,37 @@ const LoginScreen: React.FC = () => {
 
     try {
       setLoading(true);
-      const success = await login({ username, password });
 
-      if (!success) {
+      // ✅ Sử dụng tenantLogin API mới
+      const result = await tenantLogin({ maKhachHang, password });
+
+      if (result.success && result.data) {
+        // ✅ Navigate đến StationSelection với data
+        navigation.navigate("StationSelection", {
+          sessionToken: result.data.sessionToken,
+          khachHang: result.data.khachHang,
+          tramCans: result.data.tramCans,
+        });
+      } else {
         Alert.alert(
           "Đăng nhập thất bại",
-          "Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.",
+          "Mã khách hàng hoặc mật khẩu không đúng. Vui lòng thử lại.",
         );
       }
     } catch (error) {
       console.error("Login error:", error);
       Alert.alert(
         "Lỗi đăng nhập",
-        "Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại sau.",
+        "Có lỗi xảy ra khi đăng nhập. Vui lòng kiểm tra kết nối mạng và thử lại.",
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const clearError = (field: string) => {
+    if (errors[field as keyof typeof errors]) {
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
 
@@ -88,73 +113,77 @@ const LoginScreen: React.FC = () => {
       style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
       <StatusBar style={isDarkMode ? "light" : "dark"} />
+
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
         >
-          <View style={styles.logoContainer}>
-            <Image
-              source={require("../../../assets/logo.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <Text style={[styles.title, { color: colors.primary }]}>
+          {/* Header Section */}
+          <View style={styles.headerContainer}>
+            <Text style={[styles.title, { color: colors.text }]}>
               {APP_NAME}
             </Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Đăng nhập để tiếp tục
+              Quản lý cân xe
+            </Text>
+            <Text style={[styles.subtitle2, { color: colors.textSecondary }]}>
+              Đăng nhập vào hệ thống
             </Text>
           </View>
 
+          {/* Form Section */}
           <View style={styles.formContainer}>
+            {/* ✅ Input mã khách hàng */}
             <Input
-              label="Tên đăng nhập"
-              placeholder="Nhập tên đăng nhập"
-              value={username}
+              label="Mã khách hàng"
+              placeholder="Nhập mã khách hàng của bạn"
+              value={maKhachHang}
               onChangeText={(text) => {
-                setUsername(text);
-                if (errors.username) {
-                  setErrors((prev) => ({ ...prev, username: "" }));
-                }
+                setMaKhachHang(text.toUpperCase()); // Auto uppercase
+                clearError("maKhachHang");
               }}
-              error={errors.username}
-              autoCapitalize="none"
+              error={errors.maKhachHang}
               leftIcon={
-                <Ionicons
-                  name="person-outline"
-                  size={20}
-                  color={colors.gray600}
-                />
+                <Ionicons name="business" size={20} color={colors.primary} />
               }
+              autoCapitalize="characters"
+              autoCorrect={false}
+              maxLength={20}
+              returnKeyType="next"
+              containerStyle={styles.inputContainer}
             />
 
+            {/* Input mật khẩu */}
             <Input
               label="Mật khẩu"
-              placeholder="Nhập mật khẩu"
+              placeholder="Nhập mật khẩu của bạn"
               value={password}
               onChangeText={(text) => {
                 setPassword(text);
-                if (errors.password) {
-                  setErrors((prev) => ({ ...prev, password: "" }));
-                }
+                clearError("password");
               }}
               error={errors.password}
-              secure
+              secureTextEntry
               leftIcon={
-                <Ionicons
-                  name="lock-closed-outline"
-                  size={20}
-                  color={colors.gray600}
-                />
+                <Ionicons name="lock-closed" size={20} color={colors.primary} />
               }
+              returnKeyType="go"
+              onSubmitEditing={handleLogin}
+              containerStyle={styles.inputContainer}
             />
 
-            <TouchableOpacity style={styles.forgotPasswordContainer}>
+            {/* Forgot Password Link */}
+            <TouchableOpacity
+              style={styles.forgotPasswordContainer}
+              disabled={loading}
+            >
               <Text
                 style={[styles.forgotPasswordText, { color: colors.primary }]}
               >
@@ -162,24 +191,62 @@ const LoginScreen: React.FC = () => {
               </Text>
             </TouchableOpacity>
 
-            <Button
+            {/* ✅ Login Button - Component version */}
+            {/* <Button
               title="Đăng nhập"
               onPress={handleLogin}
               loading={loading}
-              fullWidth
-              contentStyle={styles.loginButton}
-            />
+              disabled={loading || !maKhachHang.trim() || !password.trim()}
+              style={styles.loginButton}
+              textStyle={styles.loginButtonText}
+            /> */}
+
+            {/* ✅ Fallback Button - ACTIVE */}
+            <TouchableOpacity
+              style={[
+                styles.fallbackButton,
+                {
+                  backgroundColor: loading ? colors.gray300 : colors.primary,
+                  opacity: loading ? 0.6 : 1,
+                },
+              ]}
+              onPress={handleLogin}
+              disabled={loading || !maKhachHang.trim() || !password.trim()}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[styles.fallbackButtonText, { color: colors.white }]}
+              >
+                {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Help Section */}
+          <View style={styles.helpContainer}>
+            <TouchableOpacity style={styles.helpItem}>
+              <Ionicons
+                name="help-circle-outline"
+                size={20}
+                color={colors.textSecondary}
+              />
+              <Text style={[styles.helpText, { color: colors.textSecondary }]}>
+                Cần hỗ trợ đăng nhập?
+              </Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
 
-        <View style={styles.footer}>
-          <Text style={[styles.versionText, { color: colors.gray500 }]}>
-            Phiên bản: {APP_VERSION}
+        {/* Footer */}
+        <View style={styles.footerContainer}>
+          <Text style={[styles.versionText, { color: colors.textSecondary }]}>
+            Phiên bản {APP_VERSION}
           </Text>
         </View>
-
-        <Loading loading={loading} overlay message="Đang đăng nhập..." />
       </KeyboardAvoidingView>
+
+      {/* Loading Overlay */}
+      {loading && <Loading loading={true} overlay message="Đang xác thực..." />}
     </SafeAreaView>
   );
 };
@@ -191,50 +258,116 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollContent: {
+  scrollContainer: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 10,
-    paddingBottom: 24,
+    padding: 24,
+    paddingBottom: 200, // ✅ Tăng thêm space cho button
+    minHeight: "100%", // ✅ Đảm bảo chiều cao tối thiểu
   },
-  logoContainer: {
+  headerContainer: {
     alignItems: "center",
-    marginTop: "10%",
-    marginBottom: 30,
+    marginTop: 40,
+    marginBottom: 50,
   },
   logo: {
-    width: 100,
-    height: 100,
-    marginBottom: 16,
+    width: 120,
+    height: 120,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "bold",
     marginBottom: 8,
+    textAlign: "center",
   },
   subtitle: {
+    fontSize: 18,
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  subtitle2: {
     fontSize: 16,
+    textAlign: "center",
+    fontStyle: "italic",
   },
   formContainer: {
+    flex: 1,
     width: "100%",
+  },
+  inputContainer: {
+    marginBottom: 20,
   },
   forgotPasswordContainer: {
     alignSelf: "flex-end",
-    marginBottom: 24,
+    marginBottom: 30,
+    paddingVertical: 8,
   },
   forgotPasswordText: {
     fontSize: 14,
+    fontWeight: "500",
+  },
+  buttonContainer: {
+    marginTop: 10,
+    marginBottom: 30,
   },
   loginButton: {
-    height: 48,
+    height: 56,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  footer: {
+  loginButtonText: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  // ✅ Fallback button styles - REQUIRED
+  fallbackButton: {
+    height: 56,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    padding: 16,
+    marginTop: 20,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  fallbackButtonText: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  helpContainer: {
+    alignItems: "center",
+    marginTop: 20,
+  },
+  helpItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 12,
+  },
+  helpText: {
+    fontSize: 14,
+  },
+  footerContainer: {
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 24,
   },
   versionText: {
     fontSize: 12,
+    textAlign: "center",
   },
 });
 

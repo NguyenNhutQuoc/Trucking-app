@@ -12,11 +12,20 @@ import {
   Soxe,
   NhanvienWithPermissions,
   Nhanvien,
+  TramCan,
 } from "./api.types";
 
 // Auth Navigator
 export type AuthStackParamList = {
   Login: undefined;
+  StationSelection: {
+    sessionToken: string;
+    khachHang: {
+      maKhachHang: string;
+      tenKhachHang: string;
+    };
+    tramCans: TramCan[];
+  };
 };
 
 // Tab Navigation
@@ -81,6 +90,14 @@ export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Main: NavigatorScreenParams<MainTabParamList>;
   AddEditWeighing: { weighing?: Phieucan };
+  StationSelection: {
+    sessionToken: string;
+    khachHang: {
+      maKhachHang: string;
+      tenKhachHang: string;
+    };
+    tramCans: TramCan[];
+  };
   WeighingDetail: {
     weighing: Phieucan;
     weighingId: number;

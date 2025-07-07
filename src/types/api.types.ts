@@ -280,3 +280,145 @@ export interface Kiemdinh {
   noidungkhuyenmai: string;
   temp: number;
 }
+
+// src/types/api.types.ts
+
+import { NavigatorScreenParams } from "@react-navigation/native";
+
+// ✅ THAY ĐỔI: Thêm types cho multi-tenant
+export interface TenantLoginRequest {
+  maKhachHang: string;
+  password: string;
+}
+
+export interface TramCan {
+  id: number;
+  maTramCan: string;
+  tenTramCan: string;
+  diaChi: string;
+}
+
+export interface KhachHang {
+  maKhachHang: string;
+  tenKhachHang: string;
+}
+
+export interface TenantLoginResponse {
+  success: boolean;
+  message: string;
+  data: {
+    sessionToken: string;
+    khachHang: KhachHang;
+    tramCans: TramCan[];
+  };
+}
+
+export interface StationSelectionRequest {
+  sessionToken: string;
+  tramCanId: number;
+}
+
+export interface SelectedStation {
+  id: number;
+  tenTramCan: string;
+}
+
+export interface StationSelectionResponse {
+  success: boolean;
+  message: string;
+  data: {
+    sessionToken: string;
+    selectedStation: SelectedStation;
+    khachHang: KhachHang;
+  };
+}
+
+export interface SessionValidationRequest {
+  sessionToken: string;
+}
+
+export interface SessionValidationResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    khachHang: KhachHang;
+    tramCan: SelectedStation;
+  };
+}
+
+export interface TenantInfo {
+  khachHang: KhachHang;
+  selectedStation: SelectedStation;
+}
+
+// ✅ GIỮ NGUYÊN: Existing types for backward compatibility
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+// Duplicate LoginResponse removed to resolve type conflict
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface Nhanvien {
+  id: number;
+  username: string;
+  email?: string;
+  hoTen?: string;
+  vaiTro?: string;
+  trangThai?: string;
+  ngayTao?: string;
+  ngayCapNhat?: string;
+}
+
+// ✅ THAY ĐỔI: Cập nhật AuthState để support multi-tenant
+export interface AuthState {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  sessionToken: string | null;
+  tenantInfo: TenantInfo | null;
+  // Keep for backward compatibility
+  userInfo: Nhanvien | null;
+}
+
+// ✅ THAY ĐỔI: Navigation params
+export interface AuthStackParamList {
+  Login: undefined;
+  StationSelection: {
+    sessionToken: string;
+    khachHang: KhachHang;
+    tramCans: TramCan[];
+  };
+}
+
+export interface RootStackParamList {
+  Auth: NavigatorScreenParams<AuthStackParamList>;
+  Main: undefined;
+}
+
+// ✅ THAY ĐỔI: Error types
+export interface AuthError {
+  code: string;
+  message: string;
+  details?: any;
+}
+
+export interface SessionExpiredError extends AuthError {
+  code: "SESSION_EXPIRED";
+  message: "Phiên làm việc đã hết hạn";
+}
+
+export interface TenantConnectionError extends AuthError {
+  code: "TENANT_CONNECTION_FAILED";
+  message: "Không thể kết nối tới database trạm cân";
+}

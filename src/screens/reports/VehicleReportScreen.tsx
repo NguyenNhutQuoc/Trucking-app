@@ -75,7 +75,7 @@ const VehicleReportsScreen: React.FC = () => {
     try {
       const response = await vehicleApi.getAllVehicles();
       if (response.success) {
-        setVehicles(response.data);
+        setVehicles(response.data.data);
       }
     } catch (error) {
       console.error("Load vehicles error:", error);
@@ -93,7 +93,7 @@ const VehicleReportsScreen: React.FC = () => {
       );
 
       if (response.success) {
-        const stats = response.data;
+        const stats = response.data.data;
         setTotalWeight(stats.totalWeight);
         setTotalVehicles(stats.totalVehicles);
 

@@ -55,7 +55,7 @@ const GroupPermissionsScreen: React.FC = () => {
         group.nhomId,
       );
       if (groupResponse.success) {
-        const groupWithPermissions = groupResponse.data;
+        const groupWithPermissions = groupResponse.data.data;
         setGroupDetail(groupWithPermissions);
 
         // Extract form IDs from group permissions
@@ -72,7 +72,7 @@ const GroupPermissionsScreen: React.FC = () => {
       const formsResponse = await permissionApi.getAllForms();
       if (formsResponse.success) {
         // Group forms by category
-        const forms = formsResponse.data;
+        const forms = formsResponse.data.data;
         setAllForms(forms);
 
         const categories = forms.reduce((acc: Record<string, Form[]>, form) => {

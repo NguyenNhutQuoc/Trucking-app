@@ -51,7 +51,7 @@ const ProductListScreen: React.FC = () => {
       setLoading(true);
       const response = await productApi.getAllProducts();
       if (response.success) {
-        setProducts(response.data);
+        setProducts(response.data.data);
       }
     } catch (error) {
       console.error("Load products error:", error);

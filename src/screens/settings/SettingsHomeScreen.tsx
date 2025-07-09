@@ -1,4 +1,7 @@
-// src/screens/settings/SettingsHomeScreen.tsx - Updated with Dev Badges and Safe Navigation
+// ===============================================================
+// src/screens/settings/SettingsHomeScreen.tsx - Fixed Layout
+// ===============================================================
+
 import React from "react";
 import {
   View,
@@ -20,9 +23,7 @@ import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import UnderDevelopmentModal from "@/components/common/UnderDevelopmentModal";
 import { APP_VERSION, BUILD_NUMBER } from "@/constants/config";
-import { SettingsStackScreenProps } from "@/types/navigation.types";
-
-type NavigationProp = SettingsStackScreenProps<"SettingsHome">["navigation"];
+import ThemedView from "@components/common/ThemedView";
 
 const SettingsHomeScreen: React.FC = () => {
   const { userInfo, logout } = useAuth();
@@ -128,7 +129,6 @@ const SettingsHomeScreen: React.FC = () => {
             color={isDevelopment ? colors.warning : colors.primary}
           />
 
-          {/* Development overlay icon */}
           {isDevelopment && (
             <View style={styles.devOverlay}>
               <Ionicons name="construct" size={10} color={colors.warning} />
@@ -148,7 +148,6 @@ const SettingsHomeScreen: React.FC = () => {
             >
               {item.title}
             </Text>
-
             {isDevelopment && (
               <View
                 style={[styles.devBadge, { backgroundColor: colors.warning }]}
@@ -157,35 +156,20 @@ const SettingsHomeScreen: React.FC = () => {
               </View>
             )}
           </View>
-
-          {item.description && (
-            <Text
-              style={[
-                styles.settingDescription,
-                {
-                  color: isDevelopment
-                    ? colors.textSecondary + "80"
-                    : colors.textSecondary,
-                },
-              ]}
-            >
-              {item.description}
-            </Text>
-          )}
-
-          {isDevelopment && (
-            <Text style={[styles.devStatus, { color: colors.warning }]}>
-              Đang phát triển
-            </Text>
-          )}
+          <Text
+            style={[
+              styles.settingDescription,
+              { color: isDevelopment ? colors.warning : colors.textSecondary },
+            ]}
+          >
+            {isDevelopment ? "Đang phát triển" : item.description}
+          </Text>
         </View>
 
         <Ionicons
-          name={
-            isDevelopment ? "information-circle-outline" : "chevron-forward"
-          }
-          size={20}
-          color={isDevelopment ? colors.warning : colors.gray500}
+          name="chevron-forward"
+          size={16}
+          color={colors.gray500}
         />
       </TouchableOpacity>
     );
@@ -196,39 +180,32 @@ const SettingsHomeScreen: React.FC = () => {
     title: string,
     value: boolean,
     onValueChange: (value: boolean) => void,
-    description?: string,
-  ) => (
-    <View style={styles.settingItem}>
-      <View
-        style={[
-          styles.settingIconContainer,
-          { backgroundColor: colors.gray100 },
-        ]}
-      >
-        <Ionicons name={icon as any} size={24} color={colors.primary} />
+    description: string,
+  ) => {
+    return (
+      <View style={styles.switchItem}>
+        <View style={styles.switchLeft}>
+          <View style={[styles.switchIcon, { backgroundColor: colors.primary + "15" }]}>
+            <Ionicons name={icon as any} size={20} color={colors.primary} />
+          </View>
+          <View style={styles.switchContent}>
+            <Text style={[styles.switchTitle, { color: colors.text }]}>
+              {title}
+            </Text>
+            <Text style={[styles.switchDescription, { color: colors.textSecondary }]}>
+              {description}
+            </Text>
+          </View>
+        </View>
+        <Switch
+          value={value}
+          onValueChange={onValueChange}
+          trackColor={{ false: colors.gray300, true: colors.primary + "40" }}
+          thumbColor={value ? colors.primary : colors.gray100}
+        />
       </View>
-
-      <View style={styles.settingContent}>
-        <Text style={[styles.settingTitle, { color: colors.text }]}>
-          {title}
-        </Text>
-        {description && (
-          <Text
-            style={[styles.settingDescription, { color: colors.textSecondary }]}
-          >
-            {description}
-          </Text>
-        )}
-      </View>
-
-      <Switch
-        value={value}
-        onValueChange={onValueChange}
-        trackColor={{ false: colors.gray300, true: colors.primary + "70" }}
-        thumbColor={value ? colors.primary : colors.gray100}
-      />
-    </View>
-  );
+    );
+  };
 
   const handleAccountSettings = () => {
     showModalVersion(
@@ -274,34 +251,27 @@ const SettingsHomeScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: colors.background }]}
-    >
-      <Header title="Cài Đặt" showBack />
+    <ThemedView style={[styles.safeArea, { backgroundColor: colors.background }]} useSafeArea>
+      <Header title="Cài đặt" showBack />
 
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
       >
+        {/* Profile Card */}
         <Card style={styles.profileCard}>
           <View style={styles.profileSection}>
-            <View
-              style={[
-                styles.profileAvatar,
-                { backgroundColor: colors.primary + "15" },
-              ]}
-            >
+            <View style={[styles.profileAvatar, { backgroundColor: colors.primary + "15" }]}>
               <Ionicons name="person" size={40} color={colors.primary} />
             </View>
 
             <View style={styles.profileInfo}>
               <Text style={[styles.profileName, { color: colors.text }]}>
-                {userInfo?.tenNV || "User"}
+                {userInfo?.hoTen || "User"}
               </Text>
-              <Text
-                style={[styles.profileRole, { color: colors.textSecondary }]}
-              >
-                {userInfo?.type === 1 ? "Quản trị viên" : "Nhân viên"}
+              <Text style={[styles.profileRole, { color: colors.textSecondary }]}>
+                {userInfo?.vaiTro === "QUAN_TRI" ? "Quản trị viên" : "Nhân viên"}
               </Text>
             </View>
           </View>
@@ -319,9 +289,7 @@ const SettingsHomeScreen: React.FC = () => {
             onPress={handleAccountSettings}
           >
             <View style={styles.accountButtonContent}>
-              <View
-                style={[styles.devBadge, { backgroundColor: colors.warning }]}
-              >
+              <View style={[styles.devBadge, { backgroundColor: colors.warning }]}>
                 <Text style={styles.devBadgeText}>DEV</Text>
               </View>
               <Ionicons
@@ -330,27 +298,25 @@ const SettingsHomeScreen: React.FC = () => {
                 color={colors.warning}
                 style={styles.accountButtonIcon}
               />
-              <Text
-                style={[styles.accountButtonText, { color: colors.warning }]}
-              >
+              <Text style={[styles.accountButtonText, { color: colors.warning }]}>
                 Quản lý tài khoản
               </Text>
             </View>
           </TouchableOpacity>
         </Card>
 
+        {/* App Settings */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
           Cài đặt ứng dụng
         </Text>
-
         <Card style={styles.settingsCard}>
           {settingItems.map(renderSettingItem)}
         </Card>
 
+        {/* Quick Settings */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
           Tùy chọn nhanh
         </Text>
-
         <Card style={styles.settingsCard}>
           {renderSwitchItem(
             "notifications-outline",
@@ -369,7 +335,7 @@ const SettingsHomeScreen: React.FC = () => {
           )}
 
           {renderSwitchItem(
-            "moon-outline",
+            isDarkMode ? "sunny-outline" : "moon-outline",
             "Chế độ tối",
             isDarkMode,
             toggleTheme,
@@ -377,8 +343,10 @@ const SettingsHomeScreen: React.FC = () => {
           )}
         </Card>
 
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Khác</Text>
-
+        {/* Other Settings */}
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Khác
+        </Text>
         <Card style={styles.settingsCard}>
           <TouchableOpacity
             style={[
@@ -391,42 +359,23 @@ const SettingsHomeScreen: React.FC = () => {
             ]}
             onPress={handleHelp}
           >
-            <View
-              style={[
-                styles.settingIconContainer,
-                { backgroundColor: colors.warning + "15" },
-              ]}
-            >
-              <Ionicons
-                name="help-circle-outline"
-                size={24}
-                color={colors.warning}
-              />
+            <View style={[styles.settingIconContainer, { backgroundColor: colors.warning + "15" }]}>
+              <Ionicons name="help-circle-outline" size={24} color={colors.warning} />
             </View>
-
             <View style={styles.settingContent}>
               <View style={styles.titleRow}>
-                <Text
-                  style={[styles.settingTitle, { color: colors.text + "80" }]}
-                >
+                <Text style={[styles.settingTitle, { color: colors.text + "80" }]}>
                   Trợ giúp & Hỗ trợ
                 </Text>
-                <View
-                  style={[styles.devBadge, { backgroundColor: colors.warning }]}
-                >
+                <View style={[styles.devBadge, { backgroundColor: colors.warning }]}>
                   <Text style={styles.devBadgeText}>DEV</Text>
                 </View>
               </View>
-              <Text style={[styles.devStatus, { color: colors.warning }]}>
+              <Text style={[styles.settingDescription, { color: colors.warning }]}>
                 Đang phát triển
               </Text>
             </View>
-
-            <Ionicons
-              name="information-circle-outline"
-              size={20}
-              color={colors.warning}
-            />
+            <Ionicons name="chevron-forward" size={16} color={colors.gray500} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -440,42 +389,23 @@ const SettingsHomeScreen: React.FC = () => {
             ]}
             onPress={handleTerms}
           >
-            <View
-              style={[
-                styles.settingIconContainer,
-                { backgroundColor: colors.warning + "15" },
-              ]}
-            >
-              <Ionicons
-                name="document-text-outline"
-                size={24}
-                color={colors.warning}
-              />
+            <View style={[styles.settingIconContainer, { backgroundColor: colors.warning + "15" }]}>
+              <Ionicons name="document-text-outline" size={24} color={colors.warning} />
             </View>
-
             <View style={styles.settingContent}>
               <View style={styles.titleRow}>
-                <Text
-                  style={[styles.settingTitle, { color: colors.text + "80" }]}
-                >
+                <Text style={[styles.settingTitle, { color: colors.text + "80" }]}>
                   Điều khoản & Quy định
                 </Text>
-                <View
-                  style={[styles.devBadge, { backgroundColor: colors.warning }]}
-                >
+                <View style={[styles.devBadge, { backgroundColor: colors.warning }]}>
                   <Text style={styles.devBadgeText}>DEV</Text>
                 </View>
               </View>
-              <Text style={[styles.devStatus, { color: colors.warning }]}>
+              <Text style={[styles.settingDescription, { color: colors.warning }]}>
                 Đang phát triển
               </Text>
             </View>
-
-            <Ionicons
-              name="information-circle-outline"
-              size={20}
-              color={colors.warning}
-            />
+            <Ionicons name="chevron-forward" size={16} color={colors.gray500} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -489,75 +419,49 @@ const SettingsHomeScreen: React.FC = () => {
             ]}
             onPress={handleAppInfo}
           >
-            <View
-              style={[
-                styles.settingIconContainer,
-                { backgroundColor: colors.warning + "15" },
-              ]}
-            >
-              <Ionicons
-                name="information-circle-outline"
-                size={24}
-                color={colors.warning}
-              />
+            <View style={[styles.settingIconContainer, { backgroundColor: colors.warning + "15" }]}>
+              <Ionicons name="information-circle-outline" size={24} color={colors.warning} />
             </View>
-
             <View style={styles.settingContent}>
               <View style={styles.titleRow}>
-                <Text
-                  style={[styles.settingTitle, { color: colors.text + "80" }]}
-                >
+                <Text style={[styles.settingTitle, { color: colors.text + "80" }]}>
                   Thông tin ứng dụng
                 </Text>
-                <View
-                  style={[styles.devBadge, { backgroundColor: colors.warning }]}
-                >
+                <View style={[styles.devBadge, { backgroundColor: colors.warning }]}>
                   <Text style={styles.devBadgeText}>DEV</Text>
                 </View>
               </View>
-              <Text
-                style={[
-                  styles.settingDescription,
-                  { color: colors.textSecondary + "80" },
-                ]}
-              >
+              <Text style={[styles.settingDescription, { color: colors.textSecondary + "80" }]}>
                 Phiên bản {APP_VERSION} (Build {BUILD_NUMBER})
               </Text>
               <Text style={[styles.devStatus, { color: colors.warning }]}>
                 Đang phát triển
               </Text>
             </View>
-
-            <Ionicons
-              name="information-circle-outline"
-              size={20}
-              color={colors.warning}
-            />
+            <Ionicons name="chevron-forward" size={16} color={colors.gray500} />
           </TouchableOpacity>
         </Card>
 
+        {/* Logout Button */}
         <View style={styles.logoutButtonContainer}>
           <Button
             title="Đăng xuất"
             variant="outline"
             contentStyle={{ ...styles.logoutButton, borderColor: colors.error }}
             onPress={handleLogout}
-            icon={
-              <Ionicons name="log-out-outline" size={18} color={colors.error} />
-            }
+            icon={<Ionicons name="log-out-outline" size={18} color={colors.error} />}
             textStyle={{ color: colors.error }}
           />
         </View>
       </ScrollView>
 
-      {/* Under Development Modal */}
       <UnderDevelopmentModal
         visible={showModal}
         onClose={closeModal}
         featureName={currentFeature}
         message={currentMessage}
       />
-    </SafeAreaView>
+    </ThemedView>
   );
 };
 
@@ -568,8 +472,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  // ✅ FIXED: Better content spacing to account for fixed header
   content: {
     padding: 16,
+    paddingTop: 8, // Reduced since header now has proper spacing
     paddingBottom: 32,
   },
   profileCard: {
@@ -602,7 +508,6 @@ const styles = StyleSheet.create({
   accountButton: {
     borderRadius: 8,
     padding: 12,
-    position: "relative",
   },
   accountButtonContent: {
     flexDirection: "row",
@@ -633,7 +538,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0,0,0,0.1)",
-    position: "relative",
   },
   settingIconContainer: {
     width: 40,
@@ -686,6 +590,41 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginTop: 2,
   },
+
+  // ✅ IMPROVED: Switch items styling
+  switchItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.1)",
+  },
+  switchLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  switchIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  switchContent: {
+    flex: 1,
+  },
+  switchTitle: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+  switchDescription: {
+    fontSize: 12,
+  },
+
   logoutButtonContainer: {
     marginTop: 8,
   },

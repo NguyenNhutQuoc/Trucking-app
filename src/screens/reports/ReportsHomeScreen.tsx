@@ -39,7 +39,7 @@ const ReportsHomeScreen: React.FC = () => {
       setLoading(true);
       const response = await weighingApi.getTodayStatistics();
       if (response.success) {
-        setStatistics(response.data);
+        setStatistics(response.data.data);
       }
     } catch (error) {
       console.error("Load statistics error:", error);

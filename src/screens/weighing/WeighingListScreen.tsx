@@ -111,7 +111,7 @@ const WeighingListScreen: React.FC = () => {
       setLoading(true);
       const response = await weighingApi.getAllWeighings();
       if (response.success) {
-        const sortedWeighings = response.data.sort((a, b) => {
+        const sortedWeighings = response.data.data.sort((a, b) => {
           return (
             new Date(b.ngaycan1).getTime() - new Date(a.ngaycan1).getTime()
           );

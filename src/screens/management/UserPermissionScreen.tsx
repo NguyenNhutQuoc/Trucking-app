@@ -53,7 +53,7 @@ const UserPermissionsScreen: React.FC = () => {
       // Load user permissions
       const userResponse = await userApi.getUserPermissions(user.nvId);
       if (userResponse.success) {
-        const userWithPermissions = userResponse.data;
+        const userWithPermissions = userResponse.data.data;
         setUserDetail(userWithPermissions);
 
         // Extract form IDs from user permissions
@@ -66,7 +66,7 @@ const UserPermissionsScreen: React.FC = () => {
       const formsResponse = await permissionApi.getAllForms();
       if (formsResponse.success) {
         // Group forms by category
-        const forms = formsResponse.data;
+        const forms = formsResponse.data.data;
         setAllForms(forms);
 
         const categories = forms.reduce((acc: Record<string, Form[]>, form) => {

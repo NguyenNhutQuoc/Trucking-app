@@ -9,13 +9,13 @@ import {
 } from "@/types/api.types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// ✅ THAY ĐỔI: Cập nhật interfaces
-interface TenantLoginRequest {
+// ✅ NEW: Updated interfaces for multi-tenant
+export interface TenantLoginRequest {
   maKhachHang: string;
   password: string;
 }
 
-interface TenantLoginResponse {
+export interface TenantLoginResponse {
   success: boolean;
   message: string;
   data: {
@@ -34,12 +34,12 @@ interface TenantLoginResponse {
   };
 }
 
-interface StationSelectionRequest {
+export interface StationSelectionRequest {
   sessionToken: string;
   tramCanId: number;
 }
 
-interface StationSelectionResponse {
+export interface StationSelectionResponse {
   success: boolean;
   message: string;
   data: {
@@ -55,7 +55,7 @@ interface StationSelectionResponse {
   };
 }
 
-interface SessionValidationResponse {
+export interface SessionValidationResponse {
   success: boolean;
   message: string;
   data?: {
@@ -71,47 +71,122 @@ interface SessionValidationResponse {
 }
 
 /**
- * Dịch vụ xác thực người dùng
+ * ✅ UPDATED: Dịch vụ xác thực người dùng với multi-tenant support
  */
 export const authApi = {
   /**
-   * ✅ THAY ĐỔI: Đăng nhập theo tenant (bước 1)
-   * @param credentials Thông tin đăng nhập (maKhachHang, password)
+   * ✅ NEW: Lấy session token từ AsyncStorage
    */
-  tenantLogin: async (
-    credentials: TenantLoginRequest,
-  ): Promise<TenantLoginResponse> => {
+  getSessionToken: async (): Promise<string | null> => {
     try {
-      console.log("Attempting tenant login with credentials:", credentials);
+      const sessionToken = await AsyncStorage.getItem("session_token");
+      console.log(
+        "🔑 Retrieved session token:",
+        sessionToken ? "exists" : "null",
+      );
+      return sessionToken;
+    } catch (error) {
+      console.error("❌ Get session token error:", error);
+      return null;
+    }
+  },
+
+  /**
+   * ✅ NEW: Lấy thông tin tenant từ AsyncStorage
+   */
+  getTenantInfo: async () => {
+    try {
+      const tenantInfoStr = await AsyncStorage.getItem("tenant_info");
+      if (tenantInfoStr) {
+        const tenantInfo = JSON.parse(tenantInfoStr);
+        console.log(
+          "🏢 Retrieved tenant info:",
+          tenantInfo?.khachHang?.tenKhachHang,
+        );
+        return tenantInfo;
+      }
+      console.log("🏢 No tenant info found");
+      return null;
+    } catch (error) {
+      console.error("❌ Get tenant info error:", error);
+      return null;
+    }
+  },
+
+  /**
+   * ✅ NEW: Validate session token hiện tại
+   */
+  validateToken: async (): Promise<boolean> => {
+    try {
+      const sessionToken = await AsyncStorage.getItem("session_token");
+      if (!sessionToken) {
+        console.log("🔍 No session token to validate");
+        return false;
+      }
+
+      console.log("🔍 Validating session token...");
+      const response = await authApi.validateSession(sessionToken);
+
+      if (response.success) {
+        console.log("✅ Session token is valid");
+        return true;
+      } else {
+        console.log("❌ Session token is invalid:", response.message);
+        return false;
+      }
+    } catch (error) {
+      console.error("❌ Validate token error:", error);
+      return false;
+    }
+  },
+
+  /**
+   * Đăng nhập theo tenant (bước 1)
+   */
+  tenantLogin: async (credentials: TenantLoginRequest): Promise<TenantLoginResponse> => {
+    try {
+      console.log("🔐 Starting tenant login:", credentials.maKhachHang);
+
       const response = await api.post<TenantLoginResponse>(
         "/auth/tenant-login",
         credentials,
       );
 
-      console.log("Tenant login successful:", response.data);
+      if (response.data.success) {
+        console.log("✅ Tenant login successful");
+
+        // ✅ CRITICAL FIX: Immediately store temp session token
+        console.log("💾 Storing temporary session token...");
+        await AsyncStorage.setItem("session_token", response.data.data.sessionToken);
+
+        console.log("🔑 Temp token stored:", response.data.data.sessionToken.substring(0, 20) + "...");
+      }
+
       return response.data;
     } catch (error: any) {
-      console.log("Tenant login error:", error.message);
-      console.error("Tenant login error:", error);
+      console.error("❌ Tenant login error:", error);
       throw error;
     }
   },
 
   /**
-   * ✅ THAY ĐỔI: Chọn trạm cân (bước 2)
-   * @param request Object chứa sessionToken và tramCanId
+   * Chọn trạm cân (bước 2)
    */
   selectStation: async (
     request: StationSelectionRequest,
   ): Promise<StationSelectionResponse> => {
     try {
-      console.log("Attempting station selection:", request);
+      console.log("🏭 Selecting station:", request.tramCanId);
+
+      // Temporarily store session token for this request
+      await AsyncStorage.setItem("session_token", request.sessionToken);
+
       const response = await api.post<StationSelectionResponse>(
         "/auth/select-station",
-        request,
+        { tramCanId: request.tramCanId },
       );
 
-      // ✅ THAY ĐỔI: Lưu session token và tenant info
+      // Save final session token and tenant info
       if (response.data.success) {
         await AsyncStorage.setItem(
           "session_token",
@@ -126,125 +201,138 @@ export const authApi = {
         );
       }
 
-      console.log("Station selection successful:", response.data);
+      console.log("✅ Station selection successful");
       return response.data;
     } catch (error: any) {
-      console.log("Station selection error:", error.message);
-      console.error("Station selection error:", error);
+      console.error("❌ Station selection error:", error);
       throw error;
     }
   },
 
   /**
-   * ✅ THAY ĐỔI: Validate session token
-   * @param sessionToken Token cần validate
+   * Validate session với server
    */
   validateSession: async (
     sessionToken: string,
   ): Promise<SessionValidationResponse> => {
     try {
+      console.log("🔍 Validating session with server...");
+
       const response = await api.post<SessionValidationResponse>(
         "/auth/validate-session",
         { sessionToken },
       );
+
+      console.log("✅ Session validation response:", response.data.success);
       return response.data;
     } catch (error) {
-      console.error("Validate session error:", error);
+      console.error("❌ Validate session error:", error);
       return { success: false, message: "Session validation failed" };
     }
   },
 
   /**
-   * ✅ THAY ĐỔI: Đăng xuất khỏi hệ thống
+   * Đăng xuất khỏi hệ thống
    */
   logout: async (): Promise<void> => {
     try {
+      console.log("🚪 Logging out...");
+
       const sessionToken = await AsyncStorage.getItem("session_token");
 
       if (sessionToken) {
         try {
           // Call logout API
           await api.post("/auth/logout", { sessionToken });
+          console.log("✅ Server logout successful");
         } catch (error) {
-          console.log("Logout API failed, continuing with local cleanup...");
+          console.log(
+            "⚠️ Server logout failed, continuing with local cleanup...",
+          );
         }
       }
 
-      // ✅ THAY ĐỔI: Xóa session token và tenant info
+      // Clear local storage
       await AsyncStorage.removeItem("session_token");
       await AsyncStorage.removeItem("tenant_info");
+
+      console.log("🧹 Local session cleared");
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error("❌ Logout error:", error);
       throw error;
     }
   },
 
   /**
-   * ✅ THAY ĐỔI: Kiểm tra session hiện tại có hợp lệ không
-   */
-  validateToken: async (): Promise<boolean> => {
-    try {
-      const sessionToken = await AsyncStorage.getItem("session_token");
-      if (!sessionToken) return false;
-
-      const response = await authApi.validateSession(sessionToken);
-      return response.success;
-    } catch (error) {
-      console.error("Validate token error:", error);
-      return false;
-    }
-  },
-
-  /**
-   * ✅ THAY ĐỔI: Lấy thông tin tenant đã lưu
-   */
-  getTenantInfo: async () => {
-    try {
-      const tenantInfo = await AsyncStorage.getItem("tenant_info");
-      if (tenantInfo) {
-        return JSON.parse(tenantInfo);
-      }
-      return null;
-    } catch (error) {
-      console.error("Get tenant info error:", error);
-      return null;
-    }
-  },
-
-  /**
-   * ✅ THAY ĐỔI: Kiểm tra người dùng đã đăng nhập chưa
+   * Kiểm tra người dùng đã đăng nhập chưa
    */
   isAuthenticated: async (): Promise<boolean> => {
     try {
       const sessionToken = await AsyncStorage.getItem("session_token");
       const tenantInfo = await AsyncStorage.getItem("tenant_info");
-      return !!(sessionToken && tenantInfo);
+
+      const hasLocalData = !!(sessionToken && tenantInfo);
+
+      if (!hasLocalData) {
+        console.log("🔐 No local authentication data");
+        return false;
+      }
+
+      // Validate with server
+      const isValid = await authApi.validateToken();
+      console.log("🔐 Authentication check result:", isValid);
+
+      return isValid;
     } catch (error) {
-      console.error("Check authentication error:", error);
+      console.error("❌ Authentication check error:", error);
       return false;
     }
   },
 
   /**
-   * ✅ THAY ĐỔI: Lấy session token hiện tại
+   * ✅ NEW: Refresh session token
    */
-  getSessionToken: async (): Promise<string | null> => {
+  refreshSession: async (): Promise<boolean> => {
     try {
-      return await AsyncStorage.getItem("session_token");
+      const sessionToken = await AsyncStorage.getItem("session_token");
+
+      if (!sessionToken) {
+        console.log("🔄 No session token to refresh");
+        return false;
+      }
+
+      console.log("🔄 Refreshing session...");
+
+      const response = await api.post("/auth/refresh-session", {
+        sessionToken,
+      });
+
+      if (response.data.success) {
+        console.log("✅ Session refreshed successfully");
+        return true;
+      }
+
+      console.log("❌ Session refresh failed");
+      return false;
     } catch (error) {
-      console.error("Get session token error:", error);
-      return null;
+      console.error("❌ Refresh session error:", error);
+      return false;
     }
   },
 
-  // ✅ GIỮ NGUYÊN: Các method cũ cho compatibility
+  // ============================================================================
+  // ✅ LEGACY METHODS - For backward compatibility
+  // ============================================================================
+
   /**
    * @deprecated Sử dụng tenantLogin thay thế
    */
   login: async (
     credentials: LoginRequest,
   ): Promise<ApiResponse<LoginResponse["data"]>> => {
-    // Redirect to tenant login for backward compatibility
+    console.log("⚠️ Using deprecated login method, redirecting to tenantLogin");
+
+    // Convert old login to new tenant login
     const tenantCredentials: TenantLoginRequest = {
       maKhachHang: credentials.username, // Assume username is maKhachHang
       password: credentials.password,
@@ -275,13 +363,17 @@ export const authApi = {
     passwordData: ChangePasswordRequest,
   ): Promise<ApiResponse<{ success: boolean }>> => {
     try {
+      console.log("🔑 Changing password...");
+
       const response = await api.post<ApiResponse<{ success: boolean }>>(
         "/auth/change-password",
         passwordData,
       );
+
+      console.log("✅ Password changed successfully");
       return response.data;
     } catch (error) {
-      console.error("Change password error:", error);
+      console.error("❌ Change password error:", error);
       throw error;
     }
   },
@@ -291,10 +383,14 @@ export const authApi = {
    */
   getUserPermissions: async () => {
     try {
+      console.log("🔐 Getting user permissions...");
+
       const response = await api.get("/auth/permissions");
+
+      console.log("✅ User permissions retrieved");
       return response.data;
     } catch (error) {
-      console.error("Get user permissions error:", error);
+      console.error("❌ Get user permissions error:", error);
       throw error;
     }
   },
@@ -303,18 +399,23 @@ export const authApi = {
    * @deprecated Sử dụng getTenantInfo thay thế
    */
   getCurrentUser: async () => {
+    console.log(
+      "⚠️ Using deprecated getCurrentUser method, redirecting to getTenantInfo",
+    );
+
     try {
       const tenantInfo = await authApi.getTenantInfo();
       if (tenantInfo) {
         return {
           id: tenantInfo.khachHang.id,
           username: tenantInfo.khachHang.maKhachHang,
-          // Convert tenant info to user format
+          name: tenantInfo.khachHang.tenKhachHang,
+          // Convert tenant info to user format for compatibility
         };
       }
       return null;
     } catch (error) {
-      console.error("Get current user error:", error);
+      console.error("❌ Get current user error:", error);
       return null;
     }
   },

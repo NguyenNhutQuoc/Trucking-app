@@ -83,7 +83,7 @@ const CompanyReportScreen: React.FC = () => {
     try {
       const response = await customerApi.getAllCustomers();
       if (response.success) {
-        setCompanies(response.data);
+        setCompanies(response.data.data);
       }
     } catch (error) {
       console.error("Load companies error:", error);
@@ -101,7 +101,7 @@ const CompanyReportScreen: React.FC = () => {
       );
 
       if (response.success) {
-        const stats = response.data;
+        const stats = response.data.data;
         setTotalWeight(stats.totalWeight);
         setTotalVehicles(stats.totalVehicles);
 

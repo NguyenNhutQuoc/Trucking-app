@@ -52,7 +52,7 @@ const CompanyListScreen: React.FC = () => {
       setLoading(true);
       const response = await customerApi.getAllCustomers();
       if (response.success) {
-        setCompanies(response.data);
+        setCompanies(response.data.data);
       }
     } catch (error) {
       console.error("Load companies error:", error);

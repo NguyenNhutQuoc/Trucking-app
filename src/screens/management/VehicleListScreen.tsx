@@ -51,7 +51,7 @@ const VehicleListScreen: React.FC = () => {
       setLoading(true);
       const response = await vehicleApi.getAllVehicles();
       if (response.success) {
-        setVehicles(response.data);
+        setVehicles(response.data.data);
       }
     } catch (error) {
       console.error("Load vehicles error:", error);

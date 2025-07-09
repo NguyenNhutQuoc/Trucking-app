@@ -83,7 +83,7 @@ const HomeScreen: React.FC = () => {
     try {
       const response = await weighingApi.getPendingWeighings();
       if (response.success) {
-        setPendingWeighings(response.data);
+        setPendingWeighings(response.data.data);
       }
     } catch (error) {
       console.error("Load pending weighings error:", error);
@@ -95,8 +95,9 @@ const HomeScreen: React.FC = () => {
     try {
       const today = new Date().toISOString().split("T")[0];
       const response = await weighingApi.getWeighingsByDateRange(today, today);
+      console.log(response);
       if (response.success) {
-        const data = response.data;
+        const data = response.data.data;
         setTodayStats({
           totalVehicles: data.length,
           totalWeight: data.reduce((sum, item) => {

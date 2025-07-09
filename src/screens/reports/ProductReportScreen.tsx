@@ -81,7 +81,7 @@ const ProductReportScreen: React.FC = () => {
     try {
       const response = await productApi.getAllProducts();
       if (response.success) {
-        setProducts(response.data);
+        setProducts(response.data.data);
       }
     } catch (error) {
       console.error("Load products error:", error);
@@ -97,7 +97,7 @@ const ProductReportScreen: React.FC = () => {
       if (productData.length === 0) {
         const productResponse = await productApi.getAllProducts();
         if (productResponse.success) {
-          productData = productResponse.data;
+          productData = productResponse.data.data;
           setProducts(productData);
         }
       }
@@ -108,7 +108,7 @@ const ProductReportScreen: React.FC = () => {
       );
 
       if (response.success) {
-        const stats = response.data;
+        const stats = response.data.data;
         setTotalWeight(stats.totalWeight);
         setTotalVehicles(stats.totalVehicles);
 

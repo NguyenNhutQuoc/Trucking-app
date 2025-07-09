@@ -50,7 +50,7 @@ const UserListScreen: React.FC = () => {
       setLoading(true);
       const response = await userApi.getAllUsers();
       if (response.success) {
-        setUsers(response.data);
+        setUsers(response.data.data);
       } else {
         Alert.alert(
           "Lỗi",

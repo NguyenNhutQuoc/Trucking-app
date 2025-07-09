@@ -86,7 +86,7 @@ const DateRangeReportsScreen: React.FC = () => {
       );
 
       if (response.success) {
-        const stats = response.data;
+        const stats = response.data.data;
         setTotalWeight(stats.totalWeight);
         setTotalVehicles(stats.totalVehicles);
 

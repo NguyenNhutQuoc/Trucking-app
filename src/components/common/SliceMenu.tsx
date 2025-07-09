@@ -1,4 +1,4 @@
-// src/components/common/SlideMenu.tsx - Updated with Safe Navigation
+// src/components/common/SliceMenu.tsx - Fixed Layout Issues
 import React from "react";
 import {
   View,
@@ -35,7 +35,7 @@ interface MenuItem {
   screen?: string;
   action?: () => void;
   divider?: boolean;
-  developmentFeature?: boolean; // Mark items that are under development
+  developmentFeature?: boolean;
 }
 
 const SlideMenu: React.FC<SlideMenuProps> = ({ visible, onClose }) => {
@@ -55,7 +55,6 @@ const SlideMenu: React.FC<SlideMenuProps> = ({ visible, onClose }) => {
 
   React.useEffect(() => {
     if (visible) {
-      // Animate menu in
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: 0,
@@ -69,7 +68,6 @@ const SlideMenu: React.FC<SlideMenuProps> = ({ visible, onClose }) => {
         }),
       ]).start();
     } else {
-      // Animate menu out
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: -MENU_WIDTH,
@@ -116,7 +114,7 @@ const SlideMenu: React.FC<SlideMenuProps> = ({ visible, onClose }) => {
     onClose();
     showModalVersion(
       "Đồng bộ dữ liệu",
-      "Chức năng đồng bộ dữ liệu tự động với server đang được phát triển. Hiện tại dữ liệu được lưu cục bộ trên thiết bị.",
+      "Chức năng đồng bộ dữ liệu tự động với server đang được phát triển.",
     );
   };
 
@@ -124,7 +122,7 @@ const SlideMenu: React.FC<SlideMenuProps> = ({ visible, onClose }) => {
     onClose();
     showModalVersion(
       "Trợ giúp & Hỗ trợ",
-      "Hệ thống trợ giúp tích hợp đang được xây dựng. Hiện tại vui lòng liên hệ admin để được hỗ trợ kỹ thuật.",
+      "Hệ thống trợ giúp tích hợp đang được xây dựng.",
     );
   };
 
@@ -137,7 +135,7 @@ const SlideMenu: React.FC<SlideMenuProps> = ({ visible, onClose }) => {
     },
     {
       id: "weighing",
-      title: "Danh sách cân",
+      title: "Danh sách cân", // ✅ FIXED: This is the "Menu Cân" you mentioned
       icon: "list-outline",
       screen: "WeighingList",
     },
@@ -185,7 +183,6 @@ const SlideMenu: React.FC<SlideMenuProps> = ({ visible, onClose }) => {
       icon: isDarkMode ? "sunny-outline" : "moon-outline",
       action: () => {
         toggleTheme();
-        // Don't close menu immediately for theme toggle
       },
     },
     {
@@ -284,96 +281,77 @@ const SlideMenu: React.FC<SlideMenuProps> = ({ visible, onClose }) => {
 
   return (
     <>
-      <Modal
-        visible={visible}
-        transparent
-        animationType="none"
-        onRequestClose={onClose}
-      >
-        {/* Overlay */}
-        <Animated.View
-          style={[
-            styles.overlay,
-            {
-              opacity: overlayOpacity,
-            },
-          ]}
+      {visible && (
+        <Modal
+          visible={visible}
+          transparent={true}
+          animationType="none"
+          onRequestClose={onClose}
         >
-          <TouchableOpacity
-            style={styles.overlayTouchable}
-            activeOpacity={1}
-            onPress={onClose}
-          />
-        </Animated.View>
+          <Animated.View
+            style={[styles.overlay, { opacity: overlayOpacity }]}
+          >
+            <TouchableOpacity
+              style={styles.overlayTouchable}
+              activeOpacity={1}
+              onPress={onClose}
+            />
+          </Animated.View>
 
-        {/* Menu */}
-        <Animated.View
-          style={[
-            styles.menu,
-            {
-              backgroundColor: colors.card,
-              transform: [{ translateX: slideAnim }],
-            },
-          ]}
-        >
-          <SafeAreaView style={styles.menuContainer}>
-            {/* Header */}
-            <View
-              style={[
-                styles.menuHeader,
-                {
-                  backgroundColor: colors.primary,
-                  borderBottomColor: colors.gray200,
-                },
-              ]}
-            >
-              <View style={styles.userInfo}>
-                <View
-                  style={[
-                    styles.avatar,
-                    { backgroundColor: colors.white + "20" },
-                  ]}
-                >
-                  <Ionicons name="person" size={24} color="white" />
+          <Animated.View
+            style={[
+              styles.menu,
+              { backgroundColor: colors.surface, transform: [{ translateX: slideAnim }] },
+            ]}
+          >
+            <SafeAreaView style={styles.menuContainer}>
+              {/* ✅ FIXED: Improved header spacing and alignment */}
+              <View
+                style={[styles.menuHeader, { backgroundColor: colors.primary, borderBottomColor: colors.gray200 }]}
+              >
+                <View style={styles.userInfo}>
+                  <View style={[styles.avatar, { backgroundColor: colors.primaryLight }]}>
+                    <Ionicons name="person" size={24} color="white" />
+                  </View>
+                  <View style={styles.userDetails}>
+                    <Text style={styles.userName}>
+                      {userInfo?.hoTen || "Người dùng"}
+                    </Text>
+                    <Text style={styles.userRole}>
+                      {userInfo?.vaiTro === "QUAN_TRI" ? "Quản trị viên" : "Nhân viên"}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.userDetails}>
-                  <Text style={styles.userName}>
-                    {userInfo?.tenNV || "User"}
-                  </Text>
-                  <Text style={styles.userRole}>
-                    {userInfo?.type === 1 ? "Quản trị viên" : "Nhân viên"}
-                  </Text>
-                </View>
+                <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                  <Ionicons name="close" size={24} color="white" />
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                <Ionicons name="close" size={24} color="white" />
-              </TouchableOpacity>
-            </View>
 
-            {/* Menu Items */}
-            <ScrollView
-              style={styles.menuContent}
-              showsVerticalScrollIndicator={false}
-            >
-              {menuItems.map(renderMenuItem)}
-            </ScrollView>
+              {/* ✅ FIXED: Improved menu content with better spacing */}
+              <ScrollView
+                style={styles.menuContent}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.menuScrollContent}
+              >
+                {menuItems.map(renderMenuItem)}
+              </ScrollView>
 
-            {/* Footer */}
-            <View
-              style={[styles.menuFooter, { borderTopColor: colors.gray200 }]}
-            >
-              <Text style={[styles.appName, { color: colors.text }]}>
-                {APP_NAME}
-              </Text>
-              <Text style={[styles.appVersion, { color: colors.gray500 }]}>
-                Phiên bản {APP_VERSION}
-              </Text>
-            </View>
-          </SafeAreaView>
-        </Animated.View>
-      </Modal>
+              {/* Footer */}
+              <View
+                style={[styles.menuFooter, { borderTopColor: colors.gray200 }]}
+              >
+                <Text style={[styles.appName, { color: colors.text }]}>
+                  {APP_NAME}
+                </Text>
+                <Text style={[styles.appVersion, { color: colors.gray500 }]}>
+                  Phiên bản {APP_VERSION}
+                </Text>
+              </View>
+            </SafeAreaView>
+          </Animated.View>
+        </Modal>
+      )}
 
-      {/* Under Development Modal */}
       <UnderDevelopmentModal
         visible={showModal}
         onClose={closeModal}
@@ -411,12 +389,14 @@ const styles = StyleSheet.create({
   menuContainer: {
     flex: 1,
   },
+  // ✅ FIXED: Improved header layout and spacing
   menuHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     padding: 20,
-    paddingTop: 16,
+    paddingTop: 24, // ✅ Increased top padding for better spacing
+    paddingBottom: 20,
     borderBottomWidth: 1,
   },
   userInfo: {
@@ -448,10 +428,14 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 4,
   },
+  // ✅ FIXED: Improved menu content spacing
   menuContent: {
     flex: 1,
-    paddingVertical: 8,
   },
+  menuScrollContent: {
+    paddingVertical: 12, // ✅ Added vertical padding for better spacing
+  },
+  // ✅ FIXED: Better menu item alignment and spacing
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -459,6 +443,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 20,
     marginHorizontal: 8,
+    marginVertical: 2, // ✅ Added small vertical margin
     borderRadius: 8,
   },
   menuItemLeft: {
@@ -473,6 +458,7 @@ const styles = StyleSheet.create({
   menuIcon: {
     marginRight: 16,
     width: 24,
+    textAlign: "center", // ✅ Center align icons
   },
   menuText: {
     fontSize: 16,

@@ -92,15 +92,15 @@ const CustomReportScreen: React.FC = () => {
         ]);
 
       if (companyResponse.success) {
-        setCompanies(companyResponse.data);
+        setCompanies(companyresponse.data.data);
       }
 
       if (productResponse.success) {
-        setProducts(productResponse.data);
+        setProducts(productresponse.data.data);
       }
 
       if (vehicleResponse.success) {
-        setVehicles(vehicleResponse.data);
+        setVehicles(vehicleresponse.data.data);
       }
     } catch (error) {
       console.error("Load filter options error:", error);
@@ -156,8 +156,8 @@ const CustomReportScreen: React.FC = () => {
       // Get all weighings from API first
       const response = await weighingApi.getAllWeighings();
 
-      if (response.success && response.data) {
-        let allWeighings: Phieucan[] = response.data;
+      if (response.success && response.data.data) {
+        let allWeighings: Phieucan[] = response.data.data;
 
         // Apply client-side filtering
         const filteredWeighings = allWeighings.filter((item) => {
@@ -355,9 +355,9 @@ const CustomReportScreen: React.FC = () => {
       );
 
       if (response.success) {
-        let filteredData: any = { ...response.data };
-        let totalVehicles = response.data.totalVehicles;
-        let totalWeight = response.data.totalWeight;
+        let filteredData: any = { ...response.data.data };
+        let totalVehicles = response.data.data.totalVehicles;
+        let totalWeight = response.data.data.totalWeight;
 
         // Apply company filter
         if (selectedCompany) {
@@ -365,7 +365,7 @@ const CustomReportScreen: React.FC = () => {
             (c) => c.id.toString() === selectedCompany,
           );
           if (company) {
-            const companyStats = response.data.byCompany.find(
+            const companyStats = response.data.data.byCompany.find(
               (c: any) => c.companyName === company.ten,
             );
 
@@ -389,7 +389,7 @@ const CustomReportScreen: React.FC = () => {
             (p) => p.id.toString() === selectedProduct,
           );
           if (product) {
-            const productStats = response.data.byProduct.find(
+            const productStats = response.data.data.byProduct.find(
               (p: any) => p.productName === product.ten,
             );
 
@@ -425,7 +425,7 @@ const CustomReportScreen: React.FC = () => {
             (v) => v.id.toString() === selectedVehicle,
           );
           if (vehicle) {
-            const vehicleStats = response.data.byVehicle.find(
+            const vehicleStats = response.data.data.byVehicle.find(
               (v: any) => v.vehicleNumber === vehicle.soxe,
             );
 

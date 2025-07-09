@@ -1,12 +1,16 @@
-// src/components/layout/AppHeader.tsx
+// =====================================================
+// src/components/layout/AppHeader.tsx - Fixed Top Spacing
+// =====================================================
+
 import React from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   Alert,
+  Platform,
+  StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/hooks/useAuth";
@@ -28,8 +32,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   showStationSwitcher = true,
   rightComponent,
 }) => {
-  const { tenantInfo, logout, getTenantDisplayName, getStationDisplayName } =
-    useAuth();
+  const { tenantInfo, logout, getTenantDisplayName } = useAuth();
   const { colors } = useAppTheme();
 
   const handleLogout = () => {
@@ -53,66 +56,72 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.surface }]}>
-      {/* Top row - Company and logout */}
-      <View style={styles.topRow}>
-        <View style={styles.leftSection}>
-          <View style={styles.companyInfo}>
-            <Text
-              style={[styles.companyName, { color: colors.text }]}
-              numberOfLines={1}
-            >
-              {getTenantDisplayName()}
-            </Text>
-            <Text
-              style={[styles.companyCode, { color: colors.textSecondary }]}
-              numberOfLines={1}
-            >
-              {tenantInfo?.khachHang?.maKhachHang}
-            </Text>
+    <>
+      {/* ✅ FIXED: Better status bar handling */}
+      <StatusBar backgroundColor={colors.surface} barStyle="dark-content" />
+
+      <View style={[styles.container, { backgroundColor: colors.surface }]}>
+        {/* ✅ FIXED: Improved top spacing - moved content down from status bar */}
+        <View style={styles.topRow}>
+          <View style={styles.leftSection}>
+            <View style={styles.companyInfo}>
+              <Text
+                style={[styles.companyName, { color: colors.text }]}
+                numberOfLines={1}
+              >
+                {getTenantDisplayName()}
+              </Text>
+              <Text
+                style={[styles.companyCode, { color: colors.textSecondary }]}
+                numberOfLines={1}
+              >
+                {tenantInfo?.khachHang?.maKhachHang}
+              </Text>
+            </View>
           </View>
-        </View>
 
-        <View style={styles.rightSection}>
-          {rightComponent && (
-            <View style={styles.rightComponentContainer}>{rightComponent}</View>
-          )}
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={20} color={colors.error} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Bottom row - Navigation and station */}
-      <View style={styles.bottomRow}>
-        <View style={styles.navSection}>
-          {showBack && (
-            <TouchableOpacity style={styles.backButton} onPress={onBackPress}>
-              <Ionicons name="arrow-back" size={20} color={colors.text} />
+          <View style={styles.rightSection}>
+            {rightComponent && (
+              <View style={styles.rightComponentContainer}>{rightComponent}</View>
+            )}
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <Ionicons name="log-out-outline" size={20} color={colors.error} />
             </TouchableOpacity>
-          )}
+          </View>
+        </View>
 
-          {title && (
-            <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+        {/* Bottom row - Navigation and station */}
+        <View style={styles.bottomRow}>
+          <View style={styles.navSection}>
+            {showBack && (
+              <TouchableOpacity style={styles.backButton} onPress={onBackPress}>
+                <Ionicons name="arrow-back" size={20} color={colors.text} />
+              </TouchableOpacity>
+            )}
+
+            {title && (
+              <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+            )}
+          </View>
+
+          {showStationSwitcher && (
+            <View style={styles.stationSection}>
+              <StationSwitcher showStationName={true} />
+            </View>
           )}
         </View>
 
-        {showStationSwitcher && (
-          <View style={styles.stationSection}>
-            <StationSwitcher showStationName={true} />
-          </View>
-        )}
+        {/* Divider */}
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
       </View>
-
-      {/* Divider */}
-      <View style={[styles.divider, { backgroundColor: colors.border }]} />
-    </View>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 8,
+    // ✅ FIXED: Added proper top padding for status bar and better spacing
+    paddingTop: Platform.OS === 'ios' ? 44 : StatusBar.currentHeight + 8, // Proper status bar height + margin
     paddingBottom: 8,
   },
   topRow: {
@@ -120,17 +129,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 12, // ✅ Increased padding for better spacing
   },
   leftSection: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
-  },
-  logo: {
-    width: 32,
-    height: 32,
-    marginRight: 12,
   },
   companyInfo: {
     flex: 1,
@@ -160,7 +164,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10, // ✅ Adjusted padding for better spacing
   },
   navSection: {
     flexDirection: "row",

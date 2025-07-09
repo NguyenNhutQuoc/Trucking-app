@@ -1,14 +1,12 @@
 // src/api/station.ts
-import api from "./api";
-import { ApiResponse } from "@/types/api.types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import api from "./api";
 
 export interface TramCan {
   id: number;
   maTramCan: string;
   tenTramCan: string;
-  diaChi: string;
-  trangThai?: string;
+  diaChi?: string;
   moTa?: string;
 }
 
@@ -52,34 +50,38 @@ export interface StationDetailResponse {
 }
 
 /**
- * Dịch vụ quản lý trạm cân
+ * ✅ UPDATED: Dịch vụ quản lý trạm cân với x-session-token support
  */
 export const stationApi = {
   /**
-   * Lấy danh sách trạm cân của tôi
+   * Lấy danh sách trạm cân của tôi (cần x-session-token header)
    */
   getMyStations: async (): Promise<MyStationsResponse> => {
     try {
-      console.log("Getting my stations...");
+      console.log("🏭 Getting my stations...");
+
+      // ✅ Session token sẽ được tự động thêm vào header bởi interceptor
       const response = await api.get<MyStationsResponse>(
         "/tramcan/my-stations",
       );
 
-      console.log("My stations response:", response.data);
+      console.log("✅ My stations response:", response.data);
       return response.data;
     } catch (error: any) {
-      console.error("Get my stations error:", error);
+      console.error("❌ Get my stations error:", error);
       throw error;
     }
   },
 
   /**
-   * Chuyển đổi trạm cân
+   * Chuyển đổi trạm cân (cần x-session-token header)
    * @param tramCanId ID của trạm cân muốn chuyển đến
    */
   switchStation: async (tramCanId: number): Promise<SwitchStationResponse> => {
     try {
-      console.log("Switching to station:", tramCanId);
+      console.log("🔄 Switching to station:", tramCanId);
+
+      // ✅ Session token sẽ được tự động thêm vào header bởi interceptor
       const response = await api.post<SwitchStationResponse>(
         "/tramcan/switch-station",
         { tramCanId },
@@ -100,31 +102,33 @@ export const stationApi = {
         );
       }
 
-      console.log("Switch station successful:", response.data);
+      console.log("✅ Switch station successful:", response.data);
       return response.data;
     } catch (error: any) {
-      console.error("Switch station error:", error);
+      console.error("❌ Switch station error:", error);
       throw error;
     }
   },
 
   /**
-   * Lấy chi tiết trạm cân
+   * Lấy chi tiết trạm cân (cần x-session-token header)
    * @param tramCanId ID của trạm cân
    */
   getStationDetail: async (
     tramCanId: number,
   ): Promise<StationDetailResponse> => {
     try {
-      console.log("Getting station detail:", tramCanId);
+      console.log("🔍 Getting station detail:", tramCanId);
+
+      // ✅ Session token sẽ được tự động thêm vào header bởi interceptor
       const response = await api.get<StationDetailResponse>(
         `/tramcan/${tramCanId}`,
       );
 
-      console.log("Station detail response:", response.data);
+      console.log("✅ Station detail response:", response.data);
       return response.data;
     } catch (error: any) {
-      console.error("Get station detail error:", error);
+      console.error("❌ Get station detail error:", error);
       throw error;
     }
   },
@@ -134,35 +138,77 @@ export const stationApi = {
    */
   refreshStations: async (): Promise<TramCan[]> => {
     try {
+      console.log("🔄 Refreshing stations...");
+
       const response = await stationApi.getMyStations();
       return response.success ? response.data : [];
     } catch (error) {
-      console.error("Refresh stations error:", error);
+      console.error("❌ Refresh stations error:", error);
       return [];
     }
   },
 
   /**
-   * Kiểm tra trạm cân hiện tại có trong danh sách không
+   * ✅ NEW: Kiểm tra trạng thái kết nối trạm cân
    */
-  validateCurrentStation: async (): Promise<boolean> => {
+  checkStationStatus: async (tramCanId: number): Promise<boolean> => {
     try {
-      const tenantInfo = await AsyncStorage.getItem("tenant_info");
-      if (!tenantInfo) return false;
+      console.log("🔍 Checking station status:", tramCanId);
 
-      const { selectedStation } = JSON.parse(tenantInfo);
-      const stationsResponse = await stationApi.getMyStations();
-
-      if (!stationsResponse.success) return false;
-
-      const currentStationExists = stationsResponse.data.some(
-        (station) => station.id === selectedStation.id,
-      );
-
-      return currentStationExists;
+      const response = await api.get(`/tramcan/${tramCanId}/status`);
+      return response.data.success && response.data.data.isOnline;
     } catch (error) {
-      console.error("Validate current station error:", error);
+      console.error("❌ Check station status error:", error);
       return false;
     }
   },
+
+  /**
+   * ✅ NEW: Lấy thống kê tổng quan của trạm cân hiện tại
+   */
+  getCurrentStationStats: async (): Promise<any> => {
+    try {
+      console.log("📊 Getting current station stats...");
+
+      const response = await api.get("/tramcan/current/stats");
+      return response.data.success ? response.data.data : null;
+    } catch (error) {
+      console.error("❌ Get station stats error:", error);
+      return null;
+    }
+  },
+};
+
+/**
+ * ✅ NEW: Hook để sử dụng trong React components
+ */
+export const useStationApi = () => {
+  const loadMyStations = async () => {
+    try {
+      const response = await stationApi.getMyStations();
+      return response.data;
+    } catch (error) {
+      console.error("❌ useStationApi - loadMyStations error:", error);
+      return [];
+    }
+  };
+
+  const switchToStation = async (tramCanId: number) => {
+    try {
+      const response = await stationApi.switchStation(tramCanId);
+      return response.success;
+    } catch (error) {
+      console.error("❌ useStationApi - switchToStation error:", error);
+      return false;
+    }
+  };
+
+  return {
+    loadMyStations,
+    switchToStation,
+    getStationDetail: stationApi.getStationDetail,
+    refreshStations: stationApi.refreshStations,
+    checkStationStatus: stationApi.checkStationStatus,
+    getCurrentStationStats: stationApi.getCurrentStationStats,
+  };
 };

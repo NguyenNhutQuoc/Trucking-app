@@ -1,4 +1,4 @@
-// src/screens/home/HomeScreen.tsx - Updated with AppHeader
+// src/screens/home/HomeScreen.tsx - Updated with full dark mode support
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -15,7 +15,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useNavigationHandler } from "@/hooks/useNavigationHandler";
 import { weighingApi } from "@/api/weighing";
-// ✅ THAY ĐỔI: Import AppHeader thay vì Header cũ
 import AppHeader from "@/components/layout/AppHeader";
 import Card from "@/components/common/Card";
 import Loading from "@/components/common/Loading";
@@ -27,7 +26,7 @@ import { Phieucan } from "@/types/api.types";
 
 const HomeScreen: React.FC = () => {
   const { userInfo, tenantInfo, getStationDisplayName } = useAuth();
-  const { colors } = useAppTheme();
+  const { colors, isDarkMode } = useAppTheme();
   const {
     safeNavigate,
     showModalVersion,
@@ -48,13 +47,14 @@ const HomeScreen: React.FC = () => {
 
   useEffect(() => {
     loadData();
+    console.log("HomeScreen mounted");
   }, []);
 
-  // ✅ THAY ĐỔI: Reload data khi station thay đổi
   useEffect(() => {
     if (tenantInfo?.selectedStation) {
       loadData();
     }
+    console.log("Selected station changed:", tenantInfo?.selectedStation?.id);
   }, [tenantInfo?.selectedStation?.id]);
 
   const loadData = async () => {
@@ -81,7 +81,7 @@ const HomeScreen: React.FC = () => {
 
   const loadPendingWeighings = async () => {
     try {
-      const response = await weighingApi.getPendingWeighings();
+      const response: any = await weighingApi.getPendingWeighings();
       if (response.success) {
         setPendingWeighings(response.data.data);
       }
@@ -94,13 +94,28 @@ const HomeScreen: React.FC = () => {
   const loadTodayStats = async () => {
     try {
       const today = new Date().toISOString().split("T")[0];
-      const response = await weighingApi.getWeighingsByDateRange(today, today);
+      const response: any = await weighingApi.getWeighingsByDateRange(
+        today,
+        today,
+      );
       console.log(response);
       if (response.success) {
         const data = response.data.data;
+        interface WeighingItem {
+          tlcan1: number;
+          tlcan2?: number;
+        }
+
+        interface TodayStats {
+          totalVehicles: number;
+          totalWeight: number;
+        }
+
+        const typedData: WeighingItem[] = data;
+
         setTodayStats({
-          totalVehicles: data.length,
-          totalWeight: data.reduce((sum, item) => {
+          totalVehicles: typedData.length,
+          totalWeight: typedData.reduce((sum: number, item: WeighingItem) => {
             const netWeight = (item.tlcan2 || 0) - item.tlcan1;
             return sum + Math.max(0, netWeight);
           }, 0),
@@ -229,11 +244,25 @@ const HomeScreen: React.FC = () => {
                 style={[
                   styles.bar,
                   {
-                    backgroundColor: colors.primary,
                     height: `${(data[index] / maxValue) * 100}%`,
+                    backgroundColor: colors.primary,
+                    opacity: isDarkMode ? 0.8 : 0.7,
                   },
                 ]}
               />
+              <ThemedText
+                style={[
+                  styles.dayLabel,
+                  {
+                    color: colors.textSecondary,
+                    marginTop: 8,
+                    fontSize: 12,
+                    textAlign: "center",
+                  },
+                ]}
+              >
+                {day}
+              </ThemedText>
             </View>
           ))}
         </View>
@@ -241,35 +270,18 @@ const HomeScreen: React.FC = () => {
     );
   };
 
-  if (loading && !refreshing) {
-    return (
-      <SafeAreaView
-        style={[styles.container, { backgroundColor: colors.background }]}
-      >
-        {/* ✅ THAY ĐỔI: Sử dụng AppHeader */}
-        <AppHeader
-          title="Trang chủ"
-          showStationSwitcher={true}
-          rightComponent={
-            <TouchableOpacity onPress={toggleMenu}>
-              <Ionicons name="menu" size={20} color={colors.text} />
-            </TouchableOpacity>
-          }
-        />
-        <Loading loading={true} />
-      </SafeAreaView>
-    );
+  if (loading) {
+    return <Loading loading />;
   }
 
   return (
     <ThemedView style={styles.container}>
-      {/* ✅ THAY ĐỔI: Sử dụng AppHeader với Station Switcher */}
       <AppHeader
         title="Trang chủ"
-        showStationSwitcher={true}
+        showBack={false}
         rightComponent={
           <TouchableOpacity onPress={toggleMenu}>
-            <Ionicons name="menu" size={20} color={colors.text} />
+            <Ionicons name="menu" size={24} color={colors.text} />
           </TouchableOpacity>
         }
       />
@@ -277,83 +289,104 @@ const HomeScreen: React.FC = () => {
       <ScrollView
         style={styles.content}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+            progressBackgroundColor={colors.card}
+          />
         }
       >
-        {/* ✅ THAY ĐỔI: Hiển thị thông tin trạm cân hiện tại */}
-        <Card style={styles.stationInfoCard}>
-          <View style={styles.stationInfoContent}>
-            <Ionicons name="location" size={20} color={colors.primary} />
-            <View style={styles.stationInfoText}>
-              <ThemedText
-                style={[styles.stationLabel, { color: colors.textSecondary }]}
+        {/* Station Info Card - Enhanced Dark Mode Support */}
+        {tenantInfo?.selectedStation && (
+          <Card
+            style={{
+              ...styles.stationInfoCard,
+              backgroundColor: colors.card,
+              borderColor: isDarkMode ? colors.border : "transparent",
+              borderWidth: isDarkMode ? 1 : 0,
+            }}
+          >
+            <View style={styles.stationInfoContent}>
+              <View
+                style={[
+                  styles.stationIconContainer,
+                  { backgroundColor: colors.primary + "15" },
+                ]}
               >
-                Đang làm việc tại
-              </ThemedText>
-              <ThemedText style={[styles.stationName, { color: colors.text }]}>
-                {getStationDisplayName()}
-              </ThemedText>
+                <Ionicons name="business" size={24} color={colors.primary} />
+              </View>
+              <View style={styles.stationInfoText}>
+                <ThemedText
+                  style={[styles.stationLabel, { color: colors.textSecondary }]}
+                >
+                  Trạm cân hiện tại
+                </ThemedText>
+                <ThemedText
+                  style={[styles.stationName, { color: colors.text }]}
+                >
+                  {getStationDisplayName()}
+                </ThemedText>
+              </View>
             </View>
+          </Card>
+        )}
+
+        {/* Quick Stats Grid - Fixed Layout */}
+        <View style={styles.quickStatsGrid}>
+          <View style={styles.quickStatsRow}>
+            <TouchableOpacity
+              style={styles.statCardContainer}
+              onPress={handleStatsPress}
+            >
+              <Card style={styles.statCard}>
+                <ThemedText
+                  style={[styles.statNumber, { color: colors.success }]}
+                >
+                  {todayStats.totalVehicles}
+                </ThemedText>
+                <ThemedText
+                  style={[styles.statLabel, { color: colors.textSecondary }]}
+                >
+                  Xe hôm nay
+                </ThemedText>
+              </Card>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.statCardContainer}
+              onPress={handleStatsPress}
+            >
+              <Card style={styles.statCard}>
+                <ThemedText
+                  style={[styles.statNumber, { color: colors.warning }]}
+                >
+                  {(todayStats.totalWeight / 1000).toFixed(1)}T
+                </ThemedText>
+                <ThemedText
+                  style={[styles.statLabel, { color: colors.textSecondary }]}
+                >
+                  Tổng trọng lượng
+                </ThemedText>
+              </Card>
+            </TouchableOpacity>
           </View>
-        </Card>
-
-        {/* Quick Stats */}
-        <View style={styles.quickStatsContainer}>
-          <TouchableOpacity onPress={handleStatsPress}>
-            <Card style={styles.statCard}>
-              <ThemedText
-                style={[styles.statNumber, { color: colors.primary }]}
-              >
-                {todayStats.totalVehicles}
-              </ThemedText>
-              <ThemedText
-                style={[styles.statLabel, { color: colors.textSecondary }]}
-              >
-                Xe hôm nay
-              </ThemedText>
-            </Card>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={handleStatsPress}>
-            <Card style={styles.statCard}>
-              <ThemedText
-                style={[styles.statNumber, { color: colors.success }]}
-              >
-                {todayStats.totalWeight.toFixed(1)}
-              </ThemedText>
-              <ThemedText
-                style={[styles.statLabel, { color: colors.textSecondary }]}
-              >
-                Tấn hôm nay
-              </ThemedText>
-            </Card>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={handleNewWeighing}>
-            <Card style={(styles.newWeighingCard, styles.statCard)}>
-              <Ionicons name="add-circle" size={32} color={colors.primary} />
-              <ThemedText style={[styles.statLabel, { color: colors.primary }]}>
-                Cân mới
-              </ThemedText>
-            </Card>
-          </TouchableOpacity>
         </View>
 
-        {/* Pending Weighings */}
+        {/* Pending Weighings - Enhanced Dark Mode Support */}
         <View style={styles.pendingWeighingsContainer}>
           <View style={styles.sectionHeader}>
             <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>
-              Phiếu cân chờ hoàn thành
+              Chờ hoàn thành ({pendingWeighings.length})
             </ThemedText>
-            {pendingWeighings.length > 0 && (
-              <TouchableOpacity onPress={handleViewAllPending}>
-                <ThemedText
-                  style={[styles.viewAllText, { color: colors.primary }]}
-                >
-                  Xem tất cả
-                </ThemedText>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity onPress={handleViewAllPending}>
+              <ThemedText
+                style={[styles.viewAllText, { color: colors.primary }]}
+              >
+                Xem tất cả
+              </ThemedText>
+            </TouchableOpacity>
           </View>
 
           {pendingWeighings.length > 0 ? (
@@ -368,7 +401,7 @@ const HomeScreen: React.FC = () => {
           )}
         </View>
 
-        {/* Activity Chart */}
+        {/* Activity Chart - Enhanced Dark Mode Support */}
         <View style={styles.activityContainer}>
           <View style={styles.sectionHeader}>
             <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>
@@ -383,7 +416,16 @@ const HomeScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          <Card style={styles.activityChartCard}>{renderActivityChart()}</Card>
+          <Card
+            style={{
+              ...styles.activityChartCard,
+              backgroundColor: colors.card,
+              borderColor: isDarkMode ? colors.border : "transparent",
+              borderWidth: isDarkMode ? 1 : 0,
+            }}
+          >
+            {renderActivityChart()}
+          </Card>
         </View>
       </ScrollView>
 
@@ -409,7 +451,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-  // ✅ THAY ĐỔI: Thêm styles cho station info
+  // Station Info Styles
   stationInfoCard: {
     marginBottom: 16,
     padding: 0,
@@ -419,31 +461,48 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
   },
+  stationIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
   stationInfoText: {
-    marginLeft: 12,
     flex: 1,
   },
   stationLabel: {
     fontSize: 12,
     marginBottom: 2,
+    fontWeight: "500",
   },
   stationName: {
     fontSize: 14,
     fontWeight: "600",
   },
-  quickStatsContainer: {
-    flexDirection: "row",
-    gap: 12,
+  // Quick Stats Grid Styles
+  quickStatsGrid: {
     marginBottom: 20,
+  },
+  quickStatsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "stretch", // Ensure all cards have same height
+  },
+  statCardContainer: {
+    flex: 1,
+    marginHorizontal: 4, // Small gap between cards
   },
   statCard: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     padding: 16,
+    minHeight: 100, // Consistent height for all cards
+    marginHorizontal: 0, // Remove default margin
   },
   newWeighingCard: {
-    borderColor: "#5C7CFA",
     borderWidth: 1,
   },
   statNumber: {
@@ -454,7 +513,9 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
     textAlign: "center",
+    fontWeight: "500",
   },
+  // Pending Weighings Styles
   pendingWeighingsContainer: {
     marginBottom: 20,
   },
@@ -470,6 +531,7 @@ const styles = StyleSheet.create({
   },
   viewAllText: {
     fontSize: 14,
+    fontWeight: "500",
   },
   pendingWeighingCard: {
     marginBottom: 12,
@@ -493,6 +555,7 @@ const styles = StyleSheet.create({
   },
   weighTicketNumber: {
     fontSize: 14,
+    fontWeight: "500",
   },
   infoRow: {
     flexDirection: "row",
@@ -505,6 +568,7 @@ const styles = StyleSheet.create({
   infoLabel: {
     fontSize: 14,
     marginRight: 4,
+    fontWeight: "500",
   },
   infoValue: {
     fontSize: 14,
@@ -518,10 +582,12 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 14,
     flex: 1,
+    fontStyle: "italic",
   },
   completeButton: {
     padding: 8,
   },
+  // Empty State Styles
   emptyStateCard: {
     padding: 0,
   },
@@ -534,7 +600,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 14,
     textAlign: "center",
+    fontStyle: "italic",
   },
+  // Activity Chart Styles
   activityContainer: {
     marginBottom: 20,
   },
@@ -554,11 +622,17 @@ const styles = StyleSheet.create({
   barContainer: {
     width: "12%",
     justifyContent: "flex-end",
+    alignItems: "center",
   },
   bar: {
     width: "100%",
-    height: "100%",
     borderRadius: 4,
+    minHeight: 4,
+  },
+  dayLabel: {
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 4,
   },
 });
 

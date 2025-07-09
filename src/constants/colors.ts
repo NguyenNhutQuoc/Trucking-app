@@ -1,4 +1,7 @@
-// src/constants/colors.ts
+// =====================================================
+// src/constants/colors.ts - FIXED Dark Mode Colors
+// =====================================================
+
 const colors = {
   primary: "#5C7CFA",
   primaryDark: "#4263EB",
@@ -50,7 +53,7 @@ const colors = {
   gray800: "#343A40",
   gray900: "#212529",
 
-  // Surface colors
+  // ✅ FIXED: Surface colors for light mode
   surface: "#FFFFFF",
   surfaceVariant: "#F8F9FA",
   surfaceDark: "#F1F3F5",
@@ -71,13 +74,14 @@ const colors = {
 
 export default colors;
 
-// Dark theme colors
+// ✅ FIXED: Complete dark theme colors
 export const darkColors = {
   ...colors,
   primary: "#5C7CFA",
   primaryDark: "#4263EB",
   primaryLight: "#748FFC",
 
+  // ✅ FIXED: Core dark theme colors
   background: "#121212", // Dark background
   card: "#1E1E1E", // Darker card background
   text: "#E9ECEF", // Light text for contrast
@@ -85,7 +89,25 @@ export const darkColors = {
   textDisabled: "#495057",
   border: "#343A40",
 
-  // Gray scale - inverted for dark mode
+  // ✅ FIXED: Surface colors for dark mode
+  surface: "#1E1E1E", // Dark surface
+  surfaceVariant: "#2D2D2D",
+  surfaceDark: "#121212",
+  surfaceLight: "#343A40",
+  surfaceBorder: "#343A40",
+  surfaceText: "#E9ECEF",
+  surfaceTextSecondary: "#ADB5BD",
+  surfaceTextDisabled: "#495057",
+  surfaceBorderLight: "#495057",
+  surfaceBorderDark: "#121212",
+  surfaceBorderVariant: "#343A40",
+  surfaceBackground: "#121212",
+  surfaceBackgroundDark: "#0D1117",
+  surfaceBackgroundLight: "#1E1E1E",
+  surfaceBackgroundVariant: "#2D2D2D",
+  surfaceBackgroundText: "#E9ECEF",
+
+  // ✅ FIXED: Gray scale - properly inverted for dark mode
   gray50: "#343A40",
   gray100: "#495057",
   gray200: "#6C757D",

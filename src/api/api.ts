@@ -24,7 +24,7 @@ api.interceptors.request.use(
       // Lấy session token từ AsyncStorage
       const sessionToken = await AsyncStorage.getItem("session_token");
 
-      console.log(config.headers);
+      console.log(sessionToken);
       if (sessionToken && config.headers) {
         // ✅ KEY POINT: Thêm x-session-token vào header
         config.headers["x-session-token"] = sessionToken;

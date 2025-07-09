@@ -303,7 +303,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const getMyStations = async () => {
     try {
       const response = await stationApi.getMyStations();
-      return response.success ? response.data : [];
+      return response.success ? response.data.tramCans : [];
     } catch (error) {
       console.error("Get my stations error:", error);
       return [];

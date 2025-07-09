@@ -1,7 +1,6 @@
-// src/constants/config.ts
+// src/constants/config.ts - Updated with dark mode support
 // API configuration
-export const API_URL =
-  "https://8274e2a972d5.ngrok-free.app/api/v1"; // Development server
+export const API_URL = "https://3bf604b942ff.ngrok-free.app/api/v1"; // Development server
 // export const API_URL = 'https://api.example.com/api'; // Production server
 console.log("API URL:", API_URL);
 // App configuration
@@ -9,14 +8,14 @@ export const APP_NAME = "Quản Lý Cân Xe";
 export const APP_VERSION = "1.0.0";
 export const BUILD_NUMBER = "2025.05.01";
 
-// Feature flags
+// ✅ FIXED: Enable dark mode feature flag
 export const FEATURES = {
   OFFLINE_MODE: true,
   SYNC_BACKGROUND: true,
   PRINT_SUPPORT: true,
   CAMERA_SUPPORT: true,
   NOTIFICATIONS: true,
-  DARK_MODE: false,
+  DARK_MODE: true, // ✅ CHANGED: Enable dark mode
 };
 
 // Default settings

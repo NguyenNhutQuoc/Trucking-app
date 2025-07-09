@@ -13,7 +13,9 @@ export interface TramCan {
 export interface MyStationsResponse {
   success: boolean;
   message: string;
-  data: TramCan[];
+  data: {
+    tramCans: TramCan[];
+  };
 }
 
 export interface SwitchStationRequest {
@@ -77,14 +79,17 @@ export const stationApi = {
    * Chuyển đổi trạm cân (cần x-session-token header)
    * @param tramCanId ID của trạm cân muốn chuyển đến
    */
-  switchStation: async (tramCanId: number): Promise<SwitchStationResponse> => {
+  switchStation: async (
+    tramCanId: number,
+    isActivated: boolean = false, // ✅ NEW: Thêm tham số isActivated để xác định trạng thái trạm cân
+  ): Promise<SwitchStationResponse> => {
     try {
       console.log("🔄 Switching to station:", tramCanId);
 
       // ✅ Session token sẽ được tự động thêm vào header bởi interceptor
       const response = await api.post<SwitchStationResponse>(
         "/tramcan/switch-station",
-        { tramCanId },
+        { tramCanId, isActivated },
       );
 
       // ✅ Cập nhật session token và tenant info sau khi switch
@@ -141,7 +146,7 @@ export const stationApi = {
       console.log("🔄 Refreshing stations...");
 
       const response = await stationApi.getMyStations();
-      return response.success ? response.data : [];
+      return response.success ? response.data.tramCans : [];
     } catch (error) {
       console.error("❌ Refresh stations error:", error);
       return [];

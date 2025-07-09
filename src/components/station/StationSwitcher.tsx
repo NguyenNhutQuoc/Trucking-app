@@ -1,4 +1,4 @@
-// src/components/station/StationSwitcher.tsx
+// src/components/station/StationSwitcher.tsx - Fixed version with dark mode support
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -9,25 +9,29 @@ import {
   FlatList,
   Alert,
   RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 import { useAuth } from "@/hooks/useAuth";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { stationApi, TramCan } from "@/api/station";
 import Button from "@/components/common/Button";
-import Loading from "@/components/common/Loading";
 
 interface StationSwitcherProps {
   showStationName?: boolean;
+  isActivated?: boolean; // Optional prop to control activation state
   iconOnly?: boolean;
 }
 
 const StationSwitcher: React.FC<StationSwitcherProps> = ({
   showStationName = true,
+  isActivated = false, // Default to false if not provided
   iconOnly = false,
 }) => {
-  const { tenantInfo, sessionToken } = useAuth();
-  const { colors } = useAppTheme();
+  const { tenantInfo, sessionToken, getStationDisplayName } = useAuth();
+  const { colors, isDarkMode } = useAppTheme();
 
   const [showModal, setShowModal] = useState(false);
   const [stations, setStations] = useState<TramCan[]>([]);
@@ -37,7 +41,7 @@ const StationSwitcher: React.FC<StationSwitcherProps> = ({
 
   // Load stations when modal opens
   useEffect(() => {
-    if (showModal) {
+    if (showModal && stations.length === 0) {
       loadStations();
     }
   }, [showModal]);
@@ -45,15 +49,24 @@ const StationSwitcher: React.FC<StationSwitcherProps> = ({
   const loadStations = async () => {
     try {
       setLoading(true);
-      const response = await stationApi.getMyStations();
+      console.log("🏭 Loading stations for switcher...");
 
-      if (response.success) {
-        setStations(response.data);
+      const response = await stationApi.getMyStations();
+      console.log("📋 Stations response:", response);
+      console.log(response.data.tramCans);
+
+      if (response.success && response.data.tramCans) {
+        setStations(response.data.tramCans);
+        console.log("✅ Loaded stations count:", response.data.tramCans.length);
       } else {
-        Alert.alert("Lỗi", "Không thể tải danh sách trạm cân");
+        console.error("❌ Failed to load stations:", response.message);
+        Alert.alert(
+          "Lỗi",
+          response.message || "Không thể tải danh sách trạm cân",
+        );
       }
     } catch (error) {
-      console.error("Load stations error:", error);
+      console.error("❌ Load stations error:", error);
       Alert.alert("Lỗi", "Có lỗi xảy ra khi tải danh sách trạm cân");
     } finally {
       setLoading(false);
@@ -70,7 +83,7 @@ const StationSwitcher: React.FC<StationSwitcherProps> = ({
   };
 
   const handleSwitchStation = async (station: TramCan) => {
-    // Nếu chọn trạm hiện tại thì không làm gì
+    // If selecting current station, just close modal
     if (station.id === tenantInfo?.selectedStation?.id) {
       setShowModal(false);
       return;
@@ -78,7 +91,9 @@ const StationSwitcher: React.FC<StationSwitcherProps> = ({
 
     try {
       setSwitching(true);
-      const response = await stationApi.switchStation(station.id);
+      console.log("🔄 Switching to station:", station.id, station.tenTramCan);
+
+      const response = await stationApi.switchStation(station.id, isActivated);
 
       if (response.success) {
         setShowModal(false);
@@ -86,16 +101,17 @@ const StationSwitcher: React.FC<StationSwitcherProps> = ({
           {
             text: "OK",
             onPress: () => {
-              // Reload app hoặc refresh data
-              // Có thể emit event để các component khác biết
+              // The auth context will handle the reload
+              console.log("✅ Station switched successfully");
             },
           },
         ]);
       } else {
-        Alert.alert("Lỗi", "Không thể chuyển trạm cân");
+        console.error("❌ Switch station failed:", response.message);
+        Alert.alert("Lỗi", response.message || "Không thể chuyển trạm cân");
       }
     } catch (error) {
-      console.error("Switch station error:", error);
+      console.error("❌ Switch station error:", error);
       Alert.alert("Lỗi", "Có lỗi xảy ra khi chuyển trạm cân");
     } finally {
       setSwitching(false);
@@ -112,118 +128,169 @@ const StationSwitcher: React.FC<StationSwitcherProps> = ({
           {
             backgroundColor: colors.surface,
             borderColor: isCurrentStation ? colors.primary : colors.border,
+            borderWidth: isCurrentStation ? 2 : 1,
           },
         ]}
         onPress={() => handleSwitchStation(item)}
         disabled={switching}
       >
-        <View style={styles.stationItemContent}>
+        <View style={styles.stationItemLeft}>
+          <View
+            style={[
+              styles.radioButton,
+              {
+                borderColor: isCurrentStation ? colors.primary : colors.border,
+                backgroundColor: isCurrentStation
+                  ? colors.primary
+                  : "transparent",
+              },
+            ]}
+          >
+            {isCurrentStation && (
+              <View
+                style={[
+                  styles.radioButtonInner,
+                  { backgroundColor: colors.surface },
+                ]}
+              />
+            )}
+          </View>
+
           <View style={styles.stationInfo}>
             <Text style={[styles.stationName, { color: colors.text }]}>
               {item.tenTramCan}
             </Text>
             <Text style={[styles.stationCode, { color: colors.textSecondary }]}>
-              {item.maTramCan} • {item.diaChi}
+              Mã: {item.maTramCan}
             </Text>
+            {item.diaChi && (
+              <Text
+                style={[styles.stationAddress, { color: colors.textSecondary }]}
+              >
+                {item.diaChi}
+              </Text>
+            )}
           </View>
+        </View>
 
-          {isCurrentStation && (
-            <View style={styles.currentBadge}>
-              <Ionicons
-                name="checkmark-circle"
-                size={20}
-                color={colors.primary}
-              />
-              <Text style={[styles.currentText, { color: colors.primary }]}>
+        <View style={styles.stationItemRight}>
+          {isCurrentStation ? (
+            <View
+              style={[
+                styles.currentBadge,
+                { backgroundColor: colors.success + "20" },
+              ]}
+            >
+              <Text
+                style={[styles.currentBadgeText, { color: colors.success }]}
+              >
                 Hiện tại
               </Text>
             </View>
+          ) : (
+            <Ionicons
+              name="location-outline"
+              size={20}
+              color={colors.textSecondary}
+            />
           )}
         </View>
       </TouchableOpacity>
     );
   };
 
+  const renderHeader = () => (
+    <View style={[styles.modalHeader, { backgroundColor: colors.surface }]}>
+      <View style={styles.headerLeft}>
+        <Text style={[styles.modalTitle, { color: colors.text }]}>
+          Chọn trạm cân
+        </Text>
+        <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
+          {tenantInfo?.khachHang?.tenKhachHang}
+        </Text>
+      </View>
+
+      <View style={styles.headerRight}>
+        <TouchableOpacity
+          onPress={handleRefresh}
+          style={[styles.refreshButton, { backgroundColor: colors.gray100 }]}
+          disabled={refreshing || loading}
+        >
+          <Ionicons
+            name="refresh"
+            size={18}
+            color={refreshing ? colors.textSecondary : colors.primary}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => setShowModal(false)}
+          style={[styles.closeButton, { backgroundColor: colors.gray100 }]}
+        >
+          <Ionicons name="close" size={18} color={colors.text} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <Ionicons
+        name="business-outline"
+        size={48}
+        color={colors.textSecondary}
+      />
+      <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+        Không có trạm cân nào
+      </Text>
+      <Button
+        title="Thử lại"
+        onPress={loadStations}
+        variant="outline"
+        style={styles.retryButton}
+      />
+    </View>
+  );
+
+  const renderLoadingState = () => (
+    <View style={styles.loadingContainer}>
+      <ActivityIndicator size="large" color={colors.primary} />
+      <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+        Đang tải trạm cân...
+      </Text>
+    </View>
+  );
+
+  // Main trigger button
   if (iconOnly) {
     return (
       <>
         <TouchableOpacity
-          style={styles.iconButton}
           onPress={() => setShowModal(true)}
+          style={[styles.iconButton, { backgroundColor: colors.gray100 }]}
         >
-          <Ionicons name="swap-horizontal" size={20} color={colors.primary} />
+          <Ionicons name="location" size={18} color={colors.primary} />
         </TouchableOpacity>
-        {renderModal()}
-      </>
-    );
-  }
 
-  return (
-    <>
-      <TouchableOpacity
-        style={[styles.switcher, { backgroundColor: colors.surface }]}
-        onPress={() => setShowModal(true)}
-      >
-        <View style={styles.switcherContent}>
-          <Ionicons name="business" size={16} color={colors.primary} />
-          {showStationName && (
-            <Text
-              style={[styles.switcherText, { color: colors.text }]}
-              numberOfLines={1}
-            >
-              {tenantInfo?.selectedStation?.tenTramCan || "Chọn trạm cân"}
-            </Text>
-          )}
-          <Ionicons
-            name="chevron-down"
-            size={16}
-            color={colors.textSecondary}
-          />
-        </View>
-      </TouchableOpacity>
-      {renderModal()}
-    </>
-  );
-
-  function renderModal() {
-    return (
-      <Modal
-        visible={showModal}
-        animationType="slide"
-        onRequestClose={() => setShowModal(false)}
-      >
-        <View
-          style={[
-            styles.modalContainer,
-            { backgroundColor: colors.background },
-          ]}
+        {/* Modal */}
+        <Modal
+          visible={showModal}
+          animationType="slide"
+          presentationStyle="formSheet"
+          onRequestClose={() => setShowModal(false)}
         >
-          {/* Header */}
-          <View
-            style={[styles.modalHeader, { backgroundColor: colors.surface }]}
+          <SafeAreaView
+            style={[
+              styles.modalContainer,
+              { backgroundColor: colors.background },
+            ]}
           >
-            <TouchableOpacity
-              onPress={() => setShowModal(false)}
-              style={styles.closeButton}
-            >
-              <Ionicons name="close" size={24} color={colors.text} />
-            </TouchableOpacity>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>
-              Chọn trạm cân
-            </Text>
-            <TouchableOpacity
-              onPress={handleRefresh}
-              style={styles.refreshButton}
-              disabled={loading || refreshing}
-            >
-              <Ionicons name="refresh" size={20} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
+            {renderHeader()}
 
-          {/* Content */}
-          <View style={styles.modalContent}>
             {loading ? (
-              <Loading loading={true} />
+              renderLoadingState()
+            ) : stations.length === 0 ? (
+              renderEmptyState()
             ) : (
               <FlatList
                 data={stations}
@@ -235,50 +302,140 @@ const StationSwitcher: React.FC<StationSwitcherProps> = ({
                     refreshing={refreshing}
                     onRefresh={handleRefresh}
                     colors={[colors.primary]}
+                    tintColor={colors.primary}
                   />
                 }
                 showsVerticalScrollIndicator={false}
               />
             )}
-          </View>
 
-          {/* Footer info */}
-          <View
-            style={[styles.modalFooter, { backgroundColor: colors.surface }]}
-          >
-            <Text style={[styles.footerText, { color: colors.textSecondary }]}>
-              {tenantInfo?.khachHang?.tenKhachHang}
-            </Text>
-          </View>
-        </View>
-
-        {switching && <Loading loading={true} />}
-      </Modal>
+            {switching && (
+              <View
+                style={[
+                  styles.switchingOverlay,
+                  { backgroundColor: colors.background + "CC" },
+                ]}
+              >
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={[styles.switchingText, { color: colors.text }]}>
+                  Đang chuyển trạm cân...
+                </Text>
+              </View>
+            )}
+          </SafeAreaView>
+        </Modal>
+      </>
     );
   }
+
+  // Full button with station name
+  return (
+    <>
+      <TouchableOpacity
+        onPress={() => setShowModal(true)}
+        style={[styles.stationButton, { backgroundColor: colors.surface }]}
+      >
+        <View style={styles.stationButtonContent}>
+          <Ionicons name="location" size={16} color={colors.primary} />
+          {showStationName && (
+            <Text
+              style={[styles.stationButtonText, { color: colors.text }]}
+              numberOfLines={1}
+            >
+              {getStationDisplayName()}
+            </Text>
+          )}
+          <Ionicons
+            name="chevron-down"
+            size={14}
+            color={colors.textSecondary}
+          />
+        </View>
+      </TouchableOpacity>
+
+      {/* Modal */}
+      <Modal
+        visible={showModal}
+        animationType="slide"
+        presentationStyle="formSheet"
+        onRequestClose={() => setShowModal(false)}
+      >
+        <SafeAreaView
+          style={[
+            styles.modalContainer,
+            { backgroundColor: colors.background },
+          ]}
+        >
+          {renderHeader()}
+
+          {loading ? (
+            renderLoadingState()
+          ) : stations.length === 0 ? (
+            renderEmptyState()
+          ) : (
+            <FlatList
+              data={stations}
+              renderItem={renderStationItem}
+              keyExtractor={(item) => item.id.toString()}
+              contentContainerStyle={styles.stationsList}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  colors={[colors.primary]}
+                  tintColor={colors.primary}
+                />
+              }
+              showsVerticalScrollIndicator={false}
+            />
+          )}
+
+          {switching && (
+            <View
+              style={[
+                styles.switchingOverlay,
+                { backgroundColor: colors.background + "CC" },
+              ]}
+            >
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={[styles.switchingText, { color: colors.text }]}>
+                Đang chuyển trạm cân...
+              </Text>
+            </View>
+          )}
+        </SafeAreaView>
+      </Modal>
+    </>
+  );
 };
 
 const styles = StyleSheet.create({
-  switcher: {
+  // Trigger buttons
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stationButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E5E5E5",
+    maxWidth: 200,
   },
-  switcherContent: {
+  stationButtonContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 6,
   },
-  switcherText: {
+  stationButtonText: {
     fontSize: 14,
     fontWeight: "500",
     flex: 1,
   },
-  iconButton: {
-    padding: 8,
-  },
+
+  // Modal
   modalContainer: {
     flex: 1,
   },
@@ -286,41 +443,71 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E5",
+    borderBottomColor: "rgba(0,0,0,0.1)",
   },
-  closeButton: {
-    padding: 8,
+  headerLeft: {
+    flex: 1,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: "600",
-    flex: 1,
-    textAlign: "center",
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    marginTop: 2,
+  },
+  headerRight: {
+    flexDirection: "row",
+    gap: 8,
   },
   refreshButton: {
-    padding: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  modalContent: {
-    flex: 1,
-    padding: 16,
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
   },
+
+  // Station list
   stationsList: {
-    flexGrow: 1,
+    padding: 16,
+    paddingBottom: 32,
   },
   stationItem: {
-    borderRadius: 12,
-    borderWidth: 2,
-    marginBottom: 12,
-    overflow: "hidden",
-  },
-  stationItemContent: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     padding: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+  },
+  stationItemLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  radioButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  radioButtonInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   stationInfo: {
     flex: 1,
@@ -331,27 +518,67 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   stationCode: {
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  stationAddress: {
     fontSize: 13,
     lineHeight: 18,
   },
+  stationItemRight: {
+    marginLeft: 12,
+  },
   currentBadge: {
-    flexDirection: "row",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  currentBadgeText: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+
+  // Loading and empty states
+  loadingContainer: {
+    flex: 1,
     alignItems: "center",
-    gap: 4,
+    justifyContent: "center",
+    padding: 32,
   },
-  currentText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  modalFooter: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E5E5",
-  },
-  footerText: {
+  loadingText: {
     fontSize: 14,
+    marginTop: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 32,
+  },
+  emptyText: {
+    fontSize: 16,
+    marginTop: 16,
+    marginBottom: 24,
     textAlign: "center",
+  },
+  retryButton: {
+    minWidth: 120,
+  },
+
+  // Switching overlay
+  switchingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  switchingText: {
+    fontSize: 16,
+    marginTop: 16,
+    fontWeight: "500",
   },
 });
 

@@ -1,5 +1,5 @@
 // =====================================================
-// src/components/layout/AppHeader.tsx - Fixed Top Spacing
+// src/components/layout/AppHeader.tsx - COMPLETE Dark Mode Fix
 // =====================================================
 
 import React from "react";
@@ -33,46 +33,77 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   rightComponent,
 }) => {
   const { tenantInfo, logout, getTenantDisplayName } = useAuth();
-  const { colors } = useAppTheme();
+  const { colors, isDarkMode } = useAppTheme();
 
   const handleLogout = () => {
-    Alert.alert("Đăng xuất", "Bạn có chắc chắn muốn đăng xuất không?", [
-      {
-        text: "Hủy",
-        style: "cancel",
-      },
-      {
-        text: "Đăng xuất",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await logout();
-          } catch (error) {
-            console.error("Logout error:", error);
-          }
+    Alert.alert(
+      "Đăng xuất",
+      "Bạn có chắc chắn muốn đăng xuất không?",
+      [
+        {
+          text: "Hủy",
+          style: "cancel",
         },
+        {
+          text: "Đăng xuất",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await logout();
+            } catch (error) {
+              console.error("Logout error:", error);
+            }
+          },
+        },
+      ],
+      {
+        // ✅ FIXED: Alert styling for dark mode
+        userInterfaceStyle: isDarkMode ? "dark" : "light",
       },
-    ]);
+    );
   };
+
+  // ✅ FIXED: Ensure we're using the correct surface color
+  const headerBackgroundColor =
+    colors.surface || (isDarkMode ? "#1E1E1E" : "#FFFFFF");
+  const headerTextColor = colors.text || (isDarkMode ? "#E9ECEF" : "#212529");
+  const secondaryTextColor =
+    colors.textSecondary || (isDarkMode ? "#ADB5BD" : "#868E96");
+  const borderColor = colors.border || (isDarkMode ? "#343A40" : "#E9ECEF");
 
   return (
     <>
-      {/* ✅ FIXED: Better status bar handling */}
-      <StatusBar backgroundColor={colors.surface} barStyle="dark-content" />
+      {/* ✅ FIXED: Proper status bar handling */}
+      <StatusBar
+        backgroundColor={headerBackgroundColor}
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
+        translucent={false}
+      />
 
-      <View style={[styles.container, { backgroundColor: colors.surface }]}>
-        {/* ✅ FIXED: Improved top spacing - moved content down from status bar */}
+      <View
+        style={[
+          styles.container,
+          {
+            backgroundColor: headerBackgroundColor,
+            borderBottomWidth: 1,
+            borderBottomColor: borderColor,
+            shadowColor: isDarkMode ? "#000" : "#000",
+            shadowOpacity: isDarkMode ? 0.3 : 0.1,
+          },
+        ]}
+      >
+        {/* ✅ FIXED: Top row with explicit colors */}
         <View style={styles.topRow}>
           <View style={styles.leftSection}>
             <View style={styles.companyInfo}>
               <Text
-                style={[styles.companyName, { color: colors.text }]}
+                style={[styles.companyName, { color: headerTextColor }]}
                 numberOfLines={1}
               >
                 {getTenantDisplayName()}
               </Text>
               <Text
-                style={[styles.companyCode, { color: colors.textSecondary }]}
+                style={[styles.companyCode, { color: secondaryTextColor }]}
                 numberOfLines={1}
               >
                 {tenantInfo?.khachHang?.maKhachHang}
@@ -82,37 +113,69 @@ const AppHeader: React.FC<AppHeaderProps> = ({
 
           <View style={styles.rightSection}>
             {rightComponent && (
-              <View style={styles.rightComponentContainer}>{rightComponent}</View>
+              <View style={styles.rightComponentContainer}>
+                {rightComponent}
+              </View>
             )}
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <TouchableOpacity
+              style={[
+                styles.logoutButton,
+                {
+                  backgroundColor: isDarkMode
+                    ? colors.error + "20"
+                    : colors.error + "10",
+                },
+              ]}
+              onPress={handleLogout}
+            >
               <Ionicons name="log-out-outline" size={20} color={colors.error} />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Bottom row - Navigation and station */}
+        {/* ✅ FIXED: Bottom row with explicit colors */}
         <View style={styles.bottomRow}>
           <View style={styles.navSection}>
             {showBack && (
-              <TouchableOpacity style={styles.backButton} onPress={onBackPress}>
-                <Ionicons name="arrow-back" size={20} color={colors.text} />
+              <TouchableOpacity
+                style={[
+                  styles.backButton,
+                  {
+                    backgroundColor: isDarkMode
+                      ? "rgba(255,255,255,0.1)"
+                      : "rgba(0,0,0,0.05)",
+                  },
+                ]}
+                onPress={onBackPress}
+              >
+                <Ionicons name="arrow-back" size={20} color={headerTextColor} />
               </TouchableOpacity>
             )}
 
             {title && (
-              <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+              <Text style={[styles.title, { color: headerTextColor }]}>
+                {title}
+              </Text>
             )}
           </View>
 
           {showStationSwitcher && (
             <View style={styles.stationSection}>
-              <StationSwitcher showStationName={true} />
+              <StationSwitcher showStationName={true} isActivated={true} />
             </View>
           )}
         </View>
 
-        {/* Divider */}
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        {/* ✅ FIXED: Divider with explicit color */}
+        <View
+          style={[
+            styles.divider,
+            {
+              backgroundColor: borderColor,
+              opacity: 0.5,
+            },
+          ]}
+        />
       </View>
     </>
   );
@@ -120,16 +183,22 @@ const AppHeader: React.FC<AppHeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    // ✅ FIXED: Added proper top padding for status bar and better spacing
-    paddingTop: Platform.OS === 'ios' ? 44 : StatusBar.currentHeight + 8, // Proper status bar height + margin
+    // ✅ FIXED: Better status bar handling
+    paddingTop:
+      Platform.OS === "ios" ? 44 : (StatusBar.currentHeight || 24) + 8,
     paddingBottom: 8,
+    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 3,
+    zIndex: 1000, // ✅ FIXED: Ensure header is above other content
   },
   topRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 12, // ✅ Increased padding for better spacing
+    paddingVertical: 12,
+    minHeight: 56, // ✅ FIXED: Ensure consistent height
   },
   leftSection: {
     flexDirection: "row",
@@ -146,6 +215,8 @@ const styles = StyleSheet.create({
   },
   companyCode: {
     fontSize: 12,
+    fontWeight: "500",
+    opacity: 0.8,
   },
   rightSection: {
     flexDirection: "row",
@@ -158,13 +229,18 @@ const styles = StyleSheet.create({
   logoutButton: {
     padding: 8,
     borderRadius: 8,
+    minWidth: 36,
+    minHeight: 36,
+    justifyContent: "center",
+    alignItems: "center",
   },
   bottomRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 10, // ✅ Adjusted padding for better spacing
+    paddingVertical: 10,
+    minHeight: 48, // ✅ FIXED: Ensure consistent height
   },
   navSection: {
     flexDirection: "row",
@@ -175,6 +251,10 @@ const styles = StyleSheet.create({
     padding: 8,
     marginRight: 8,
     borderRadius: 8,
+    minWidth: 36,
+    minHeight: 36,
+    justifyContent: "center",
+    alignItems: "center",
   },
   title: {
     fontSize: 18,

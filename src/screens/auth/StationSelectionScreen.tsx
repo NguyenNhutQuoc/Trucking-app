@@ -9,6 +9,7 @@ import {
   FlatList,
   Alert,
   RefreshControl,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -63,7 +64,7 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
       const response = await stationApi.getMyStations();
 
       if (response.success) {
-        setStations(response.data);
+        setStations(response.data.tramCans);
       } else {
         Alert.alert("Lỗi", "Không thể tải lại danh sách trạm cân");
       }
@@ -159,7 +160,7 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
     >
       <StatusBar style={isDarkMode ? "light" : "dark"} />
 
-      {/* Header */}
+      {/* ✅ FIXED: Header with proper spacing from status bar */}
       <View style={[styles.header, { backgroundColor: colors.surface }]}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
@@ -230,17 +231,28 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  // ✅ FIXED: Header với khoảng cách hợp lý từ status bar
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16, // ✅ Tăng padding cho đẹp hơn
+    paddingTop: Platform.OS === "ios" ? 16 : 35, // ✅ Thêm padding top riêng cho status bar
     borderBottomWidth: 1,
     borderBottomColor: "#E5E5E5",
+    elevation: 2, // ✅ Thêm shadow cho Android
+    shadowColor: "#000", // ✅ Thêm shadow cho iOS
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   backButton: {
     padding: 8,
-    marginRight: 8,
+    marginRight: 12, // ✅ Tăng margin cho spacing tốt hơn
+    borderRadius: 8, // ✅ Thêm border radius cho đẹp
   },
   headerContent: {
     flex: 1,
@@ -248,14 +260,15 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "600",
+    marginBottom: 2, // ✅ Thêm margin bottom nhỏ
   },
   headerSubtitle: {
     fontSize: 14,
-    marginTop: 2,
   },
   refreshButton: {
     padding: 8,
-    marginLeft: 8,
+    marginLeft: 12, // ✅ Tăng margin cho spacing tốt hơn
+    borderRadius: 8, // ✅ Thêm border radius cho đẹp
   },
   content: {
     flex: 1,
@@ -265,9 +278,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     marginBottom: 24,
+    lineHeight: 22, // ✅ Thêm line height cho đọc dễ hơn
   },
   stationsList: {
     flexGrow: 1,
+    paddingBottom: 16, // ✅ Thêm padding bottom
   },
   stationItem: {
     flexDirection: "row",
@@ -277,6 +292,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderRadius: 12,
     borderWidth: 2,
+    // ✅ Thêm shadow cho item
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   stationItemLeft: {
     flexDirection: "row",
@@ -315,9 +339,10 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   buttonContainer: {
-    paddingTop: 16,
+    paddingTop: 20, // ✅ Tăng padding top
     borderTopWidth: 1,
     borderTopColor: "#E5E5E5",
+    marginTop: 8, // ✅ Thêm margin top
   },
   continueButton: {
     marginTop: 8,

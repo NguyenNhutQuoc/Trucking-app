@@ -62,6 +62,9 @@ const Button: React.FC<ButtonProps> = ({
             backgroundColor: "transparent",
             borderWidth: 1,
             borderColor: colors.primary,
+            // Remove shadow for outline variant
+            elevation: 0,
+            shadowOpacity: 0,
           },
           text: {
             color: colors.primary,
@@ -158,10 +161,15 @@ const Button: React.FC<ButtonProps> = ({
   const variantStyles = getVariantStyles();
   const sizeStyles = getSizeStyles();
 
+  // Determine if this variant should have shadow
+  const shouldHaveShadow = variant !== "outline" && variant !== "text";
+
   return (
     <TouchableOpacity
       style={[
         styles.container,
+        // Apply shadow styles conditionally
+        shouldHaveShadow && styles.containerWithShadow,
         variantStyles.container,
         sizeStyles.container,
         fullWidth && styles.fullWidth,
@@ -209,6 +217,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 8,
+  },
+  // Separate shadow styles that only apply to solid buttons
+  containerWithShadow: {
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },

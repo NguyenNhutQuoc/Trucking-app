@@ -30,7 +30,8 @@ const StationSwitcher: React.FC<StationSwitcherProps> = ({
   isActivated = false, // Default to false if not provided
   iconOnly = false,
 }) => {
-  const { tenantInfo, sessionToken, getStationDisplayName } = useAuth();
+  const { tenantInfo, sessionToken, getStationDisplayName, switchStation } =
+    useAuth();
   const { colors, isDarkMode } = useAppTheme();
 
   const [showModal, setShowModal] = useState(false);
@@ -93,22 +94,17 @@ const StationSwitcher: React.FC<StationSwitcherProps> = ({
       setSwitching(true);
       console.log("🔄 Switching to station:", station.id, station.tenTramCan);
 
-      const response = await stationApi.switchStation(station.id, isActivated);
+      // ✅ FIX: Sử dụng switchStation từ useAuth thay vì stationApi trực tiếp
+      const success = await switchStation(station.id);
 
-      if (response.success) {
-        setShowModal(false);
-        Alert.alert("Thành công", `Đã chuyển đến ${station.tenTramCan}`, [
-          {
-            text: "OK",
-            onPress: () => {
-              // The auth context will handle the reload
-              console.log("✅ Station switched successfully");
-            },
-          },
+      if (success) {
+        console.log("✅ Station switched successfully to:", station.tenTramCan);
+
+        Alert.alert("Thành công", `Đã chuyển sang trạm ${station.tenTramCan}`, [
+          { text: "OK", onPress: () => setShowModal(false) },
         ]);
       } else {
-        console.error("❌ Switch station failed:", response.message);
-        Alert.alert("Lỗi", response.message || "Không thể chuyển trạm cân");
+        Alert.alert("Lỗi", "Không thể chuyển trạm cân");
       }
     } catch (error) {
       console.error("❌ Switch station error:", error);

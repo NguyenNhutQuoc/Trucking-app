@@ -1,13 +1,21 @@
 // src/api/vehicle.ts
 import api from "./api";
-import { ApiResponse, Soxe, SoxeCreate, SoxeUpdate } from "@/types/api.types";
+import {
+  ApiResponse,
+  ApiPaginatedResponse,
+  PaginationParams,
+  Soxe,
+  SoxeCreate,
+  SoxeUpdate,
+} from "@/types/api.types";
 
 /**
  * Service quản lý số xe
  */
 export const vehicleApi = {
   /**
-   * Lấy danh sách tất cả xe
+   * Lấy danh sách tất cả xe (DEPRECATED - use getVehicles instead)
+   * @deprecated Sử dụng getVehicles với pagination
    */
   getAllVehicles: async (): Promise<ApiResponse<Soxe[]>> => {
     try {
@@ -15,6 +23,27 @@ export const vehicleApi = {
       return response.data;
     } catch (error) {
       console.error("Get all vehicles error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách xe với pagination (NEW)
+   * @param params Pagination parameters (page, pageSize)
+   */
+  getVehicles: async (
+    params?: PaginationParams,
+  ): Promise<ApiPaginatedResponse<Soxe>> => {
+    try {
+      const response = await api.get<ApiPaginatedResponse<Soxe>>("/soxe", {
+        params: {
+          page: params?.page || 1,
+          pageSize: params?.pageSize || 10,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Get vehicles with pagination error:", error);
       throw error;
     }
   },

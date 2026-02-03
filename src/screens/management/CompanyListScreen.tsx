@@ -19,6 +19,8 @@ import Button from "@/components/common/Button";
 import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"; // ✅ NEW
+import LoadMoreButton from "@/components/common/LoadMoreButton"; // ✅ NEW
 import { Khachhang } from "@/types/api.types";
 import { ManagementStackScreenProps } from "@/types/navigation.types";
 import { formatPhoneNumber } from "@/utils/formatters";
@@ -30,45 +32,36 @@ const CompanyListScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { colors } = useAppTheme();
 
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [companies, setCompanies] = useState<Khachhang[]>([]);
+  // ✅ UPDATED: Use infinite scroll pagination hook
+  const {
+    items: companies,
+    loading,
+    loadingMore,
+    hasMore,
+    loadMore,
+    refresh,
+    isRefreshing,
+  } = useInfiniteScroll<Khachhang>(
+    async (page, pageSize) => {
+      const response = await customerApi.getCustomers({ page, pageSize });
+      return response.success ? response.data : null;
+    },
+    { pageSize: 20 },
+  );
+
   const [filteredCompanies, setFilteredCompanies] = useState<Khachhang[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   useFocusEffect(
     useCallback(() => {
-      loadCompanies();
+      refresh();
     }, []),
   );
 
   useEffect(() => {
     applySearch();
   }, [companies, searchQuery]);
-
-  const loadCompanies = async () => {
-    try {
-      setLoading(true);
-      const response = await customerApi.getAllCustomers();
-      if (response.success) {
-        setCompanies(response.data.data);
-      }
-    } catch (error) {
-      console.error("Load companies error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRefresh = async () => {
-    try {
-      setRefreshing(true);
-      await loadCompanies();
-    } finally {
-      setRefreshing(false);
-    }
-  };
 
   const applySearch = () => {
     if (!searchQuery.trim()) {
@@ -364,8 +357,8 @@ const CompanyListScreen: React.FC = () => {
               renderItem={renderTableRow}
               keyExtractor={(item) => item.id.toString()}
               contentContainerStyle={styles.tableContent}
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
+              refreshing={isRefreshing}
+              onRefresh={refresh}
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
                   {loading ? (
@@ -386,6 +379,15 @@ const CompanyListScreen: React.FC = () => {
                   )}
                 </View>
               }
+              ListFooterComponent={
+                !loading && !searchQuery ? (
+                  <LoadMoreButton
+                    onPress={loadMore}
+                    loading={loadingMore}
+                    hasMore={hasMore}
+                  />
+                ) : null
+              }
             />
           </View>
         ) : (
@@ -394,8 +396,8 @@ const CompanyListScreen: React.FC = () => {
             renderItem={renderCompanyItem}
             keyExtractor={(item) => item.id.toString()}
             contentContainerStyle={styles.listContent}
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
+            refreshing={isRefreshing}
+            onRefresh={refresh}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 {loading ? (
@@ -423,11 +425,20 @@ const CompanyListScreen: React.FC = () => {
                 )}
               </View>
             }
+            ListFooterComponent={
+              !loading && !searchQuery ? (
+                <LoadMoreButton
+                  onPress={loadMore}
+                  loading={loadingMore}
+                  hasMore={hasMore}
+                />
+              ) : null
+            }
           />
         )}
       </View>
 
-      <Loading loading={loading && !refreshing} />
+      <Loading loading={loading && !isRefreshing} />
     </ThemedView>
   );
 };

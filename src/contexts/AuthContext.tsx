@@ -86,15 +86,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const isSessionValid = await authApi.validateToken();
 
           if (isSessionValid) {
-            // Valid session - set authenticated state
+            // ✅ FIXED: Access properties directly (.NET flattened format)
             setAuthState({
               isAuthenticated: true,
               isLoading: false,
               sessionToken,
               tenantInfo,
               userInfo: {
-                id: tenantInfo.khachHang.id,
-                username: tenantInfo.khachHang.maKhachHang,
+                id: tenantInfo.selectedStation?.maTramCan || 0,
+                username: tenantInfo.selectedStation?.tenTramCan || "",
               } as Nhanvien,
             });
           } else {
@@ -163,10 +163,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await authApi.selectStation({ sessionToken, tramCanId });
 
       if (response.success) {
-        // Update auth state with final session
+        // ✅ FIXED: Access data directly (.NET flattened format)
         const newTenantInfo: TenantInfo = {
-          khachHang: response.data.khachHang as KhachHang,
           selectedStation: response.data.selectedStation,
+          dbConfig: response.data.dbConfig,
         };
 
         setAuthState({
@@ -175,8 +175,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           sessionToken: response.data.sessionToken,
           tenantInfo: newTenantInfo,
           userInfo: {
-            id: response.data.khachHang.maKhachHang || 0,
-            username: response.data.khachHang.maKhachHang,
+            id: response.data.selectedStation?.maTramCan || 0,
+            username: response.data.selectedStation?.tenTramCan || "",
           } as Nhanvien,
         });
 
@@ -273,10 +273,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await stationApi.switchStation(tramCanId);
 
       if (response.success) {
-        // Update auth state with new station info
+        // ✅ FIXED: Update auth state with flattened structure
         const newTenantInfo = {
-          khachHang: response.data.khachHang,
           selectedStation: response.data.selectedStation,
+          dbConfig: response.data.dbConfig,
         };
 
         setAuthState((prev) => ({
@@ -285,8 +285,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           tenantInfo: newTenantInfo,
           userInfo: {
             ...prev.userInfo,
-            id: response.data.khachHang.maKhachHang || 0,
-            username: response.data.khachHang.maKhachHang,
+            id: response.data.selectedStation?.maTramCan || 0,
+            username: response.data.selectedStation?.tenTramCan || "",
           } as Nhanvien,
         }));
 

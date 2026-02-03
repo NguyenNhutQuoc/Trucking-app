@@ -19,6 +19,8 @@ import Button from "@/components/common/Button";
 import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"; // ✅ NEW
+import LoadMoreButton from "@/components/common/LoadMoreButton"; // ✅ NEW
 import { Soxe } from "@/types/api.types";
 import { ManagementStackScreenProps } from "@/types/navigation.types";
 
@@ -29,45 +31,36 @@ const VehicleListScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { colors } = useAppTheme();
 
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [vehicles, setVehicles] = useState<Soxe[]>([]);
+  // ✅ UPDATED: Use infinite scroll pagination hook
+  const {
+    items: vehicles,
+    loading,
+    loadingMore,
+    hasMore,
+    loadMore,
+    refresh,
+    isRefreshing,
+  } = useInfiniteScroll<Soxe>(
+    async (page, pageSize) => {
+      const response = await vehicleApi.getVehicles({ page, pageSize });
+      return response.success ? response.data : null;
+    },
+    { pageSize: 20 },
+  );
+
   const [filteredVehicles, setFilteredVehicles] = useState<Soxe[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   useFocusEffect(
     useCallback(() => {
-      loadVehicles();
+      refresh();
     }, []),
   );
 
   useEffect(() => {
     applySearch();
   }, [vehicles, searchQuery]);
-
-  const loadVehicles = async () => {
-    try {
-      setLoading(true);
-      const response = await vehicleApi.getAllVehicles();
-      if (response.success) {
-        setVehicles(response.data.data);
-      }
-    } catch (error) {
-      console.error("Load vehicles error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRefresh = async () => {
-    try {
-      setRefreshing(true);
-      await loadVehicles();
-    } finally {
-      setRefreshing(false);
-    }
-  };
 
   const applySearch = () => {
     if (!searchQuery.trim()) {
@@ -316,8 +309,8 @@ const VehicleListScreen: React.FC = () => {
               renderItem={renderTableRow}
               keyExtractor={(item) => item.id.toString()}
               contentContainerStyle={styles.tableContent}
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
+              refreshing={isRefreshing}
+              onRefresh={refresh}
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
                   {loading ? (
@@ -338,6 +331,15 @@ const VehicleListScreen: React.FC = () => {
                   )}
                 </View>
               }
+              ListFooterComponent={
+                !loading && !searchQuery ? (
+                  <LoadMoreButton
+                    onPress={loadMore}
+                    loading={loadingMore}
+                    hasMore={hasMore}
+                  />
+                ) : null
+              }
             />
           </View>
         ) : (
@@ -346,8 +348,8 @@ const VehicleListScreen: React.FC = () => {
             renderItem={renderListItem}
             keyExtractor={(item) => item.id.toString()}
             contentContainerStyle={styles.listContent}
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
+            refreshing={isRefreshing}
+            onRefresh={refresh}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 {loading ? (
@@ -375,11 +377,20 @@ const VehicleListScreen: React.FC = () => {
                 )}
               </View>
             }
+            ListFooterComponent={
+              !loading && !searchQuery ? (
+                <LoadMoreButton
+                  onPress={loadMore}
+                  loading={loadingMore}
+                  hasMore={hasMore}
+                />
+              ) : null
+            }
           />
         )}
       </View>
 
-      <Loading loading={loading && !refreshing} />
+      <Loading loading={loading && !isRefreshing} />
     </ThemedView>
   );
 };

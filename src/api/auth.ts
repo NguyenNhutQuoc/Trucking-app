@@ -9,22 +9,24 @@ import {
 } from "@/types/api.types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// ✅ NEW: Updated interfaces for multi-tenant
+// ✅ NEW: Updated interfaces for multi-tenant (.NET Compatible)
 export interface TenantLoginRequest {
   maKhachHang: string;
   password: string;
 }
 
+/**
+ * Response từ .NET API cho tenant login
+ * Format: { success, message, data: {...}, statusCode }
+ */
 export interface TenantLoginResponse {
   success: boolean;
   message: string;
   data: {
     sessionToken: string;
-    khachHang: {
-      id: number;
-      maKhachHang: string;
-      tenKhachHang: string;
-    };
+    khachHangId: number; // ← Có thể có hoặc không tùy .NET API
+    maKhachHang: string;
+    tenKhachHang: string;
     tramCans: Array<{
       id: number;
       maTramCan: string;
@@ -32,6 +34,7 @@ export interface TenantLoginResponse {
       diaChi: string;
     }>;
   };
+  statusCode?: number; // ← NEW: Optional từ .NET
 }
 
 export interface StationSelectionRequest {
@@ -39,6 +42,10 @@ export interface StationSelectionRequest {
   tramCanId: number;
 }
 
+/**
+ * Response từ .NET API cho station selection
+ * Format: { success, message, data: {...}, statusCode }
+ */
 export interface StationSelectionResponse {
   success: boolean;
   message: string;
@@ -46,28 +53,48 @@ export interface StationSelectionResponse {
     sessionToken: string;
     selectedStation: {
       id: number;
+      maTramCan: string; // ← Thêm field này từ .NET
       tenTramCan: string;
+      diaChi: string; // ← Thêm field này từ .NET
     };
-    khachHang: {
-      maKhachHang: string;
-      tenKhachHang: string;
+    dbConfig?: {
+      // ← Optional, .NET có thể trả về
+      host: string;
+      port: number;
+      database: string;
+      username: string;
+      password: string;
+      instanceName?: string | null;
     };
   };
+  statusCode?: number; // ← NEW: Optional từ .NET
 }
 
+/**
+ * Response từ .NET API cho session validation
+ * Format: { success, message, data: {...}, statusCode }
+ */
 export interface SessionValidationResponse {
   success: boolean;
   message: string;
   data?: {
-    khachHang: {
-      maKhachHang: string;
-      tenKhachHang: string;
-    };
-    tramCan: {
+    sessionToken?: string;
+    selectedStation?: {
       id: number;
+      maTramCan: string;
       tenTramCan: string;
+      diaChi: string;
+    };
+    dbConfig?: {
+      host: string;
+      port: number;
+      database: string;
+      username: string;
+      password: string;
+      instanceName?: string | null;
     };
   };
+  statusCode?: number; // ← NEW: Optional từ .NET
 }
 
 /**
@@ -155,7 +182,7 @@ export const authApi = {
       if (response.data.success) {
         console.log("✅ Tenant login successful");
 
-        // ✅ CRITICAL FIX: Immediately store temp session token
+        // ✅ FIXED: Access sessionToken correctly (nested .data.data)
         console.log("💾 Storing temporary session token...");
         await AsyncStorage.setItem("session_token", response.data.data.sessionToken);
 
@@ -195,8 +222,8 @@ export const authApi = {
         await AsyncStorage.setItem(
           "tenant_info",
           JSON.stringify({
-            khachHang: response.data.data.khachHang,
             selectedStation: response.data.data.selectedStation,
+            dbConfig: response.data.data.dbConfig,
           }),
         );
       }
@@ -347,10 +374,10 @@ export const authApi = {
       data: {
         token: response.data.sessionToken,
         user: {
-          nvId: response.data.khachHang.id?.toString() ?? "",
-          tenNV: response.data.khachHang.tenKhachHang ?? "",
-          type: 0, // Set appropriate value if available
-          nhomId: 0, // Set appropriate value if available
+          nvId: response.data.maKhachHang || "",
+          tenNV: response.data.tenKhachHang || "",
+          type: 0,
+          nhomId: 0,
         },
       },
     };

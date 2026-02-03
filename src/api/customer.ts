@@ -2,6 +2,8 @@
 import api from "./api";
 import {
   ApiResponse,
+  ApiPaginatedResponse,
+  PaginationParams,
   Khachhang,
   KhachhangCreate,
   KhachhangUpdate,
@@ -12,7 +14,8 @@ import {
  */
 export const customerApi = {
   /**
-   * Lấy danh sách tất cả khách hàng
+   * Lấy danh sách tất cả khách hàng (DEPRECATED - use getCustomers instead)
+   * @deprecated Sử dụng getCustomers với pagination
    */
   getAllCustomers: async (): Promise<ApiResponse<Khachhang[]>> => {
     try {
@@ -20,6 +23,30 @@ export const customerApi = {
       return response.data;
     } catch (error) {
       console.error("Get all customers error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách khách hàng với pagination (NEW)
+   * @param params Pagination parameters (page, pageSize)
+   */
+  getCustomers: async (
+    params?: PaginationParams,
+  ): Promise<ApiPaginatedResponse<Khachhang>> => {
+    try {
+      const response = await api.get<ApiPaginatedResponse<Khachhang>>(
+        "/khachhang",
+        {
+          params: {
+            page: params?.page || 1,
+            pageSize: params?.pageSize || 10,
+          },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Get customers with pagination error:", error);
       throw error;
     }
   },

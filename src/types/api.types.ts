@@ -25,10 +25,54 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
+// ============================================
+// 📦 API RESPONSE TYPES (.NET Compatible)
+// ============================================
+
+/**
+ * Base API Response từ .NET backend
+ * Tương thích với format: { success, message, data, statusCode }
+ */
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
+  statusCode?: number; // ← NEW: Optional field từ .NET API
+}
+
+/**
+ * Paginated response wrapper for list endpoints
+ * Sử dụng cho tất cả các endpoints GET list với pagination
+ * Format từ .NET: { items, totalCount, page, pageSize, totalPages, hasPrevious, hasNext }
+ */
+export interface PaginatedResponse<T> {
+  items: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasPrevious: boolean;
+  hasNext: boolean;
+}
+
+/**
+ * Pagination request parameters
+ * Sử dụng khi gọi API có pagination
+ */
+export interface PaginationParams {
+  page?: number; // Default: 1
+  pageSize?: number; // Default: 10, Max: 100
+}
+
+/**
+ * API Response với Pagination (.NET format)
+ * Wrapper cho API response có pagination
+ */
+export interface ApiPaginatedResponse<T> {
+  success: boolean;
+  message: string;
+  data: PaginatedResponse<T>;
+  statusCode?: number; // ← NEW: Optional field từ .NET API
 }
 
 // Phiếu cân
@@ -304,14 +348,14 @@ export interface KhachHang {
 }
 
 export interface TenantLoginResponse {
-  success: boolean;
-  message: string;
-  data: {
-    sessionToken: string;
-    khachHang: KhachHang;
-    tramCans: TramCan[];
-  };
+  sessionToken: string;
+  khachHangId: number;
+  maKhachHang: string;
+  tenKhachHang: string;
+  tramCans: TramCan[];
 }
+
+export interface TenantLoginApiResponse extends ApiResponse<TenantLoginResponse> {}
 
 export interface StationSelectionRequest {
   sessionToken: string;
@@ -324,31 +368,30 @@ export interface SelectedStation {
 }
 
 export interface StationSelectionResponse {
-  success: boolean;
-  message: string;
-  data: {
-    sessionToken: string;
-    selectedStation: SelectedStation;
-    khachHang: KhachHang;
-  };
+  sessionToken: string;
+  selectedStation: SelectedStation;
+  dbConfig?: DbConfig;
 }
+
+export interface StationSelectionApiResponse extends ApiResponse<StationSelectionResponse> {}
 
 export interface SessionValidationRequest {
   sessionToken: string;
 }
 
 export interface SessionValidationResponse {
-  success: boolean;
-  message: string;
-  data?: {
-    khachHang: KhachHang;
-    tramCan: SelectedStation;
-  };
+  isValid: boolean;
+  selectedStation?: SelectedStation;
+  dbConfig?: DbConfig;
 }
 
+export interface SessionValidationApiResponse extends ApiResponse<SessionValidationResponse> {}
+
+// ✅ UPDATED: Flattened TenantInfo (.NET format)
+// Không còn nested khachHang, chỉ có selectedStation và dbConfig
 export interface TenantInfo {
-  khachHang: KhachHang;
   selectedStation: SelectedStation;
+  dbConfig?: DbConfig; // Optional database configuration
 }
 
 // ✅ GIỮ NGUYÊN: Existing types for backward compatibility

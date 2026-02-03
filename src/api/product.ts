@@ -2,6 +2,8 @@
 import api from "./api";
 import {
   ApiResponse,
+  ApiPaginatedResponse,
+  PaginationParams,
   Hanghoa,
   HanghoaCreate,
   HanghoaUpdate,
@@ -12,7 +14,8 @@ import {
  */
 export const productApi = {
   /**
-   * Lấy danh sách tất cả hàng hóa
+   * Lấy danh sách tất cả hàng hóa (DEPRECATED - use getProducts instead)
+   * @deprecated Sử dụng getProducts với pagination
    */
   getAllProducts: async (): Promise<ApiResponse<Hanghoa[]>> => {
     try {
@@ -20,6 +23,30 @@ export const productApi = {
       return response.data;
     } catch (error) {
       console.error("Get all products error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách hàng hóa với pagination (NEW)
+   * @param params Pagination parameters (page, pageSize)
+   */
+  getProducts: async (
+    params?: PaginationParams,
+  ): Promise<ApiPaginatedResponse<Hanghoa>> => {
+    try {
+      const response = await api.get<ApiPaginatedResponse<Hanghoa>>(
+        "/hanghoa",
+        {
+          params: {
+            page: params?.page || 1,
+            pageSize: params?.pageSize || 10,
+          },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Get products with pagination error:", error);
       throw error;
     }
   },

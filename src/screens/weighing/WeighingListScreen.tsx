@@ -22,6 +22,8 @@ import Loading from "@/components/common/Loading";
 import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"; // ✅ NEW
+import LoadMoreButton from "@/components/common/LoadMoreButton"; // ✅ NEW
 import { Phieucan } from "@/types/api.types";
 import { formatWeight } from "@/utils/formatters";
 
@@ -48,10 +50,23 @@ const WeighingListScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useAppTheme();
 
-  // State
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [weighings, setWeighings] = useState<Phieucan[]>([]);
+  // ✅ UPDATED: Use infinite scroll pagination hook
+  const {
+    items: weighings,
+    loading,
+    loadingMore,
+    hasMore,
+    loadMore,
+    refresh,
+    isRefreshing,
+  } = useInfiniteScroll<Phieucan>(
+    async (page, pageSize) => {
+      const response = await weighingApi.getWeighings({ page, pageSize });
+      return response.success ? response.data : null;
+    },
+    { pageSize: 20 },
+  );
+
   const [filteredWeighings, setFilteredWeighings] = useState<Phieucan[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterState>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -65,7 +80,7 @@ const WeighingListScreen: React.FC = () => {
   // Effects
   useFocusEffect(
     useCallback(() => {
-      loadData();
+      refresh();
     }, []),
   );
 
@@ -106,36 +121,6 @@ const WeighingListScreen: React.FC = () => {
   };
 
   // Data Functions
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const response = await weighingApi.getAllWeighings();
-      if (response.success) {
-        const sortedWeighings = response.data.data.sort((a, b) => {
-          return (
-            new Date(b.ngaycan1).getTime() - new Date(a.ngaycan1).getTime()
-          );
-        });
-        setWeighings(sortedWeighings);
-      }
-    } catch (error) {
-      console.error("Load weighings error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onRefresh = async () => {
-    try {
-      setRefreshing(true);
-      await loadData();
-    } catch (error) {
-      console.error("Refresh data error:", error);
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
   const applyFilters = () => {
     let result = [...weighings];
 
@@ -746,8 +731,8 @@ const WeighingListScreen: React.FC = () => {
               showsVerticalScrollIndicator={false}
               refreshControl={
                 <RefreshControl
-                  refreshing={refreshing}
-                  onRefresh={onRefresh}
+                  refreshing={isRefreshing}
+                  onRefresh={refresh}
                   colors={[colors.primary]}
                   tintColor={colors.primary}
                 />
@@ -766,6 +751,15 @@ const WeighingListScreen: React.FC = () => {
                   </ThemedText>
                 </View>
               }
+              ListFooterComponent={
+                !loading && !searchQuery ? (
+                  <LoadMoreButton
+                    onPress={loadMore}
+                    loading={loadingMore}
+                    hasMore={hasMore}
+                  />
+                ) : null
+              }
             />
           </View>
         ) : (
@@ -777,8 +771,8 @@ const WeighingListScreen: React.FC = () => {
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
+                refreshing={isRefreshing}
+                onRefresh={refresh}
                 colors={[colors.primary]}
                 tintColor={colors.primary}
               />
@@ -804,12 +798,21 @@ const WeighingListScreen: React.FC = () => {
                 />
               </View>
             }
+            ListFooterComponent={
+              !loading && !searchQuery ? (
+                <LoadMoreButton
+                  onPress={loadMore}
+                  loading={loadingMore}
+                  hasMore={hasMore}
+                />
+              ) : null
+            }
           />
         )}
       </View>
 
       <FilterModal />
-      <Loading loading={loading} />
+      <Loading loading={loading && !isRefreshing} />
     </ThemedView>
   );
 };

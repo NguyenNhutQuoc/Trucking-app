@@ -17,9 +17,11 @@ import Header from "@/components/common/Header";
 import Card from "@/components/common/Card";
 import Loading from "@/components/common/Loading";
 import Button from "@/components/common/Button";
-import ThemedView from "@/components/common/ThemedView"; // Import ThemedView
-import ThemedText from "@/components/common/ThemedText"; // Import ThemedText
-import { useAppTheme } from "@/hooks/useAppTheme"; // Import the theme hook
+import ThemedView from "@/components/common/ThemedView";
+import ThemedText from "@/components/common/ThemedText";
+import { useAppTheme } from "@/hooks/useAppTheme";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"; // ✅ NEW
+import LoadMoreButton from "@/components/common/LoadMoreButton"; // ✅ NEW
 import { Nhanvien, NhanvienWithPermissions } from "@/types/api.types";
 import { ManagementStackScreenProps } from "@/types/navigation.types";
 
@@ -27,52 +29,37 @@ type NavigationProp = ManagementStackScreenProps<"UserList">["navigation"];
 
 const UserListScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { colors, isDarkMode } = useAppTheme(); // Use the theme hook
+  const { colors, isDarkMode } = useAppTheme();
 
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [users, setUsers] = useState<Nhanvien[]>([]);
+  // ✅ UPDATED: Use infinite scroll pagination hook
+  const {
+    items: users,
+    loading,
+    loadingMore,
+    hasMore,
+    loadMore,
+    refresh,
+    isRefreshing,
+  } = useInfiniteScroll<Nhanvien>(
+    async (page, pageSize) => {
+      const response = await userApi.getUsers({ page, pageSize });
+      return response.success ? response.data : null;
+    },
+    { pageSize: 20 },
+  );
+
   const [filteredUsers, setFilteredUsers] = useState<Nhanvien[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
   useFocusEffect(
     useCallback(() => {
-      loadUsers();
+      refresh();
     }, []),
   );
 
   useEffect(() => {
     applySearch();
   }, [users, searchQuery]);
-
-  const loadUsers = async () => {
-    try {
-      setLoading(true);
-      const response = await userApi.getAllUsers();
-      if (response.success) {
-        setUsers(response.data.data);
-      } else {
-        Alert.alert(
-          "Lỗi",
-          response.message || "Không thể tải danh sách người dùng",
-        );
-      }
-    } catch (error) {
-      console.error("Load users error:", error);
-      Alert.alert("Lỗi", "Có lỗi xảy ra khi tải danh sách người dùng");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRefresh = async () => {
-    try {
-      setRefreshing(true);
-      await loadUsers();
-    } finally {
-      setRefreshing(false);
-    }
-  };
 
   const applySearch = () => {
     if (!searchQuery.trim()) {
@@ -333,8 +320,8 @@ const UserListScreen: React.FC = () => {
           renderItem={renderUserItem}
           keyExtractor={(item) => item.nvId}
           contentContainerStyle={styles.listContent}
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
+          refreshing={isRefreshing}
+          onRefresh={refresh}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               {loading ? (
@@ -362,10 +349,19 @@ const UserListScreen: React.FC = () => {
               )}
             </View>
           }
+          ListFooterComponent={
+            !loading && !searchQuery ? (
+              <LoadMoreButton
+                onPress={loadMore}
+                loading={loadingMore}
+                hasMore={hasMore}
+              />
+            ) : null
+          }
         />
       </View>
 
-      <Loading loading={loading && !refreshing} />
+      <Loading loading={loading && !isRefreshing} />
     </ThemedView>
   );
 };

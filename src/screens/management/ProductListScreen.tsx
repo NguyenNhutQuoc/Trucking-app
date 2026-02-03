@@ -19,6 +19,8 @@ import Button from "@/components/common/Button";
 import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"; // ✅ NEW: Use infinite scroll hook
+import LoadMoreButton from "@/components/common/LoadMoreButton"; // ✅ NEW: Load more button
 import { Hanghoa } from "@/types/api.types";
 import { ManagementStackScreenProps } from "@/types/navigation.types";
 
@@ -29,45 +31,36 @@ const ProductListScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { colors } = useAppTheme();
 
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [products, setProducts] = useState<Hanghoa[]>([]);
+  // ✅ UPDATED: Use infinite scroll pagination hook
+  const {
+    items: products,
+    loading,
+    loadingMore,
+    hasMore,
+    loadMore,
+    refresh,
+    isRefreshing,
+  } = useInfiniteScroll<Hanghoa>(
+    async (page, pageSize) => {
+      const response = await productApi.getProducts({ page, pageSize });
+      return response.success ? response.data : null;
+    },
+    { pageSize: 20 }, // Load 20 items per page
+  );
+
   const [filteredProducts, setFilteredProducts] = useState<Hanghoa[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   useFocusEffect(
     useCallback(() => {
-      loadProducts();
+      refresh(); // Refresh on screen focus
     }, []),
   );
 
   useEffect(() => {
     applySearch();
   }, [products, searchQuery]);
-
-  const loadProducts = async () => {
-    try {
-      setLoading(true);
-      const response = await productApi.getAllProducts();
-      if (response.success) {
-        setProducts(response.data.data);
-      }
-    } catch (error) {
-      console.error("Load products error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRefresh = async () => {
-    try {
-      setRefreshing(true);
-      await loadProducts();
-    } finally {
-      setRefreshing(false);
-    }
-  };
 
   const applySearch = () => {
     if (!searchQuery.trim()) {
@@ -337,8 +330,8 @@ const ProductListScreen: React.FC = () => {
               renderItem={renderTableRow}
               keyExtractor={(item) => item.id.toString()}
               contentContainerStyle={styles.tableContent}
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
+              refreshing={isRefreshing}
+              onRefresh={refresh}
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
                   {loading ? (
@@ -359,6 +352,15 @@ const ProductListScreen: React.FC = () => {
                   )}
                 </View>
               }
+              ListFooterComponent={
+                !loading && !searchQuery ? (
+                  <LoadMoreButton
+                    onPress={loadMore}
+                    loading={loadingMore}
+                    hasMore={hasMore}
+                  />
+                ) : null
+              }
             />
           </View>
         ) : (
@@ -367,8 +369,8 @@ const ProductListScreen: React.FC = () => {
             renderItem={renderProductItem}
             keyExtractor={(item) => item.id.toString()}
             contentContainerStyle={styles.listContent}
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
+            refreshing={isRefreshing}
+            onRefresh={refresh}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 {loading ? (
@@ -396,11 +398,20 @@ const ProductListScreen: React.FC = () => {
                 )}
               </View>
             }
+            ListFooterComponent={
+              !loading && !searchQuery ? (
+                <LoadMoreButton
+                  onPress={loadMore}
+                  loading={loadingMore}
+                  hasMore={hasMore}
+                />
+              ) : null
+            }
           />
         )}
       </View>
 
-      <Loading loading={loading && !refreshing} />
+      <Loading loading={loading && !isRefreshing} />
     </ThemedView>
   );
 };

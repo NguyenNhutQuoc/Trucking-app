@@ -2,6 +2,8 @@
 import api from "./api";
 import {
   ApiResponse,
+  ApiPaginatedResponse,
+  PaginationParams,
   Phieucan,
   PhieucanCreate,
   PhieucanComplete,
@@ -14,7 +16,8 @@ import {
  */
 export const weighingApi = {
   /**
-   * Lấy danh sách tất cả phiếu cân
+   * Lấy danh sách tất cả phiếu cân (DEPRECATED - use getWeighings instead)
+   * @deprecated Sử dụng getWeighings với pagination
    */
   getAllWeighings: async (): Promise<ApiResponse<Phieucan[]>> => {
     try {
@@ -22,6 +25,30 @@ export const weighingApi = {
       return response.data;
     } catch (error) {
       console.error("Get all weighings error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách phiếu cân với pagination (NEW)
+   * @param params Pagination parameters (page, pageSize)
+   */
+  getWeighings: async (
+    params?: PaginationParams,
+  ): Promise<ApiPaginatedResponse<Phieucan>> => {
+    try {
+      const response = await api.get<ApiPaginatedResponse<Phieucan>>(
+        "/phieucan",
+        {
+          params: {
+            page: params?.page || 1,
+            pageSize: params?.pageSize || 10,
+          },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Get weighings with pagination error:", error);
       throw error;
     }
   },

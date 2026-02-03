@@ -2,6 +2,8 @@
 import api from "./api";
 import {
   ApiResponse,
+  ApiPaginatedResponse,
+  PaginationParams,
   Nhanvien,
   NhanvienCreate,
   NhanvienUpdate,
@@ -13,7 +15,8 @@ import {
  */
 export const userApi = {
   /**
-   * Lấy danh sách tất cả người dùng
+   * Lấy danh sách tất cả người dùng (DEPRECATED - use getUsers instead)
+   * @deprecated Sử dụng getUsers với pagination
    */
   getAllUsers: async (): Promise<ApiResponse<Nhanvien[]>> => {
     try {
@@ -21,6 +24,30 @@ export const userApi = {
       return response.data;
     } catch (error) {
       console.error("Get all users error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách người dùng với pagination (NEW)
+   * @param params Pagination parameters (page, pageSize)
+   */
+  getUsers: async (
+    params?: PaginationParams,
+  ): Promise<ApiPaginatedResponse<Nhanvien>> => {
+    try {
+      const response = await api.get<ApiPaginatedResponse<Nhanvien>>(
+        "/nhanvien",
+        {
+          params: {
+            page: params?.page || 1,
+            pageSize: params?.pageSize || 10,
+          },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Get users with pagination error:", error);
       throw error;
     }
   },

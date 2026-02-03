@@ -2,6 +2,8 @@
 import api from "./api";
 import {
   ApiResponse,
+  ApiPaginatedResponse,
+  PaginationParams,
   NhomQuyen,
   NhomQuyenCreate,
   NhomQuyenUpdate,
@@ -16,7 +18,8 @@ import {
  */
 export const permissionApi = {
   /**
-   * Lấy danh sách tất cả nhóm quyền
+   * Lấy danh sách tất cả nhóm quyền (DEPRECATED - use getGroups instead)
+   * @deprecated Sử dụng getGroups với pagination
    */
   getAllGroups: async (): Promise<ApiResponse<NhomQuyen[]>> => {
     try {
@@ -24,6 +27,30 @@ export const permissionApi = {
       return response.data;
     } catch (error) {
       console.error("Get all permission groups error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách nhóm quyền với pagination (NEW)
+   * @param params Pagination parameters (page, pageSize)
+   */
+  getGroups: async (
+    params?: PaginationParams,
+  ): Promise<ApiPaginatedResponse<NhomQuyen>> => {
+    try {
+      const response = await api.get<ApiPaginatedResponse<NhomQuyen>>(
+        "/nhomquyen",
+        {
+          params: {
+            page: params?.page || 1,
+            pageSize: params?.pageSize || 10,
+          },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Get groups with pagination error:", error);
       throw error;
     }
   },

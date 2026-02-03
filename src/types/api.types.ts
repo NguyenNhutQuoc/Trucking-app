@@ -355,7 +355,8 @@ export interface TenantLoginResponse {
   tramCans: TramCan[];
 }
 
-export interface TenantLoginApiResponse extends ApiResponse<TenantLoginResponse> {}
+export interface TenantLoginApiResponse
+  extends ApiResponse<TenantLoginResponse> {}
 
 export interface StationSelectionRequest {
   sessionToken: string;
@@ -373,7 +374,8 @@ export interface StationSelectionResponse {
   dbConfig?: DbConfig;
 }
 
-export interface StationSelectionApiResponse extends ApiResponse<StationSelectionResponse> {}
+export interface StationSelectionApiResponse
+  extends ApiResponse<StationSelectionResponse> {}
 
 export interface SessionValidationRequest {
   sessionToken: string;
@@ -385,7 +387,8 @@ export interface SessionValidationResponse {
   dbConfig?: DbConfig;
 }
 
-export interface SessionValidationApiResponse extends ApiResponse<SessionValidationResponse> {}
+export interface SessionValidationApiResponse
+  extends ApiResponse<SessionValidationResponse> {}
 
 // ✅ UPDATED: Flattened TenantInfo (.NET format)
 // Không còn nested khachHang, chỉ có selectedStation và dbConfig

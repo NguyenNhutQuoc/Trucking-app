@@ -170,7 +170,9 @@ export const authApi = {
   /**
    * Đăng nhập theo tenant (bước 1)
    */
-  tenantLogin: async (credentials: TenantLoginRequest): Promise<TenantLoginResponse> => {
+  tenantLogin: async (
+    credentials: TenantLoginRequest,
+  ): Promise<TenantLoginResponse> => {
     try {
       console.log("🔐 Starting tenant login:", credentials.maKhachHang);
 
@@ -184,9 +186,15 @@ export const authApi = {
 
         // ✅ FIXED: Access sessionToken correctly (nested .data.data)
         console.log("💾 Storing temporary session token...");
-        await AsyncStorage.setItem("session_token", response.data.data.sessionToken);
+        await AsyncStorage.setItem(
+          "session_token",
+          response.data.data.sessionToken,
+        );
 
-        console.log("🔑 Temp token stored:", response.data.data.sessionToken.substring(0, 20) + "...");
+        console.log(
+          "🔑 Temp token stored:",
+          response.data.data.sessionToken.substring(0, 20) + "...",
+        );
       }
 
       return response.data;

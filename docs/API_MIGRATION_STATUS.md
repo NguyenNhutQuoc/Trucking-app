@@ -9,6 +9,7 @@
 #### 1. Types & Interfaces (api.types.ts)
 
 **ApiResponse**
+
 ```typescript
 // OLD (Node.js compatible)
 interface ApiResponse<T> {
@@ -22,11 +23,12 @@ interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
-  statusCode?: number;  // ← ADDED
+  statusCode?: number; // ← ADDED
 }
 ```
 
-**PaginatedResponse** 
+**PaginatedResponse**
+
 ```typescript
 // ADDED - Cho .NET pagination
 interface PaginatedResponse<T> {
@@ -42,14 +44,15 @@ interface PaginatedResponse<T> {
 interface ApiPaginatedResponse<T> {
   success: boolean;
   message: string;
-  data: PaginatedResponse<T>;  // ← Wrapped
-  statusCode?: number;  // ← ADDED
+  data: PaginatedResponse<T>; // ← Wrapped
+  statusCode?: number; // ← ADDED
 }
 ```
 
 #### 2. Auth Types (auth.ts)
 
 **TenantLoginResponse**
+
 ```typescript
 // OLD
 interface TenantLoginResponse {
@@ -74,6 +77,7 @@ interface TenantLoginResponse {
 ```
 
 **StationSelectionResponse**
+
 ```typescript
 // OLD
 interface StationSelectionResponse {
@@ -103,6 +107,7 @@ interface StationSelectionResponse {
 #### 3. API Functions
 
 **Pagination Functions** (product.ts, customer.ts, etc.)
+
 ```typescript
 // OLD - Deprecated
 getAllProducts(): Promise<ApiResponse<Hanghoa[]>>
@@ -118,6 +123,7 @@ getProducts(params?: PaginationParams): Promise<ApiPaginatedResponse<Hanghoa>>
 ### 1. List Endpoints - Pagination Required
 
 **Các endpoints bị ảnh hưởng:**
+
 - `/api/v1/hanghoa` (GET)
 - `/api/v1/khachhang` (GET)
 - `/api/v1/soxe` (GET)
@@ -130,11 +136,11 @@ getProducts(params?: PaginationParams): Promise<ApiPaginatedResponse<Hanghoa>>
 ```typescript
 // ❌ OLD (Node.js) - KHÔNG DÙNG NỮA
 const response = await productApi.getAllProducts();
-const items = response.data;  // Array trực tiếp
+const items = response.data; // Array trực tiếp
 
 // ✅ NEW (.NET) - DÙNG CÁI NÀY
 const response = await productApi.getProducts({ page: 1, pageSize: 20 });
-const items = response.data.items;  // Nested trong object
+const items = response.data.items; // Nested trong object
 const totalCount = response.data.totalCount;
 const hasMore = response.data.hasNext;
 ```
@@ -142,20 +148,22 @@ const hasMore = response.data.hasNext;
 ### 2. Auth Response Structure
 
 **Tenant Login:**
+
 ```typescript
 // ❌ OLD
 const response = await authApi.tenantLogin(credentials);
-const khachHang = response.data.khachHang;  // Nested object
+const khachHang = response.data.khachHang; // Nested object
 const maKH = khachHang.maKhachHang;
 const tenKH = khachHang.tenKhachHang;
 
 // ✅ NEW
 const response = await authApi.tenantLogin(credentials);
-const maKH = response.data.maKhachHang;   // Flattened
+const maKH = response.data.maKhachHang; // Flattened
 const tenKH = response.data.tenKhachHang; // Flattened
 ```
 
 **Station Selection:**
+
 ```typescript
 // ❌ OLD
 const response = await authApi.selectStation(token, stationId);
@@ -190,6 +198,7 @@ const dbConfig = response.data.dbConfig; // Optional
 **Priority HIGH - Các screens đang dùng list data:**
 
 #### Management Screens
+
 - [ ] `ProductListScreen.tsx` - Update sang `getProducts()`
 - [ ] `CompanyListScreen.tsx` - Update sang `getCustomers()`
 - [ ] `VehicleListScreen.tsx` - Update sang `getVehicles()`
@@ -197,11 +206,13 @@ const dbConfig = response.data.dbConfig; // Optional
 - [ ] `GroupPermissionListScreen.tsx` - Update sang `getGroups()`
 
 #### Weighing Screens
+
 - [ ] `WeighingListScreen.tsx` - Update sang `getWeighings()`
 - [ ] `CompletedWeighingsScreen.tsx` - Update sang `getWeighings({ status: 'completed' })`
 - [ ] `PendingWeighingsScreen.tsx` - Update sang `getWeighings({ status: 'pending' })`
 
 #### Auth/Context
+
 - [ ] `AuthContext.tsx` - Verify tenant login response handling
 - [ ] `LoginScreen.tsx` - Verify response structure
 - [ ] `StationSelectionScreen.tsx` - Verify response structure
@@ -259,7 +270,7 @@ const loadItems = async (page: number, pageSize: number) => {
 // Optional: Log statusCode nếu có
 const response = await api.someEndpoint();
 if (response.statusCode) {
-  console.log('API Status:', response.statusCode);
+  console.log("API Status:", response.statusCode);
 }
 
 // Hoặc handle errors based on statusCode
@@ -277,7 +288,7 @@ if (!response.success && response.statusCode === 404) {
 // Update tenant info storage
 const tenantLogin = async (credentials) => {
   const response = await authApi.tenantLogin(credentials);
-  
+
   if (response.success) {
     // ✅ NEW structure
     const tenantInfo = {
@@ -285,9 +296,9 @@ const tenantLogin = async (credentials) => {
       tenKhachHang: response.data.tenKhachHang,
       khachHangId: response.data.khachHangId,
     };
-    
-    await AsyncStorage.setItem('tenant_info', JSON.stringify(tenantInfo));
-    await AsyncStorage.setItem('session_token', response.data.sessionToken);
+
+    await AsyncStorage.setItem("tenant_info", JSON.stringify(tenantInfo));
+    await AsyncStorage.setItem("session_token", response.data.sessionToken);
   }
 };
 ```
@@ -297,36 +308,39 @@ const tenantLogin = async (credentials) => {
 ## ⚠️ Important Notes
 
 ### 1. Backward Compatibility
+
 - Old `getAllXXX()` functions vẫn hoạt động nhưng **DEPRECATED**
 - Nên migrate sang `getXXX()` càng sớm càng tốt
 - Trong thời gian chuyển đổi, cả 2 có thể dùng song song
 
 ### 2. Testing Strategy
+
 ```typescript
 // Test cả 2 endpoints trong development
 if (__DEV__) {
   // Test old endpoint
   const oldResponse = await productApi.getAllProducts();
-  console.log('Old format:', oldResponse.data);
-  
+  console.log("Old format:", oldResponse.data);
+
   // Test new endpoint
   const newResponse = await productApi.getProducts({ page: 1, pageSize: 10 });
-  console.log('New format:', newResponse.data.items);
+  console.log("New format:", newResponse.data.items);
 }
 ```
 
 ### 3. Error Handling
+
 ```typescript
 try {
   const response = await api.getData();
   if (!response.success) {
-    console.error('API Error:', {
+    console.error("API Error:", {
       message: response.message,
       statusCode: response.statusCode,
     });
   }
 } catch (error) {
-  console.error('Network Error:', error);
+  console.error("Network Error:", error);
 }
 ```
 
@@ -334,30 +348,33 @@ try {
 
 ## 📊 Status
 
-| Category | Status | Progress |
-|----------|--------|----------|
-| **Types** | ✅ Complete | 100% |
-| **API Functions** | ✅ Complete | 100% |
-| **Hooks** | ✅ Complete | 100% |
-| **Components** | ✅ Complete | 100% |
-| **Screens** | 🚧 In Progress | ~30% |
-| **Testing** | 🚧 In Progress | ~20% |
+| Category          | Status         | Progress |
+| ----------------- | -------------- | -------- |
+| **Types**         | ✅ Complete    | 100%     |
+| **API Functions** | ✅ Complete    | 100%     |
+| **Hooks**         | ✅ Complete    | 100%     |
+| **Components**    | ✅ Complete    | 100%     |
+| **Screens**       | 🚧 In Progress | ~30%     |
+| **Testing**       | 🚧 In Progress | ~20%     |
 
 ---
 
 ## 🎯 Next Steps
 
 ### This Week
+
 1. Migrate ProductListScreen sang pagination
 2. Test với .NET API backend
 3. Verify auth flows
 
 ### Next Week
+
 1. Migrate các list screens còn lại
 2. Update error handling
 3. Performance testing
 
 ### Later
+
 1. Remove deprecated functions
 2. Add analytics cho statusCode
 3. Optimize caching

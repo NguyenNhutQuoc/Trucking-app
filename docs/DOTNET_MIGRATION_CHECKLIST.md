@@ -4,23 +4,23 @@
 
 ### 1️⃣ Response Structure Changes
 
-| Old (Node.js) | New (.NET) | Impact |
-|---------------|------------|--------|
-| `{ success, message, data }` | `{ success, message, data, statusCode }` | ⚠️ Minor |
-| `data: [...]` (array) | `data: { items: [...], totalCount, ... }` | 🔴 Breaking |
-| `data.khachHang.maKhachHang` | `data.maKhachHang` | 🔴 Breaking |
+| Old (Node.js)                | New (.NET)                                | Impact      |
+| ---------------------------- | ----------------------------------------- | ----------- |
+| `{ success, message, data }` | `{ success, message, data, statusCode }`  | ⚠️ Minor    |
+| `data: [...]` (array)        | `data: { items: [...], totalCount, ... }` | 🔴 Breaking |
+| `data.khachHang.maKhachHang` | `data.maKhachHang`                        | 🔴 Breaking |
 
 ### 2️⃣ Code Changes Required
 
 ```typescript
 // ❌ OLD
-const items = response.data;                    // Array direct
+const items = response.data; // Array direct
 const maKH = response.data.khachHang.maKhachHang; // Nested
 
-// ✅ NEW  
-const items = response.data.items;              // Wrapped in pagination
-const maKH = response.data.maKhachHang;         // Flattened
-const status = response.statusCode;             // Optional field
+// ✅ NEW
+const items = response.data.items; // Wrapped in pagination
+const maKH = response.data.maKhachHang; // Flattened
+const status = response.statusCode; // Optional field
 ```
 
 ---
@@ -31,15 +31,12 @@ const status = response.statusCode;             // Optional field
 
 - [x] Update `ApiResponse<T>` interface
   - [x] Add `statusCode?: number` field
-  
 - [x] Add `PaginatedResponse<T>` interface
   - [x] Define `items`, `totalCount`, `page`, `pageSize`, etc.
-  
 - [x] Update Auth response types
   - [x] `TenantLoginResponse` - flatten khachHang
   - [x] `StationSelectionResponse` - add maTramCan, diaChi
   - [x] `SessionValidationResponse` - add statusCode
-  
 - [x] Add pagination support to API functions
   - [x] `productApi.getProducts()`
   - [x] `customerApi.getCustomers()`
@@ -53,27 +50,31 @@ const status = response.statusCode;             // Optional field
 #### Management Screens
 
 - [ ] **ProductListScreen.tsx**
+
   ```typescript
   // Change from:
   const response = await productApi.getAllProducts();
   setProducts(response.data);
-  
+
   // To:
   const response = await productApi.getProducts({ page: 1, pageSize: 20 });
   pagination.setData(response.data);
   ```
 
 - [ ] **CompanyListScreen.tsx**
+
   - [ ] Update API call to `getCustomers()`
   - [ ] Add pagination hook
   - [ ] Update render logic
 
 - [ ] **VehicleListScreen.tsx**
+
   - [ ] Update API call to `getVehicles()`
   - [ ] Add pagination hook
   - [ ] Update render logic
 
 - [ ] **UserListScreen.tsx**
+
   - [ ] Update API call to `getUsers()`
   - [ ] Add pagination hook
   - [ ] Update render logic
@@ -86,11 +87,13 @@ const status = response.statusCode;             // Optional field
 #### Weighing Screens
 
 - [ ] **WeighingListScreen.tsx**
+
   - [ ] Update API call to `getWeighings()`
   - [ ] Implement infinite scroll or pagination
   - [ ] Test with large datasets
 
 - [ ] **CompletedWeighingsScreen.tsx**
+
   - [ ] Update to use pagination
   - [ ] Add filters if needed
 
@@ -101,6 +104,7 @@ const status = response.statusCode;             // Optional field
 #### Auth Screens
 
 - [ ] **LoginScreen.tsx**
+
   - [ ] Verify tenant login response handling
   - [ ] Update to use flattened khachHang data
   - [ ] Test error scenarios
@@ -113,11 +117,12 @@ const status = response.statusCode;             // Optional field
 ### Phase 3: Context & Hooks 🚧 TODO
 
 - [ ] **AuthContext.tsx**
+
   ```typescript
   // Update tenant info handling
   const tenantInfo = {
-    maKhachHang: response.data.maKhachHang,    // Flattened
-    tenKhachHang: response.data.tenKhachHang,  // Flattened
+    maKhachHang: response.data.maKhachHang, // Flattened
+    tenKhachHang: response.data.tenKhachHang, // Flattened
     khachHangId: response.data.khachHangId,
   };
   ```
@@ -130,11 +135,13 @@ const status = response.statusCode;             // Optional field
 ### Phase 4: Testing 🚧 TODO
 
 - [ ] **Unit Tests**
+
   - [ ] Test pagination hooks
   - [ ] Test API response parsing
   - [ ] Test error handling
 
 - [ ] **Integration Tests**
+
   - [ ] Test list screens with real data
   - [ ] Test auth flow end-to-end
   - [ ] Test pagination edge cases
@@ -175,23 +182,24 @@ For each screen you migrate, test:
 
 ## 📊 Progress Tracking
 
-| Component | Status | Assignee | ETA |
-|-----------|--------|----------|-----|
-| **Types** | ✅ Done | - | - |
-| **API Functions** | ✅ Done | - | - |
-| **Hooks** | ✅ Done | - | - |
-| **Components** | ✅ Done | - | - |
-| ProductListScreen | 🔲 Todo | - | - |
-| CompanyListScreen | 🔲 Todo | - | - |
-| VehicleListScreen | 🔲 Todo | - | - |
-| UserListScreen | 🔲 Todo | - | - |
-| WeighingListScreen | 🔲 Todo | - | - |
-| LoginScreen | 🔲 Todo | - | - |
-| StationSelectionScreen | 🔲 Todo | - | - |
-| AuthContext | 🔲 Todo | - | - |
-| Testing | 🔲 Todo | - | - |
+| Component              | Status  | Assignee | ETA |
+| ---------------------- | ------- | -------- | --- |
+| **Types**              | ✅ Done | -        | -   |
+| **API Functions**      | ✅ Done | -        | -   |
+| **Hooks**              | ✅ Done | -        | -   |
+| **Components**         | ✅ Done | -        | -   |
+| ProductListScreen      | 🔲 Todo | -        | -   |
+| CompanyListScreen      | 🔲 Todo | -        | -   |
+| VehicleListScreen      | 🔲 Todo | -        | -   |
+| UserListScreen         | 🔲 Todo | -        | -   |
+| WeighingListScreen     | 🔲 Todo | -        | -   |
+| LoginScreen            | 🔲 Todo | -        | -   |
+| StationSelectionScreen | 🔲 Todo | -        | -   |
+| AuthContext            | 🔲 Todo | -        | -   |
+| Testing                | 🔲 Todo | -        | -   |
 
 **Legend:**
+
 - ✅ Done
 - 🚧 In Progress
 - 🔲 Todo
@@ -202,17 +210,21 @@ For each screen you migrate, test:
 ## 🚨 Known Issues
 
 ### Issue 1: Double nested data structure
+
 **Problem:** Một số nơi đang dùng `response.data.data`  
 **Solution:** Cần kiểm tra và fix thành `response.data`  
 **Locations:**
+
 - `src/api/api.ts` line 64
 - `src/api/auth.ts` lines 187, 189, 220, 225, 226
 - `src/api/weighing.ts` line 295
 
 ### Issue 2: Array type annotations
+
 **Problem:** `ApiResponse<T[]>` instead of `ApiPaginatedResponse<T>`  
 **Solution:** Update function signatures  
 **Locations:**
+
 - All `getAll*()` functions in API files (already marked deprecated)
 
 ---
@@ -220,6 +232,7 @@ For each screen you migrate, test:
 ## 💡 Quick Tips
 
 ### 1. Use the new pagination hooks
+
 ```typescript
 import { usePagination } from "@/hooks/usePagination";
 // or
@@ -227,19 +240,23 @@ import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 ```
 
 ### 2. Copy from examples
+
 Check these working examples:
+
 - `src/screens/management/ProductListWithPagination.tsx`
 - `src/screens/management/ProductListInfiniteScroll.tsx`
 
 ### 3. Test incrementally
+
 - Migrate 1 screen at a time
 - Test thoroughly before moving to next
 - Keep old code commented out initially
 
 ### 4. Handle statusCode gracefully
+
 ```typescript
 if (response.statusCode && __DEV__) {
-  console.log('API Status:', response.statusCode);
+  console.log("API Status:", response.statusCode);
 }
 ```
 
@@ -248,11 +265,13 @@ if (response.statusCode && __DEV__) {
 ## 📞 Support
 
 **Documentation:**
+
 - [Full Migration Guide](./API_MIGRATION_STATUS.md)
 - [Pagination Guide](./PAGINATION_GUIDE.md)
 - [Quick Start](./PAGINATION_QUICK_START.md)
 
 **Questions?**
+
 - Check example screens first
 - Review migration guide
 - Test with .NET API

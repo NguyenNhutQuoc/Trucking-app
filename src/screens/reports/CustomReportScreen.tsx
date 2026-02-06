@@ -154,10 +154,13 @@ const CustomReportScreen: React.FC = () => {
   const loadPhieucanList = async () => {
     try {
       // Get all weighings from API first
-      const response = await weighingApi.getAllWeighings();
+      const response = await weighingApi.getAllWeighings({
+        page: 1,
+        pageSize: 100,
+      });
 
-      if (response.success && response.data.data) {
-        let allWeighings: Phieucan[] = response.data.data;
+      if (response.success && response.data.items) {
+        let allWeighings: Phieucan[] = response.data.items;
 
         // Apply client-side filtering
         const filteredWeighings = allWeighings.filter((item) => {

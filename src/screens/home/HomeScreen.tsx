@@ -81,9 +81,12 @@ const HomeScreen: React.FC = () => {
 
   const loadPendingWeighings = async () => {
     try {
-      const response: any = await weighingApi.getPendingWeighings();
+      const response: any = await weighingApi.getPendingWeighings({
+        page: 1,
+        pageSize: 20,
+      });
       if (response.success) {
-        setPendingWeighings(response.data.data);
+        setPendingWeighings(response.data.items);
       }
     } catch (error) {
       console.error("Load pending weighings error:", error);
@@ -97,10 +100,11 @@ const HomeScreen: React.FC = () => {
       const response: any = await weighingApi.getWeighingsByDateRange(
         today,
         today,
+        { page: 1, pageSize: 100 },
       );
       console.log(response);
       if (response.success) {
-        const data = response.data.data;
+        const data = response.data.items;
         interface WeighingItem {
           tlcan1: number;
           tlcan2?: number;

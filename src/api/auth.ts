@@ -216,9 +216,13 @@ export const authApi = {
       // Temporarily store session token for this request
       await AsyncStorage.setItem("session_token", request.sessionToken);
 
+      // ✅ FIXED: Include sessionToken in request body (capital S for .NET)
       const response = await api.post<StationSelectionResponse>(
         "/auth/select-station",
-        { tramCanId: request.tramCanId },
+        {
+          SessionToken: request.sessionToken,
+          tramCanId: request.tramCanId,
+        },
       );
 
       // Save final session token and tenant info

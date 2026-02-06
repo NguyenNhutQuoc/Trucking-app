@@ -11,11 +11,12 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import ThemedText from "./ThemedText";
 
 interface LoadMoreButtonProps {
-  onLoadMore: () => void;
+  onLoadMore?: () => void;
+  onPress?: () => void;
   loading?: boolean;
   hasMore: boolean;
-  currentCount: number;
-  totalCount: number;
+  currentCount?: number;
+  totalCount?: number;
 }
 
 /**
@@ -24,24 +25,33 @@ interface LoadMoreButtonProps {
  */
 const LoadMoreButton: React.FC<LoadMoreButtonProps> = ({
   onLoadMore,
+  onPress,
   loading = false,
   hasMore,
   currentCount,
   totalCount,
 }) => {
   const { colors } = useAppTheme();
+  const handlePress = onLoadMore || onPress;
 
   if (!hasMore) {
-    return (
-      <View style={styles.container}>
-        <View style={[styles.endMessage, { borderColor: colors.border }]}>
-          <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
-          <ThemedText style={styles.endText}>
-            Đã hiển thị tất cả {totalCount} mục
-          </ThemedText>
+    if (totalCount != null) {
+      return (
+        <View style={styles.container}>
+          <View style={[styles.endMessage, { borderColor: colors.border }]}>
+            <Ionicons
+              name="checkmark-circle"
+              size={24}
+              color={colors.primary}
+            />
+            <ThemedText style={styles.endText}>
+              Đã hiển thị tất cả {totalCount} mục
+            </ThemedText>
+          </View>
         </View>
-      </View>
-    );
+      );
+    }
+    return null;
   }
 
   return (
@@ -55,7 +65,7 @@ const LoadMoreButton: React.FC<LoadMoreButtonProps> = ({
           },
           loading && styles.loadingButton,
         ]}
-        onPress={onLoadMore}
+        onPress={handlePress}
         disabled={loading}
       >
         {loading ? (
@@ -71,7 +81,9 @@ const LoadMoreButton: React.FC<LoadMoreButtonProps> = ({
               color={colors.primary}
             />
             <ThemedText style={styles.buttonText}>
-              Tải thêm ({currentCount}/{totalCount})
+              {currentCount != null && totalCount != null
+                ? `Tải thêm (${currentCount}/${totalCount})`
+                : "Tải thêm"}
             </ThemedText>
           </>
         )}

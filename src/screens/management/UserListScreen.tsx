@@ -110,14 +110,10 @@ const UserListScreen: React.FC = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              setLoading(true);
               const response = await userApi.deleteUser(user.nvId);
               if (response.success) {
-                // Cập nhật danh sách sau khi xóa thành công
-                setUsers((prevUsers) =>
-                  prevUsers.filter((u) => u.nvId !== user.nvId),
-                );
                 Alert.alert("Thành công", "Xóa người dùng thành công");
+                refresh();
               } else {
                 Alert.alert(
                   "Lỗi",
@@ -127,8 +123,6 @@ const UserListScreen: React.FC = () => {
             } catch (error) {
               console.error("Delete user error:", error);
               Alert.alert("Lỗi", "Có lỗi xảy ra khi xóa người dùng");
-            } finally {
-              setLoading(false);
             }
           },
         },

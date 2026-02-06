@@ -1,6 +1,6 @@
 // src/constants/config.ts - Updated with dark mode support
 // API configuration
-export const API_URL = "http://192.168.1.12:5075/api/v1"; // Development server
+export const API_URL = "http://192.168.1.30:5075/api/v1"; // Development server
 // export const API_URL = 'https://api.example.com/api'; // Production server
 console.log("API URL:", API_URL);
 // App configuration
@@ -40,7 +40,7 @@ export const CACHE_EXPIRY = {
 };
 
 // API timeout settings
-export const API_TIMEOUT = 15000; // 15 seconds
+export const API_TIMEOUT = 30000; // 30 seconds
 // Retry settings
 export const API_RETRY = {
   MAX_RETRIES: 3,

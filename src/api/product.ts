@@ -53,16 +53,22 @@ export const productApi = {
 
   /**
    * Tìm kiếm hàng hóa theo tên
-   * @param name Tên hàng hóa cần tìm
+   * @param q Từ khóa tìm kiếm
+   * @param params Pagination parameters (page, pageSize)
    */
   searchProductsByName: async (
-    name?: string,
-  ): Promise<ApiResponse<Hanghoa[]>> => {
+    q?: string,
+    params?: PaginationParams,
+  ): Promise<ApiPaginatedResponse<Hanghoa>> => {
     try {
-      const response = await api.get<ApiResponse<Hanghoa[]>>(
+      const response = await api.get<ApiPaginatedResponse<Hanghoa>>(
         "/hanghoa/search",
         {
-          params: { name },
+          params: {
+            q,
+            page: params?.page || 1,
+            pageSize: params?.pageSize || 10,
+          },
         },
       );
       return response.data;

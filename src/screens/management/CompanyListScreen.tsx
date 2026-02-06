@@ -104,21 +104,16 @@ const CompanyListScreen: React.FC = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              setLoading(true);
               const response = await customerApi.deleteCustomer(company.id);
               if (response.success) {
-                setCompanies((prevCompanies) =>
-                  prevCompanies.filter((c) => c.id !== company.id),
-                );
                 Alert.alert("Thành công", "Xóa Khách Hàng thành công");
+                refresh();
               } else {
                 Alert.alert("Lỗi", "Không thể xóa Khách Hàng");
               }
             } catch (error) {
               console.error("Delete company error:", error);
               Alert.alert("Lỗi", "Không thể xóa Khách Hàng");
-            } finally {
-              setLoading(false);
             }
           },
         },

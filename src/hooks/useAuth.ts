@@ -15,7 +15,8 @@ interface UseAuthReturn {
     success: boolean;
     data?: {
       sessionToken: string;
-      khachHang: any;
+      maKhachHang: string;
+      tenKhachHang: string;
       tramCans: any[];
     };
   }>;

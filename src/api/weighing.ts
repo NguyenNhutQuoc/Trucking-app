@@ -19,9 +19,19 @@ export const weighingApi = {
    * Lấy danh sách tất cả phiếu cân (DEPRECATED - use getWeighings instead)
    * @deprecated Sử dụng getWeighings với pagination
    */
-  getAllWeighings: async (): Promise<ApiResponse<Phieucan[]>> => {
+  getAllWeighings: async (
+    params?: PaginationParams,
+  ): Promise<ApiPaginatedResponse<Phieucan>> => {
     try {
-      const response = await api.get<ApiResponse<Phieucan[]>>("/phieucan");
+      const response = await api.get<ApiPaginatedResponse<Phieucan>>(
+        "/phieucan",
+        {
+          params: {
+            page: params?.page || 1,
+            pageSize: params?.pageSize || 100,
+          },
+        },
+      );
       return response.data;
     } catch (error) {
       console.error("Get all weighings error:", error);
@@ -165,11 +175,20 @@ export const weighingApi = {
 
   /**
    * Lấy danh sách phiếu cân đã hoàn thành
+   * @param params Pagination parameters (page, pageSize)
    */
-  getCompletedWeighings: async (): Promise<ApiResponse<Phieucan[]>> => {
+  getCompletedWeighings: async (
+    params?: PaginationParams,
+  ): Promise<ApiPaginatedResponse<Phieucan>> => {
     try {
-      const response = await api.get<ApiResponse<Phieucan[]>>(
+      const response = await api.get<ApiPaginatedResponse<Phieucan>>(
         "/phieucan/status/completed",
+        {
+          params: {
+            page: params?.page || 1,
+            pageSize: params?.pageSize || 10,
+          },
+        },
       );
       return response.data;
     } catch (error) {
@@ -180,11 +199,20 @@ export const weighingApi = {
 
   /**
    * Lấy danh sách phiếu cân đang chờ
+   * @param params Pagination parameters (page, pageSize)
    */
-  getPendingWeighings: async (): Promise<ApiResponse<Phieucan[]>> => {
+  getPendingWeighings: async (
+    params?: PaginationParams,
+  ): Promise<ApiPaginatedResponse<Phieucan>> => {
     try {
-      const response = await api.get<ApiResponse<Phieucan[]>>(
+      const response = await api.get<ApiPaginatedResponse<Phieucan>>(
         "/phieucan/status/pending",
+        {
+          params: {
+            page: params?.page || 1,
+            pageSize: params?.pageSize || 10,
+          },
+        },
       );
       return response.data;
     } catch (error) {
@@ -195,11 +223,20 @@ export const weighingApi = {
 
   /**
    * Lấy danh sách phiếu cân đã hủy
+   * @param params Pagination parameters (page, pageSize)
    */
-  getCanceledWeighings: async (): Promise<ApiResponse<Phieucan[]>> => {
+  getCanceledWeighings: async (
+    params?: PaginationParams,
+  ): Promise<ApiPaginatedResponse<Phieucan>> => {
     try {
-      const response = await api.get<ApiResponse<Phieucan[]>>(
+      const response = await api.get<ApiPaginatedResponse<Phieucan>>(
         "/phieucan/status/canceled",
+        {
+          params: {
+            page: params?.page || 1,
+            pageSize: params?.pageSize || 10,
+          },
+        },
       );
       return response.data;
     } catch (error) {
@@ -212,15 +249,24 @@ export const weighingApi = {
    * Lấy danh sách phiếu cân theo khoảng thời gian
    * @param startDate Ngày bắt đầu
    * @param endDate Ngày kết thúc
+   * @param params Pagination parameters (page, pageSize)
    */
   getWeighingsByDateRange: async (
     startDate: string,
     endDate: string,
-  ): Promise<ApiResponse<Phieucan[]>> => {
+    params?: PaginationParams,
+  ): Promise<ApiPaginatedResponse<Phieucan>> => {
     try {
-      const response = await api.get<ApiResponse<Phieucan[]>>(
+      const response = await api.get<ApiPaginatedResponse<Phieucan>>(
         "/phieucan/date-range/search",
-        { params: { startDate, endDate } },
+        {
+          params: {
+            startDate,
+            endDate,
+            page: params?.page || 1,
+            pageSize: params?.pageSize || 10,
+          },
+        },
       );
       return response.data;
     } catch (error) {
@@ -232,13 +278,21 @@ export const weighingApi = {
   /**
    * Lấy danh sách phiếu cân theo biển số xe
    * @param soxe Biển số xe
+   * @param params Pagination parameters (page, pageSize)
    */
   getWeighingsByVehicle: async (
     soxe: string,
-  ): Promise<ApiResponse<Phieucan[]>> => {
+    params?: PaginationParams,
+  ): Promise<ApiPaginatedResponse<Phieucan>> => {
     try {
-      const response = await api.get<ApiResponse<Phieucan[]>>(
+      const response = await api.get<ApiPaginatedResponse<Phieucan>>(
         `/phieucan/vehicle/${soxe}`,
+        {
+          params: {
+            page: params?.page || 1,
+            pageSize: params?.pageSize || 10,
+          },
+        },
       );
       return response.data;
     } catch (error) {
@@ -250,13 +304,21 @@ export const weighingApi = {
   /**
    * Lấy danh sách phiếu cân theo mã hàng
    * @param mahang Mã hàng
+   * @param params Pagination parameters (page, pageSize)
    */
   getWeighingsByProduct: async (
     mahang: string,
-  ): Promise<ApiResponse<Phieucan[]>> => {
+    params?: PaginationParams,
+  ): Promise<ApiPaginatedResponse<Phieucan>> => {
     try {
-      const response = await api.get<ApiResponse<Phieucan[]>>(
+      const response = await api.get<ApiPaginatedResponse<Phieucan>>(
         `/phieucan/product/${mahang}`,
+        {
+          params: {
+            page: params?.page || 1,
+            pageSize: params?.pageSize || 10,
+          },
+        },
       );
       return response.data;
     } catch (error) {
@@ -268,13 +330,21 @@ export const weighingApi = {
   /**
    * Lấy danh sách phiếu cân theo mã khách hàng
    * @param makh Mã khách hàng
+   * @param params Pagination parameters (page, pageSize)
    */
   getWeighingsByCustomer: async (
     makh: string,
-  ): Promise<ApiResponse<Phieucan[]>> => {
+    params?: PaginationParams,
+  ): Promise<ApiPaginatedResponse<Phieucan>> => {
     try {
-      const response = await api.get<ApiResponse<Phieucan[]>>(
+      const response = await api.get<ApiPaginatedResponse<Phieucan>>(
         `/phieucan/customer/${makh}`,
+        {
+          params: {
+            page: params?.page || 1,
+            pageSize: params?.pageSize || 10,
+          },
+        },
       );
       return response.data;
     } catch (error) {

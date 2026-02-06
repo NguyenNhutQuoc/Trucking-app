@@ -95,21 +95,16 @@ const VehicleListScreen: React.FC = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              setLoading(true);
               const response = await vehicleApi.deleteVehicle(vehicle.id);
               if (response.success) {
-                setVehicles((prevVehicles) =>
-                  prevVehicles.filter((v) => v.id !== vehicle.id),
-                );
                 Alert.alert("Thành công", "Xóa xe thành công");
+                refresh();
               } else {
                 Alert.alert("Lỗi", "Không thể xóa xe");
               }
             } catch (error) {
               console.error("Delete vehicle error:", error);
               Alert.alert("Lỗi", "Không thể xóa xe");
-            } finally {
-              setLoading(false);
             }
           },
         },

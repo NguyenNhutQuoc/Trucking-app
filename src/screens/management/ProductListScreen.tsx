@@ -101,21 +101,16 @@ const ProductListScreen: React.FC = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              setLoading(true);
               const response = await productApi.deleteProduct(product.id);
               if (response.success) {
-                setProducts((prevProducts) =>
-                  prevProducts.filter((p) => p.id !== product.id),
-                );
                 Alert.alert("Thành công", "Xóa hàng hóa thành công");
+                refresh();
               } else {
                 Alert.alert("Lỗi", "Không thể xóa hàng hóa");
               }
             } catch (error) {
               console.error("Delete product error:", error);
               Alert.alert("Lỗi", "Không thể xóa hàng hóa");
-            } finally {
-              setLoading(false);
             }
           },
         },

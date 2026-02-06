@@ -41,7 +41,13 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
   const { selectStation } = useAuth();
   const { colors, isDarkMode } = useAppTheme();
 
-  const { sessionToken, khachHang, tramCans: initialStations } = route.params;
+  // ✅ FIXED: Add null/undefined checks for route.params
+  const sessionToken = route?.params?.sessionToken || "";
+  const khachHang = route?.params?.khachHang || {
+    maKhachHang: "",
+    tenKhachHang: "N/A",
+  };
+  const initialStations = route?.params?.tramCans || [];
 
   const [selectedStationId, setSelectedStationId] = useState<number | null>(
     null,
@@ -49,6 +55,22 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [stations, setStations] = useState<TramCan[]>(initialStations);
+
+  // ✅ NEW: Validate route params on mount
+  useEffect(() => {
+    if (!sessionToken || !khachHang?.maKhachHang) {
+      Alert.alert(
+        "Lỗi",
+        "Thông tin đăng nhập không hợp lệ. Vui lòng đăng nhập lại.",
+        [
+          {
+            text: "OK",
+            onPress: () => navigation.navigate("Login" as never),
+          },
+        ],
+      );
+    }
+  }, [sessionToken, khachHang, navigation]);
 
   // Auto-select nếu chỉ có 1 trạm cân
   useEffect(() => {

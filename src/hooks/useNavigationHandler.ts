@@ -39,7 +39,10 @@ export const useNavigationHandler = (options: NavigationOptions = {}) => {
       showError: boolean = true,
       featureName?: string,
     ) => {
-      console.log(`Navigating to: ${routeName}`, params);
+      console.log(
+        `Navigating to: ${routeName}`,
+        params ? params : "(no params)",
+      );
 
       // Check if route exists in our defined routes
       if (

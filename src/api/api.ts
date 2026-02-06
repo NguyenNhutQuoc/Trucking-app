@@ -24,10 +24,12 @@ api.interceptors.request.use(
       // Lấy session token từ AsyncStorage
       const sessionToken = await AsyncStorage.getItem("session_token");
 
-      console.log(sessionToken);
       if (sessionToken && config.headers) {
         // ✅ KEY POINT: Thêm x-session-token vào header
+        // Try multiple header formats for .NET compatibility
         config.headers["x-session-token"] = sessionToken;
+        config.headers["X-Session-Token"] = sessionToken;
+        config.headers["Authorization"] = `Bearer ${sessionToken}`;
       }
 
       // Log request for debugging
@@ -36,6 +38,7 @@ api.interceptors.request.use(
       );
       if (sessionToken) {
         console.log(`🔑 Session Token: ${sessionToken.substring(0, 20)}...`);
+        console.log(`📋 Headers:`, JSON.stringify(config.headers, null, 2));
       }
       if (config.data) {
         console.log("📦 Request Data:", config.data);
@@ -67,11 +70,7 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
-    console.error(
-      "❌ API Error:",
-      error.response?.status,
-      error.response?.data,
-    );
+    console.error(error);
 
     // ✅ KEY POINT: Handle session expired (401)
     if (error.response?.status === 401) {

@@ -77,12 +77,16 @@ const LoginScreen: React.FC = () => {
 
       // ✅ Sử dụng tenantLogin API mới
       const result = await tenantLogin({ maKhachHang, password });
-
+      console.log("Login result:", result);
       if (result.success && result.data) {
         // ✅ Navigate đến StationSelection với data
+        // ✅ FIXED: Map the flat response to the expected nested structure
         navigation.navigate("StationSelection", {
           sessionToken: result.data.sessionToken,
-          khachHang: result.data.khachHang,
+          khachHang: {
+            maKhachHang: result.data.maKhachHang,
+            tenKhachHang: result.data.tenKhachHang,
+          },
           tramCans: result.data.tramCans,
         });
       } else {

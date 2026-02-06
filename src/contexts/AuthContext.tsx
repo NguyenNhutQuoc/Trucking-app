@@ -26,7 +26,8 @@ export interface AuthContextType {
     success: boolean;
     data?: {
       sessionToken: string;
-      khachHang: any;
+      maKhachHang: string;
+      tenKhachHang: string;
       tramCans: any[];
     };
   }>;
@@ -273,10 +274,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await stationApi.switchStation(tramCanId);
 
       if (response.success) {
-        // ✅ FIXED: Update auth state with flattened structure
+        // ✅ FIXED: Update auth state with correct structure
         const newTenantInfo = {
           selectedStation: response.data.selectedStation,
-          dbConfig: response.data.dbConfig,
+          khachHang: response.data.khachHang,
         };
 
         setAuthState((prev) => ({
@@ -285,7 +286,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           tenantInfo: newTenantInfo,
           userInfo: {
             ...prev.userInfo,
-            id: response.data.selectedStation?.maTramCan || 0,
+            id: response.data.selectedStation?.id || 0,
             username: response.data.selectedStation?.tenTramCan || "",
           } as Nhanvien,
         }));

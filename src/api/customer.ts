@@ -53,16 +53,22 @@ export const customerApi = {
 
   /**
    * Tìm kiếm khách hàng theo tên
-   * @param name Tên khách hàng cần tìm
+   * @param q Từ khóa tìm kiếm
+   * @param params Pagination parameters (page, pageSize)
    */
   searchCustomersByName: async (
-    name?: string,
-  ): Promise<ApiResponse<Khachhang[]>> => {
+    q?: string,
+    params?: PaginationParams,
+  ): Promise<ApiPaginatedResponse<Khachhang>> => {
     try {
-      const response = await api.get<ApiResponse<Khachhang[]>>(
+      const response = await api.get<ApiPaginatedResponse<Khachhang>>(
         "/khachhang/search",
         {
-          params: { name },
+          params: {
+            q,
+            page: params?.page || 1,
+            pageSize: params?.pageSize || 10,
+          },
         },
       );
       return response.data;

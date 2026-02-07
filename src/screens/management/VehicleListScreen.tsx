@@ -70,7 +70,7 @@ const VehicleListScreen: React.FC = () => {
 
     const query = searchQuery.toLowerCase().trim();
     const filtered = vehicles.filter((vehicle) => {
-      return vehicle.soxe.toLowerCase().includes(query);
+      return vehicle.soXe.toLowerCase().includes(query);
     });
 
     setFilteredVehicles(filtered);
@@ -87,7 +87,7 @@ const VehicleListScreen: React.FC = () => {
   const handleDeleteVehicle = (vehicle: Soxe) => {
     Alert.alert(
       "Xác nhận xóa",
-      `Bạn có chắc chắn muốn xóa xe ${vehicle.soxe}?`,
+      `Bạn có chắc chắn muốn xóa xe ${vehicle.soXe}?`,
       [
         { text: "Hủy", style: "cancel" },
         {
@@ -146,13 +146,13 @@ const VehicleListScreen: React.FC = () => {
           style={[styles.tableCell, styles.vehicleColumn]}
           numberOfLines={1}
         >
-          {item.soxe}
+          {item.soXe}
         </ThemedText>
         <ThemedText
           style={[styles.tableCell, styles.weightColumn]}
           numberOfLines={1}
         >
-          {item.trongluong.toLocaleString()}
+          {(item.trongLuong ?? 0).toLocaleString()}
         </ThemedText>
         <View style={styles.actionColumn}>
           <View style={styles.actionButtons}>
@@ -198,9 +198,9 @@ const VehicleListScreen: React.FC = () => {
             <Ionicons name="car" size={24} color={colors.primary} />
           </View>
           <View style={styles.vehicleDetails}>
-            <ThemedText style={styles.vehicleNumber}>{item.soxe}</ThemedText>
+            <ThemedText style={styles.vehicleNumber}>{item.soXe}</ThemedText>
             <ThemedText type="subtitle" style={styles.vehicleWeight}>
-              Trọng lượng: {item.trongluong.toLocaleString()} kg
+              Trọng lượng: {(item.trongLuong ?? 0).toLocaleString()} kg
             </ThemedText>
           </View>
         </View>

@@ -33,6 +33,7 @@ import {
 } from "@/utils/formatters";
 import { ReportsStackScreenProps } from "@/types/navigation.types";
 import { Khachhang, Hanghoa, Soxe, Phieucan } from "@/types/api.types";
+import { spacing } from "@/styles/spacing";
 
 type NavigationProp = ReportsStackScreenProps<"CustomReport">["navigation"];
 type ViewMode = "list" | "grid" | "table";
@@ -223,7 +224,7 @@ const CustomReportScreen: React.FC = () => {
             const vehicle = vehicles.find(
               (v) => v.id.toString() === selectedVehicle,
             );
-            if (vehicle && item.soxe !== vehicle.soxe) {
+            if (vehicle && item.soxe !== vehicle.soXe) {
               return false;
             }
           }
@@ -312,7 +313,7 @@ const CustomReportScreen: React.FC = () => {
         stt: i + 1,
         sophieu: 1000 + i,
         soxe: vehicleFilter
-          ? vehicleFilter.soxe
+          ? vehicleFilter.soXe
           : `51A-${Math.floor(Math.random() * 9999)
               .toString()
               .padStart(4, "0")}`,
@@ -463,7 +464,7 @@ const CustomReportScreen: React.FC = () => {
           );
           if (vehicle) {
             const vehicleStats = response.data.byVehicle.find(
-              (v: any) => v.vehicleNumber === vehicle.soxe,
+              (v: any) => v.vehicleNumber === vehicle.soXe,
             );
 
             if (vehicleStats) {
@@ -893,7 +894,7 @@ const CustomReportScreen: React.FC = () => {
     vehicles.forEach((vehicle) => {
       options.push({
         id: vehicle.id.toString(),
-        label: vehicle.soxe,
+        label: vehicle.soXe,
         value: vehicle.id.toString(),
         icon: "car",
       });
@@ -1078,7 +1079,7 @@ const CustomReportScreen: React.FC = () => {
                       <View style={styles.appliedFilter}>
                         <Ionicons name="car" size={16} color={colors.primary} />
                         <ThemedText style={styles.appliedFilterText}>
-                          {reportData.vehicleFilter.vehicle.soxe}
+                          {reportData.vehicleFilter.vehicle.soXe}
                         </ThemedText>
                       </View>
                     )}

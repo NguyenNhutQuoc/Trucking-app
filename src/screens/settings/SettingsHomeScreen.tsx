@@ -251,7 +251,7 @@ const SettingsHomeScreen: React.FC = () => {
   };
 
   return (
-    <ThemedView style={[styles.safeArea, { backgroundColor: colors.background }]} useSafeArea>
+    <ThemedView style={styles.safeArea} useSafeArea>
       <Header title="Cài đặt" showBack />
 
       <ScrollView

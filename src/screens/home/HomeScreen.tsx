@@ -23,6 +23,21 @@ import ThemedText from "@/components/common/ThemedText";
 import SlideMenu from "@/components/common/SliceMenu";
 import UnderDevelopmentModal from "@/components/common/UnderDevelopmentModal";
 import { Phieucan } from "@/types/api.types";
+import spacing from "@/styles/spacing";
+
+// Smart weight formatter with abbreviations
+const formatWeightAbbr = (weightInKg: number): string => {
+  if (weightInKg >= 1000000) {
+    // 1 million kg+ = show in thousands of tons
+    return `${(weightInKg / 1000000).toFixed(1)}K T`;
+  } else if (weightInKg >= 1000) {
+    // 1000 kg+ = show in tons
+    return `${(weightInKg / 1000).toFixed(1)} T`;
+  } else {
+    // Less than 1000 kg = show in kg
+    return `${Math.round(weightInKg)} kg`;
+  }
+};
 
 const HomeScreen: React.FC = () => {
   const { userInfo, tenantInfo, getStationDisplayName } = useAuth();
@@ -82,12 +97,12 @@ const HomeScreen: React.FC = () => {
 
   const loadPendingWeighings = async () => {
     try {
-      const response: any = await weighingApi.getPendingWeighings({
+      const response = await weighingApi.getPendingWeighings({
         page: 1,
         pageSize: 20,
       });
-      if (response.success) {
-        setPendingWeighings(response.data.items);
+      if (response) {
+        setPendingWeighings(response.items);
       }
     } catch (error) {
       console.error("Load pending weighings error:", error);
@@ -98,38 +113,25 @@ const HomeScreen: React.FC = () => {
   const loadTodayStats = async () => {
     try {
       const today = new Date().toISOString().split("T")[0];
-      const response = await weighingApi.getWeighingsByDateRange(today, today, {
-        page: 1,
-        pageSize: 100,
-      });
-      console.log(response);
+      const startDate = `${today} 00:00:00`;
+      const endDate = `${today} 23:59:59`;
+
+      const response = await weighingApi.getWeightStatistics(
+        startDate,
+        endDate,
+      );
+
       if (response) {
-        const data = response.items;
-        interface WeighingItem {
-          tlcan1: number;
-          tlcan2?: number;
-        }
-
-        interface TodayStats {
-          totalVehicles: number;
-          totalWeight: number;
-        }
-
-        const typedData: WeighingItem[] = data;
-
         setTodayStats({
-          totalVehicles: typedData.length,
-          totalWeight: typedData.reduce((sum: number, item: WeighingItem) => {
-            const netWeight = (item.tlcan2 || 0) - item.tlcan1;
-            return sum + Math.max(0, netWeight);
-          }, 0),
+          totalVehicles: response.data.totalVehicles,
+          totalWeight: response.data.totalWeight,
         });
       }
     } catch (error) {
       console.error("Load today stats error:", error);
-      setTodayStats({ totalVehicles: 0, totalWeight: 0 });
     }
   };
+
 
   const loadWeeklyActivity = async () => {
     try {
@@ -436,8 +438,10 @@ const HomeScreen: React.FC = () => {
               <Card style={styles.statCard}>
                 <ThemedText
                   style={[styles.statNumber, { color: colors.warning }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
                 >
-                  {(todayStats.totalWeight / 1000).toFixed(1)}T
+                  {formatWeightAbbr(todayStats.totalWeight)}
                 </ThemedText>
                 <ThemedText
                   style={[styles.statLabel, { color: colors.textSecondary }]}
@@ -524,25 +528,25 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 16,
+    padding: spacing.md,
   },
   // Station Info Styles
   stationInfoCard: {
-    marginBottom: 16,
+    marginBottom: spacing.md,
     padding: 0,
   },
   stationInfoContent: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
+    padding: spacing.md,
   },
   stationIconContainer: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: spacing.radiusFull,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: spacing.sm,
   },
   stationInfoText: {
     flex: 1,
@@ -573,17 +577,19 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    padding: 16,
-    minHeight: 100, // Consistent height for all cards
-    marginHorizontal: 0, // Remove default margin
+    padding: 12,
+    paddingHorizontal: 8,
+    minHeight: 100,
+    marginHorizontal: 0,
   },
   newWeighingCard: {
     borderWidth: 1,
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "bold",
     marginBottom: 4,
+    textAlign: "center",
   },
   statLabel: {
     fontSize: 12,

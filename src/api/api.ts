@@ -100,11 +100,14 @@ api.interceptors.response.use(
 );
 
 // ✅ Helper function để set session expired handler
-// export const setSessionExpiredHandler = (handler: () => void) => {
-//   // if (typeof global !== "undefined") {
-//   //   global.handleSessionExpired = handler;
-//   }
-// };
+export const setSessionExpiredHandler = (handler: () => void) => {
+  if (typeof global !== "undefined") {
+    global.handleSessionExpired = handler;
+  }
+};
+
+// ✅ Alias for backwards compatibility
+export const setTokenExpiredCallback = setSessionExpiredHandler;
 
 // ✅ Helper function để get current session info
 export const getCurrentSessionInfo = async () => {

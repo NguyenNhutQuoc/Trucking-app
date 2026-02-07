@@ -202,18 +202,18 @@ export interface KhachhangUpdate {
 // Số xe
 export interface Soxe {
   id: number;
-  soxe: string;
-  trongluong: number;
+  soXe: string;        // API returns camelCase
+  trongLuong: number;  // API returns camelCase
 }
 
 export interface SoxeCreate {
-  soxe: string;
-  trongluong: number;
+  soXe: string;
+  trongLuong: number;
 }
 
 export interface SoxeUpdate {
-  soxe?: string;
-  trongluong?: number;
+  soXe?: string;
+  trongLuong?: number;
 }
 
 // Nhân viên

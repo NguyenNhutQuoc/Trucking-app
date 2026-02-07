@@ -53,23 +53,25 @@ const UserPermissionsScreen: React.FC = () => {
       // Load user permissions
       const userResponse = await userApi.getUserPermissions(user.nvId);
       if (userResponse.success) {
-        const userWithPermissions = userResponse.data.data;
+        // ApiResponse<T>.data returns T directly
+        const userWithPermissions = userResponse.data;
         setUserDetail(userWithPermissions);
 
-        // Extract form IDs from user permissions
+        // Extract form IDs from user permissions with explicit type
+        interface Permission { formId: number; }
         const formIds =
-          userWithPermissions.permissions?.map((perm) => perm.formId) || [];
+          userWithPermissions.permissions?.map((perm: Permission) => perm.formId) || [];
         setUserPermissions(formIds);
       }
 
       // Load all available forms
       const formsResponse = await permissionApi.getAllForms();
       if (formsResponse.success) {
-        // Group forms by category
-        const forms = formsResponse.data.data;
+        // ApiResponse<T>.data returns T directly
+        const forms = formsResponse.data;
         setAllForms(forms);
 
-        const categories = forms.reduce((acc: Record<string, Form[]>, form) => {
+        const categories = forms.reduce((acc: Record<string, Form[]>, form: Form) => {
           const category = form.vitri;
           if (!acc[category]) {
             acc[category] = [];

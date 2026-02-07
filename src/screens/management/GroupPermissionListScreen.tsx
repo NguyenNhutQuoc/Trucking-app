@@ -55,12 +55,14 @@ const GroupPermissionsScreen: React.FC = () => {
         group.nhomId,
       );
       if (groupResponse.success) {
-        const groupWithPermissions = groupResponse.data.data;
+        // ApiResponse<T>.data returns T directly
+        const groupWithPermissions = groupResponse.data;
         setGroupDetail(groupWithPermissions);
 
-        // Extract form IDs from group permissions
+        // Extract form IDs from group permissions with explicit type
+        interface Permission { formId: number; }
         const formIds =
-          groupWithPermissions.permissions?.map((perm) => perm.formId) || [];
+          groupWithPermissions.permissions?.map((perm: Permission) => perm.formId) || [];
         setGroupPermissions(formIds);
 
         // TODO: Trong trường hợp thực tế, cần tạo endpoint để lấy số lượng thành viên
@@ -71,11 +73,11 @@ const GroupPermissionsScreen: React.FC = () => {
       // Load all available forms
       const formsResponse = await permissionApi.getAllForms();
       if (formsResponse.success) {
-        // Group forms by category
-        const forms = formsResponse.data.data;
+        // ApiResponse<T>.data returns T directly
+        const forms = formsResponse.data;
         setAllForms(forms);
 
-        const categories = forms.reduce((acc: Record<string, Form[]>, form) => {
+        const categories = forms.reduce((acc: Record<string, Form[]>, form: Form) => {
           const category = form.vitri;
           if (!acc[category]) {
             acc[category] = [];

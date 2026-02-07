@@ -15,6 +15,12 @@ import PieChart from "@/components/charts/PieChart";
 import BarChart from "@/components/charts/BarChart";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { formatWeight } from "@/utils/formatters";
+import {
+  getTodayRange,
+  getThisWeekRange,
+  getThisMonthRange,
+  formatDateForApi,
+} from "@/utils/date";
 import { ReportsStackScreenProps } from "@/types/navigation.types";
 import { PhieucanStatistics } from "@/types/api.types";
 
@@ -28,53 +34,44 @@ const ReportsHomeScreen: React.FC = () => {
   const [statistics, setStatistics] = useState<PhieucanStatistics | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<"today" | "week" | "month">(
-    "week",
+    "today",
   );
 
   useEffect(() => {
     loadStatistics();
-  }, []);
+  }, [timeframe]);
 
   const loadStatistics = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await weighingApi.getTodayStatistics();
-      console.log("API response:", response);
+
+      let range;
+      switch (timeframe) {
+        case "week":
+          range = getThisWeekRange();
+          break;
+        case "month":
+          range = getThisMonthRange();
+          break;
+        case "today":
+        default:
+          range = getTodayRange();
+          break;
+      }
+
+      const startDate = formatDateForApi(range.start);
+      const endDate = formatDateForApi(range.end);
+
+      console.log(`Loading stats for ${timeframe}: ${startDate} - ${endDate}`);
+
+      const response = await weighingApi.getWeightStatistics(
+        startDate,
+        endDate,
+      );
+      
       if (response) {
-        console.log("Today statistics:", response.data);
-
-        // API trả về array, cần transform sang PhieucanStatistics format
-        const rawData = response.data as any;
-
-        console.log("Transformed statistics:", rawData);
-
-        // Nếu data là array (format từ API hiện tại)
-        if (Array.isArray(rawData)) {
-          const transformedStats: PhieucanStatistics = {
-            totalVehicles: rawData.reduce(
-              (sum: number, item: any) => sum + (item.weighCount || 0),
-              0,
-            ),
-            totalWeight: rawData.reduce(
-              (sum: number, item: any) => sum + (item.totalWeight || 0),
-              0,
-            ),
-            byCompany: [],
-            byProduct: rawData.map((item: any) => ({
-              productName: item.productName || item.loaihang || "N/A",
-              weighCount: item.weighCount || 0,
-              totalWeight: item.totalWeight || 0,
-              totalPrice: item.totalPrice || 0,
-            })),
-            byVehicle: [],
-            byDay: [],
-          };
-          setStatistics(transformedStats);
-        } else {
-          // Nếu data đã đúng format PhieucanStatistics
-          setStatistics(rawData);
-        }
+        setStatistics(response.data);
       } else {
         setError("Không thể tải dữ liệu thống kê");
       }
@@ -88,100 +85,68 @@ const ReportsHomeScreen: React.FC = () => {
 
   const handleTimeframeChange = (newTimeframe: "today" | "week" | "month") => {
     setTimeframe(newTimeframe);
-    // In a real app, you would load data for the selected timeframe
   };
 
-  const renderTimeframeButtons = () => (
-    <View style={styles.timeframeContainer}>
-      <TouchableOpacity
-        style={[
-          styles.timeframeButton,
-          { backgroundColor: colors.gray100 },
-          timeframe === "today" && [
-            styles.activeTimeframeButton,
-            { backgroundColor: colors.primary },
-          ],
-        ]}
-        onPress={() => handleTimeframeChange("today")}
-      >
-        <ThemedText
-          style={[
-            styles.timeframeButtonText,
-            { color: colors.gray700 },
-            ...(timeframe === "today"
-              ? [styles.activeTimeframeButtonText, { color: "white" }]
-              : []),
-          ]}
-        >
-          Hôm nay
-        </ThemedText>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[
-          styles.timeframeButton,
-          { backgroundColor: colors.gray100 },
-          timeframe === "week" && [
-            styles.activeTimeframeButton,
-            { backgroundColor: colors.primary },
-          ],
-        ]}
-        onPress={() => handleTimeframeChange("week")}
-      >
-        <ThemedText
-          style={[
-            styles.timeframeButtonText,
-            { color: colors.gray700 },
-            ...(timeframe === "week"
-              ? [styles.activeTimeframeButtonText, { color: "white" }]
-              : []),
-          ]}
-        >
-          Tuần này
-        </ThemedText>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[
-          styles.timeframeButton,
-          { backgroundColor: colors.gray100 },
-          timeframe === "month" && [
-            styles.activeTimeframeButton,
-            { backgroundColor: colors.primary },
-          ],
-        ]}
-        onPress={() => handleTimeframeChange("month")}
-      >
-        <ThemedText
-          style={[
-            styles.timeframeButtonText,
-            { color: colors.gray700 },
-            ...(timeframe === "month"
-              ? [styles.activeTimeframeButtonText, { color: "white" }]
-              : []),
-          ]}
-        >
-          Tháng này
-        </ThemedText>
-      </TouchableOpacity>
+  const renderSegmentedControl = () => (
+    <View style={[styles.segmentedContainer, { backgroundColor: colors.surfaceContainer }]}>
+      {(["today", "week", "month"] as const).map((t) => {
+        const isSelected = timeframe === t;
+        const label =
+          t === "today" ? "Hôm nay" : t === "week" ? "Tuần này" : "Tháng này";
+        return (
+          <TouchableOpacity
+            key={t}
+            style={[
+              styles.segmentButton,
+              isSelected && { backgroundColor: colors.secondaryContainer },
+            ]}
+            onPress={() => handleTimeframeChange(t)}
+          >
+            {isSelected && (
+              <Ionicons name="checkmark" size={16} color={colors.onSecondaryContainer} style={styles.checkIcon} />
+            )}
+            <ThemedText
+              style={[
+                styles.segmentLabel,
+                isSelected && { color: colors.onSecondaryContainer, fontWeight: "600" },
+              ]}
+            >
+              {label}
+            </ThemedText>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 
-  const renderReportItem = (title: string, icon: string, screen: string) => (
+  const renderReportItem = (
+    title: string,
+    icon: string,
+    screen: string,
+    description: string
+  ) => (
     <TouchableOpacity
-      style={[styles.reportItem, { borderBottomColor: colors.gray200 }]}
+      style={[
+        styles.reportItem,
+        { backgroundColor: colors.surface, borderColor: colors.outlineVariant },
+      ]}
       onPress={() => navigation.navigate(screen as any)}
     >
       <View
         style={[
           styles.reportIconContainer,
-          { backgroundColor: colors.gray100 },
+          { backgroundColor: colors.primaryContainer },
         ]}
       >
-        <Ionicons name={icon as any} size={24} color={colors.primary} />
+        <Ionicons name={icon as any} size={24} color={colors.onPrimaryContainer} />
       </View>
-      <ThemedText style={styles.reportItemText}>{title}</ThemedText>
-      <Ionicons name="chevron-forward" size={20} color={colors.gray600} />
+      <View style={styles.reportContent}>
+        <ThemedText style={styles.reportItemTitle}>{title}</ThemedText>
+        <ThemedText type="caption" style={{ color: colors.onSurfaceVariant }}>
+          {description}
+        </ThemedText>
+      </View>
+      <Ionicons name="chevron-forward" size={20} color={colors.onSurfaceVariant} />
     </TouchableOpacity>
   );
 
@@ -192,29 +157,28 @@ const ReportsHomeScreen: React.FC = () => {
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
       >
-        {renderTimeframeButtons()}
+        {renderSegmentedControl()}
 
         {loading ? (
           <Loading loading />
         ) : (
           <>
             {error && (
-              <Card style={styles.summaryCard}>
+              <Card style={styles.errorCard}>
                 <View style={styles.errorContainer}>
                   <Ionicons
                     name="alert-circle-outline"
                     size={48}
-                    color={colors.gray400}
+                    color={colors.error}
                   />
-                  <ThemedText
-                    style={[styles.errorText, { color: colors.gray600 }]}
-                  >
+                  <ThemedText style={[styles.errorText, { color: colors.error }]}>
                     {error}
                   </ThemedText>
                   <Button
                     title="Thử lại"
-                    variant="primary"
+                    variant="tonal"
                     onPress={loadStatistics}
                     style={{ marginTop: 12 }}
                   />
@@ -224,63 +188,66 @@ const ReportsHomeScreen: React.FC = () => {
 
             {statistics && (
               <>
-                <Card style={styles.summaryCard}>
-                  <View style={styles.summaryRow}>
-                    <View style={styles.summaryItem}>
-                      <ThemedText type="subtitle" style={styles.summaryLabel}>
-                        Tổng xe:
-                      </ThemedText>
-                      <ThemedText style={styles.summaryValue}>
-                        {statistics.totalVehicles}
-                      </ThemedText>
+                <View style={styles.summaryContainer}>
+                  <Card style={[styles.summaryCard, { backgroundColor: colors.primaryContainer }]}>
+                    <View style={styles.summaryIconContainer}>
+                      <Ionicons name="car-sport" size={24} color={colors.onPrimaryContainer} />
                     </View>
+                    <ThemedText style={[styles.summaryLabel, { color: colors.onPrimaryContainer }]}>
+                      Tổng số xe
+                    </ThemedText>
+                    <ThemedText style={[styles.summaryValue, { color: colors.onPrimaryContainer }]}>
+                      {statistics.totalVehicles}
+                    </ThemedText>
+                  </Card>
 
-                    <View
-                      style={[
-                        styles.summaryDivider,
-                        { backgroundColor: colors.gray200 },
-                      ]}
-                    />
-
-                    <View style={styles.summaryItem}>
-                      <ThemedText type="subtitle" style={styles.summaryLabel}>
-                        Tổng trọng lượng:
-                      </ThemedText>
-                      <ThemedText style={styles.summaryValue}>
-                        {formatWeight(statistics.totalWeight, true)}
-                      </ThemedText>
+                  <Card style={[styles.summaryCard, { backgroundColor: colors.secondaryContainer }]}>
+                    <View style={styles.summaryIconContainer}>
+                      <Ionicons name="scale" size={24} color={colors.onSecondaryContainer} />
                     </View>
-                  </View>
-                </Card>
+                    <ThemedText style={[styles.summaryLabel, { color: colors.onSecondaryContainer }]}>
+                      Tổng trọng lượng
+                    </ThemedText>
+                    <ThemedText style={[styles.summaryValue, { color: colors.onSecondaryContainer }]}>
+                      {formatWeight(statistics.totalWeight, true)}
+                    </ThemedText>
+                  </Card>
+                </View>
 
                 {statistics.byProduct.length > 0 && (
                   <Card style={styles.chartCard}>
-                    <ThemedText style={styles.chartTitle}>
-                      Phân bố theo loại hàng
-                    </ThemedText>
+                    <View style={styles.cardHeader}>
+                      <Ionicons name="pie-chart" size={20} color={colors.primary} />
+                      <ThemedText style={styles.chartTitle}>
+                        Phân bố theo loại hàng
+                      </ThemedText>
+                    </View>
 
                     <PieChart
                       data={statistics.byProduct.map((item) => ({
                         name: item.productName,
                         value: item.totalWeight,
                       }))}
-                      height={150}
+                      height={200}
                     />
                   </Card>
                 )}
 
                 {statistics.byDay.length > 0 && (
                   <Card style={styles.chartCard}>
-                    <ThemedText style={styles.chartTitle}>
-                      Hoạt động theo ngày
-                    </ThemedText>
+                    <View style={styles.cardHeader}>
+                      <Ionicons name="bar-chart" size={20} color={colors.primary} />
+                      <ThemedText style={styles.chartTitle}>
+                        Hoạt động theo ngày
+                      </ThemedText>
+                    </View>
 
                     <BarChart
                       data={statistics.byDay.map((day) => ({
                         label: day.date.split("-")[2],
                         value: day.weighCount,
                       }))}
-                      height={150}
+                      height={200}
                       barColor={colors.primary}
                     />
                   </Card>
@@ -288,41 +255,48 @@ const ReportsHomeScreen: React.FC = () => {
               </>
             )}
 
-            <ThemedText type="title" style={styles.reportsTitle}>
+            <ThemedText type="title" style={styles.sectionTitle}>
               Báo cáo chi tiết
             </ThemedText>
 
-            <Card style={styles.reportsCard}>
+            <View style={styles.reportList}>
               {renderReportItem(
                 "Theo khách hàng",
                 "business-outline",
                 "CompanyReports",
+                "Thống kê theo đối tác, khách hàng"
               )}
               {renderReportItem(
                 "Theo hàng hóa",
                 "cube-outline",
                 "ProductReports",
+                "Chi tiết theo loại hàng, sản phẩm"
               )}
-              {renderReportItem("Theo xe", "car-outline", "VehicleReports")}
+              {renderReportItem(
+                "Theo xe",
+                "car-outline",
+                "VehicleReports",
+                "Hoạt động của từng phương tiện"
+              )}
               {renderReportItem(
                 "Theo khoảng thời gian",
                 "calendar-outline",
                 "DateRangeReports",
+                "Tùy chỉnh khoảng thời gian báo cáo"
               )}
               {renderReportItem(
                 "Báo cáo tùy chỉnh",
                 "options-outline",
                 "CustomReport",
+                "Bộ lọc nâng cao và xuất Excel"
               )}
-            </Card>
+            </View>
 
             <View style={styles.exportContainer}>
               <Button
-                title="Xuất báo cáo"
+                title="Xuất báo cáo tổng hợp"
                 variant="primary"
-                icon={
-                  <Ionicons name="download-outline" size={20} color="white" />
-                }
+                icon={<Ionicons name="download-outline" size={20} color="white" />}
                 fullWidth
               />
             </View>
@@ -341,101 +315,120 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 32,
   },
-  timeframeContainer: {
+  segmentedContainer: {
     flexDirection: "row",
-    borderRadius: 8,
+    borderRadius: 24, // Pill shape
     padding: 4,
-    marginBottom: 16,
+    marginBottom: 24,
+    height: 48,
+    borderWidth: 1,
+    borderColor: "transparent", 
   },
-  timeframeButton: {
+  segmentButton: {
     flex: 1,
-    paddingVertical: 8,
+    flexDirection: "row",
     alignItems: "center",
-    borderRadius: 6,
+    justifyContent: "center",
+    borderRadius: 20,
   },
-  activeTimeframeButton: {
-    // Handled dynamically
+  checkIcon: {
+    marginRight: 6,
   },
-  timeframeButtonText: {
+  segmentLabel: {
     fontSize: 14,
     fontWeight: "500",
   },
-  activeTimeframeButtonText: {
-    // Handled dynamically
+  summaryContainer: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 24,
   },
   summaryCard: {
-    marginBottom: 16,
-  },
-  summaryRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  summaryItem: {
     flex: 1,
-    padding: 12,
-    alignItems: "center",
+    padding: 16,
+    alignItems: "flex-start",
+    borderRadius: 16,
+    elevation: 2,
   },
-  summaryDivider: {
-    width: 1,
-    height: "70%",
+  summaryIconContainer: {
+    marginBottom: 12,
+    opacity: 0.8,
   },
   summaryLabel: {
-    fontSize: 14,
+    fontSize: 12,
+    fontWeight: "500",
     marginBottom: 4,
+    opacity: 0.9,
   },
   summaryValue: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 20,
+    fontWeight: "700",
   },
   chartCard: {
-    marginBottom: 16,
+    marginBottom: 24,
     padding: 16,
+    borderRadius: 16,
+    elevation: 1,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+    gap: 8,
   },
   chartTitle: {
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 16,
   },
-  reportsTitle: {
-    fontSize: 16,
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: "600",
     marginTop: 8,
-    marginBottom: 12,
-  },
-  reportsCard: {
-    padding: 0,
     marginBottom: 16,
-    overflow: "hidden",
+  },
+  reportList: {
+    gap: 12,
+    marginBottom: 24,
   },
   reportItem: {
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-    borderBottomWidth: 1,
+    borderRadius: 16,
+    borderWidth: 1,
+    elevation: 0,
   },
   reportIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 16,
   },
-  reportItemText: {
+  reportContent: {
     flex: 1,
-    fontSize: 14,
-    fontWeight: "500",
+  },
+  reportItemTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 2,
   },
   exportContainer: {
-    marginTop: 4,
+    marginBottom: 16,
+  },
+  errorCard: {
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: "#B00020",
   },
   errorContainer: {
     alignItems: "center",
-    paddingVertical: 32,
+    paddingVertical: 16,
   },
   errorText: {
-    marginTop: 12,
-    fontSize: 14,
+    marginTop: 8,
+    marginBottom: 16,
     textAlign: "center",
   },
 });

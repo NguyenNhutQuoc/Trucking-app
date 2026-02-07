@@ -20,6 +20,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { stationApi, TramCan } from "@/api/station";
 import Button from "@/components/common/Button";
 import Loading from "@/components/common/Loading";
+import { spacing } from "@/styles/spacing";
 
 interface StationSelectionScreenProps {
   route: {
@@ -85,8 +86,9 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
       setRefreshing(true);
       const response = await stationApi.getMyStations();
 
-      if (response.success) {
-        setStations(response.data.tramCans);
+      // getMyStations returns MyStationsResponse directly (not wrapped in ApiResponse)
+      if (response && response.tramCans) {
+        setStations(response.tramCans);
       } else {
         Alert.alert("Lỗi", "Không thể tải lại danh sách trạm cân");
       }

@@ -31,9 +31,10 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
   const editMode = !!vehicle;
 
   const [loading, setLoading] = useState(false);
+  // Use camelCase to match API
   const [formData, setFormData] = useState<Partial<SoxeCreate & SoxeUpdate>>({
-    soxe: "",
-    trongluong: 0,
+    soXe: "",
+    trongLuong: 0,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -41,13 +42,13 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
   useEffect(() => {
     if (vehicle && editMode) {
       setFormData({
-        soxe: vehicle.soxe,
-        trongluong: vehicle.trongluong,
+        soXe: vehicle.soXe,
+        trongLuong: vehicle.trongLuong,
       });
     }
   }, [vehicle, editMode]);
 
-  const handleInputChange = (key: string, value: string | number) => {
+  const handleInputChange = (key: keyof (SoxeCreate & SoxeUpdate), value: string | number) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
 
     // Clear error for this field if exists
@@ -63,14 +64,14 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (editMode && !formData.soxe && formData.trongluong === undefined) {
-      newErrors.soxe = "Vui lòng nhập ít nhất một trường để cập nhật";
+    if (editMode && !formData.soXe && formData.trongLuong === undefined) {
+      newErrors.soXe = "Vui lòng nhập ít nhất một trường để cập nhật";
       setErrors(newErrors);
       return false;
     }
 
-    if (!formData.soxe && !editMode) {
-      newErrors.soxe = "Vui lòng nhập biển số xe";
+    if (!formData.soXe && !editMode) {
+      newErrors.soXe = "Vui lòng nhập biển số xe";
     }
 
     setErrors(newErrors);
@@ -87,10 +88,10 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
 
       if (editMode && vehicle) {
         const updateData: SoxeUpdate = {
-          soxe: formData.soxe !== vehicle.soxe ? formData.soxe : undefined,
-          trongluong:
-            formData.trongluong !== vehicle.trongluong
-              ? formData.trongluong
+          soXe: formData.soXe !== vehicle.soXe ? formData.soXe : undefined,
+          trongLuong:
+            formData.trongLuong !== vehicle.trongLuong
+              ? formData.trongLuong
               : undefined,
         };
 
@@ -154,9 +155,9 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
       >
         <Input
           label="Biển số xe *"
-          value={formData.soxe}
-          onChangeText={(text) => handleInputChange("soxe", text)}
-          error={errors.soxe}
+          value={formData.soXe}
+          onChangeText={(text) => handleInputChange("soXe", text)}
+          error={errors.soXe}
           leftIcon={
             <Ionicons name="car-outline" size={20} color={colors.gray600} />
           }
@@ -165,10 +166,10 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
 
         <Input
           label="Trọng lượng xe (kg)"
-          value={formData.trongluong?.toString()}
+          value={formData.trongLuong?.toString()}
           onChangeText={(text) => {
             const weight = formatWeightInput(text);
-            handleInputChange("trongluong", weight);
+            handleInputChange("trongLuong", weight);
           }}
           keyboardType="numeric"
           leftIcon={

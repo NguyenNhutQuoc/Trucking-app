@@ -104,7 +104,7 @@ const Pagination: React.FC<PaginationProps> = ({
           <Ionicons
             name="chevron-back"
             size={20}
-            color={!hasPrevious || loading ? colors.disabled : colors.primary}
+            color={!hasPrevious || loading ? colors.textDisabled : colors.primary}
           />
         </TouchableOpacity>
 
@@ -165,7 +165,7 @@ const Pagination: React.FC<PaginationProps> = ({
           <Ionicons
             name="chevron-forward"
             size={20}
-            color={!hasNext || loading ? colors.disabled : colors.primary}
+            color={!hasNext || loading ? colors.textDisabled : colors.primary}
           />
         </TouchableOpacity>
       </View>

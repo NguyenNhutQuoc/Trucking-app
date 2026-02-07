@@ -1,121 +1,168 @@
 // =====================================================
-// src/constants/colors.ts - FIXED Dark Mode Colors
+// src/constants/colors.ts - Material Design 3 Color System
 // =====================================================
 
+// M3 Light Theme Colors
 const colors = {
-  primary: "#5C7CFA",
-  primaryDark: "#4263EB",
-  primaryLight: "#748FFC",
-  secondary: "#63E6BE",
-  secondaryDark: "#20C997",
-  secondaryLight: "#96F2D7",
+  // Primary - Blue (M3)
+  primary: "#1976D2",
+  primaryDark: "#1565C0",
+  primaryLight: "#42A5F5",
+  onPrimary: "#FFFFFF",
+  primaryContainer: "#BBDEFB",
+  onPrimaryContainer: "#0D47A1",
 
-  success: "#40C057",
-  warning: "#FAB005",
-  error: "#FA5252",
-  info: "#15AABF",
+  // Secondary - Teal (M3)
+  secondary: "#00796B",
+  secondaryDark: "#00695C",
+  secondaryLight: "#26A69A",
+  onSecondary: "#FFFFFF",
+  secondaryContainer: "#B2DFDB",
+  onSecondaryContainer: "#004D40",
 
-  background: "#F8F9FA",
-  card: "#FFFFFF",
-  text: "#212529",
-  textSecondary: "#868E96",
-  textDisabled: "#CED4DA",
-  border: "#E9ECEF",
+  // Tertiary - Orange
+  tertiary: "#FF6F00",
+  onTertiary: "#FFFFFF",
+  tertiaryContainer: "#FFE0B2",
+  onTertiaryContainer: "#E65100",
 
+  // Status colors (M3)
+  success: "#2E7D32",
+  warning: "#F57F17",
+  error: "#D32F2F",
+  info: "#0288D1",
+  onError: "#FFFFFF",
+  errorContainer: "#FFCDD2",
+  onErrorContainer: "#B71C1C",
+
+  // Surface & Background (M3)
+  background: "#FEFBFF",
+  onBackground: "#1C1B1F",
+  surface: "#FEFBFF",
+  onSurface: "#1C1B1F",
+  surfaceVariant: "#E7E0EC",
+  onSurfaceVariant: "#49454F",
+  
+  // Surface Container levels (M3 Elevation)
+  surfaceContainerLowest: "#FFFFFF",
+  surfaceContainerLow: "#F7F2FA",
+  surfaceContainer: "#F3EDF7",
+  surfaceContainerHigh: "#ECE6F0",
+  surfaceContainerHighest: "#E6E0E9",
+
+  // Text
+  text: "#1C1B1F",
+  textSecondary: "#49454F",
+  textDisabled: "#9E9E9E",
+
+  // Outline (M3)
+  outline: "#79747E",
+  outlineVariant: "#CAC4D0",
+
+  // Core
   white: "#FFFFFF",
+  black: "#000000",
+  card: "#FFFFFF",
+  border: "#E0E0E0",
 
-  // Status colors
-  completed: "#40C057",
-  pending: "#FAB005",
-  cancelled: "#FA5252",
+  // Status colors (legacy support)
+  completed: "#2E7D32",
+  pending: "#F57F17",
+  cancelled: "#D32F2F",
 
-  // Chart colors
-  chartBlue: "#5C7CFA",
-  chartGreen: "#40C057",
-  chartYellow: "#FAB005",
-  chartOrange: "#FD7E14",
-  chartRed: "#FA5252",
-  chartPurple: "#7950F2",
-  chartCyan: "#15AABF",
-  chartPink: "#E64980",
-  chartTeal: "#12B886",
-  chartIndigo: "#4263EB",
+  // Chart colors (M3 vibrant)
+  chartBlue: "#1976D2",
+  chartGreen: "#388E3C",
+  chartYellow: "#FBC02D",
+  chartOrange: "#F57C00",
+  chartRed: "#D32F2F",
+  chartPurple: "#7B1FA2",
+  chartCyan: "#0097A7",
+  chartPink: "#C2185B",
+  chartTeal: "#00796B",
+  chartIndigo: "#303F9F",
 
-  // Gray scale
-  gray50: "#F8F9FA",
-  gray100: "#F1F3F5",
-  gray200: "#E9ECEF",
-  gray300: "#DEE2E6",
-  gray400: "#CED4DA",
-  gray500: "#ADB5BD",
-  gray600: "#868E96",
-  gray700: "#495057",
-  gray800: "#343A40",
-  gray900: "#212529",
-
-  // ✅ FIXED: Surface colors for light mode
-  surface: "#FFFFFF",
-  surfaceVariant: "#F8F9FA",
-  surfaceDark: "#F1F3F5",
-  surfaceLight: "#E9ECEF",
-  surfaceBorder: "#E9ECEF",
-  surfaceText: "#212529",
-  surfaceTextSecondary: "#868E96",
-  surfaceTextDisabled: "#CED4DA",
-  surfaceBorderLight: "#F1F3F5",
-  surfaceBorderDark: "#343A40",
-  surfaceBorderVariant: "#DEE2E6",
-  surfaceBackground: "#F8F9FA",
-  surfaceBackgroundDark: "#F1F3F5",
-  surfaceBackgroundLight: "#E9ECEF",
-  surfaceBackgroundVariant: "#DEE2E6",
-  surfaceBackgroundText: "#212529",
+  // Gray scale (M3 Neutral)
+  gray50: "#FAFAFA",
+  gray100: "#F5F5F5",
+  gray200: "#EEEEEE",
+  gray300: "#E0E0E0",
+  gray400: "#BDBDBD",
+  gray500: "#9E9E9E",
+  gray600: "#757575",
+  gray700: "#616161",
+  gray800: "#424242",
+  gray900: "#212121",
 };
 
 export default colors;
 
-// ✅ FIXED: Complete dark theme colors
+// M3 Dark Theme Colors
 export const darkColors = {
   ...colors,
-  primary: "#5C7CFA",
-  primaryDark: "#4263EB",
-  primaryLight: "#748FFC",
+  
+  // Primary - Blue (M3 Dark)
+  primary: "#90CAF9",
+  primaryDark: "#64B5F6",
+  primaryLight: "#BBDEFB",
+  onPrimary: "#0D47A1",
+  primaryContainer: "#1565C0",
+  onPrimaryContainer: "#BBDEFB",
 
-  // ✅ FIXED: Core dark theme colors
-  background: "#121212", // Dark background
-  card: "#1E1E1E", // Darker card background
-  text: "#E9ECEF", // Light text for contrast
-  textSecondary: "#ADB5BD",
-  textDisabled: "#495057",
-  border: "#343A40",
+  // Secondary - Teal (M3 Dark)
+  secondary: "#80CBC4",
+  secondaryDark: "#4DB6AC",
+  secondaryLight: "#B2DFDB",
+  onSecondary: "#004D40",
+  secondaryContainer: "#00695C",
+  onSecondaryContainer: "#B2DFDB",
 
-  // ✅ FIXED: Surface colors for dark mode
-  surface: "#1E1E1E", // Dark surface
-  surfaceVariant: "#2D2D2D",
-  surfaceDark: "#121212",
-  surfaceLight: "#343A40",
-  surfaceBorder: "#343A40",
-  surfaceText: "#E9ECEF",
-  surfaceTextSecondary: "#ADB5BD",
-  surfaceTextDisabled: "#495057",
-  surfaceBorderLight: "#495057",
-  surfaceBorderDark: "#121212",
-  surfaceBorderVariant: "#343A40",
-  surfaceBackground: "#121212",
-  surfaceBackgroundDark: "#0D1117",
-  surfaceBackgroundLight: "#1E1E1E",
-  surfaceBackgroundVariant: "#2D2D2D",
-  surfaceBackgroundText: "#E9ECEF",
+  // Status colors (M3 Dark)
+  success: "#81C784",
+  warning: "#FFD54F",
+  error: "#EF9A9A",
+  info: "#4FC3F7",
+  onError: "#B71C1C",
+  errorContainer: "#B71C1C",
+  onErrorContainer: "#FFCDD2",
 
-  // ✅ FIXED: Gray scale - properly inverted for dark mode
-  gray50: "#343A40",
-  gray100: "#495057",
-  gray200: "#6C757D",
-  gray300: "#868E96",
-  gray400: "#ADB5BD",
-  gray500: "#CED4DA",
-  gray600: "#DEE2E6",
-  gray700: "#E9ECEF",
-  gray800: "#F1F3F5",
-  gray900: "#F8F9FA",
+  // Surface & Background (M3 Dark)
+  background: "#1C1B1F",
+  onBackground: "#E6E1E5",
+  surface: "#1C1B1F",
+  onSurface: "#E6E1E5",
+  surfaceVariant: "#49454F",
+  onSurfaceVariant: "#CAC4D0",
+  
+  // Surface Container levels (M3 Dark Elevation)
+  surfaceContainerLowest: "#0F0D13",
+  surfaceContainerLow: "#1D1B20",
+  surfaceContainer: "#211F26",
+  surfaceContainerHigh: "#2B2930",
+  surfaceContainerHighest: "#36343B",
+
+  // Text (M3 Dark)
+  text: "#E6E1E5",
+  textSecondary: "#CAC4D0",
+  textDisabled: "#6C6C6C",
+
+  // Outline (M3 Dark)
+  outline: "#938F99",
+  outlineVariant: "#49454F",
+
+  // Core (M3 Dark)
+  card: "#1E1E1E",
+  border: "#49454F",
+
+  // Gray scale (M3 Dark - inverted)
+  gray50: "#212121",
+  gray100: "#424242",
+  gray200: "#616161",
+  gray300: "#757575",
+  gray400: "#9E9E9E",
+  gray500: "#BDBDBD",
+  gray600: "#E0E0E0",
+  gray700: "#EEEEEE",
+  gray800: "#F5F5F5",
+  gray900: "#FAFAFA",
 };

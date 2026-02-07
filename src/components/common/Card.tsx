@@ -1,4 +1,5 @@
 // src/components/common/Card.tsx
+// Material Design 3 Card Component
 import React, { ReactNode } from "react";
 import {
   View,
@@ -7,18 +8,25 @@ import {
   TouchableOpacity,
   ViewStyle,
   TextStyle,
+  StyleProp,
 } from "react-native";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import spacing from "@/styles/spacing";
+
+// M3 Card variants
+type CardVariant = "elevated" | "filled" | "outlined";
 
 interface CardProps {
   title?: string;
   subtitle?: string;
   children: ReactNode;
   onPress?: () => void;
-  style?: ViewStyle;
-  titleStyle?: TextStyle;
-  subtitleStyle?: TextStyle;
-  contentStyle?: ViewStyle;
+  variant?: CardVariant;
+  style?: StyleProp<ViewStyle>;
+  titleStyle?: StyleProp<TextStyle>;
+  subtitleStyle?: StyleProp<TextStyle>;
+  contentStyle?: StyleProp<ViewStyle>;
+  // Legacy props
   bordered?: boolean;
   elevated?: boolean;
   header?: ReactNode;
@@ -32,12 +40,13 @@ const Card: React.FC<CardProps> = ({
   subtitle,
   children,
   onPress,
+  variant = "elevated",
   style,
   titleStyle,
   subtitleStyle,
   contentStyle,
-  bordered = true,
-  elevated = true,
+  bordered = false,
+  elevated: legacyElevated,
   header,
   footer,
   status = "default",
@@ -45,6 +54,7 @@ const Card: React.FC<CardProps> = ({
 }) => {
   const { colors } = useAppTheme();
 
+  // Status color for left bar
   const getStatusColor = (): string => {
     switch (status) {
       case "success":
@@ -60,14 +70,44 @@ const Card: React.FC<CardProps> = ({
     }
   };
 
+  // M3 variant styles
+  const getVariantStyles = (): ViewStyle => {
+    // Legacy support: if legacyElevated is explicitly passed, use old behavior
+    if (legacyElevated !== undefined) {
+      return legacyElevated ? styles.elevated : {};
+    }
+
+    switch (variant) {
+      case "filled":
+        return {
+          backgroundColor: colors.surfaceContainerHighest || colors.gray100,
+          borderWidth: 0,
+        };
+      case "outlined":
+        return {
+          backgroundColor: colors.surface || colors.card,
+          borderWidth: 1,
+          borderColor: colors.outlineVariant || colors.gray300,
+          elevation: 0,
+          shadowOpacity: 0,
+        };
+      case "elevated":
+      default:
+        return {
+          backgroundColor: colors.surfaceContainerLow || colors.card,
+          ...styles.elevated,
+        };
+    }
+  };
+
   const renderContent = () => (
     <View
       style={[
         styles.card,
         { backgroundColor: colors.card },
+        getVariantStyles(),
         bordered && styles.bordered,
-        bordered && { borderColor: colors.gray200 },
-        elevated && styles.elevated,
+        bordered && { borderColor: colors.outlineVariant || colors.gray200 },
         style,
       ]}
     >
@@ -81,7 +121,7 @@ const Card: React.FC<CardProps> = ({
         <View
           style={[
             styles.headerContainer,
-            { borderBottomColor: colors.gray200 },
+            { borderBottomColor: colors.outlineVariant || colors.gray200 },
           ]}
         >
           {header || (
@@ -89,7 +129,11 @@ const Card: React.FC<CardProps> = ({
               <View style={styles.titleWrapper}>
                 {title && (
                   <Text
-                    style={[styles.title, { color: colors.text }, titleStyle]}
+                    style={[
+                      styles.title, 
+                      { color: colors.onSurface || colors.text }, 
+                      titleStyle
+                    ]}
                   >
                     {title}
                   </Text>
@@ -98,7 +142,7 @@ const Card: React.FC<CardProps> = ({
                   <Text
                     style={[
                       styles.subtitle,
-                      { color: colors.textSecondary },
+                      { color: colors.onSurfaceVariant || colors.textSecondary },
                       subtitleStyle,
                     ]}
                   >
@@ -118,7 +162,10 @@ const Card: React.FC<CardProps> = ({
 
       {footer && (
         <View
-          style={[styles.footerContainer, { borderTopColor: colors.gray200 }]}
+          style={[
+            styles.footerContainer, 
+            { borderTopColor: colors.outlineVariant || colors.gray200 }
+          ]}
         >
           {footer}
         </View>
@@ -139,19 +186,19 @@ const Card: React.FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 12,
+    borderRadius: spacing.radiusMd, // M3: 12px
     overflow: "hidden",
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   bordered: {
     borderWidth: 1,
   },
   elevated: {
-    elevation: 3,
+    elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
   },
   statusBar: {
     position: "absolute",
@@ -162,7 +209,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
   },
   titleContainer: {
@@ -175,17 +222,19 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "500", // M3: Medium weight
+    letterSpacing: 0.15,
   },
   subtitle: {
     fontSize: 14,
     marginTop: 2,
+    letterSpacing: 0.25,
   },
   rightContent: {
-    marginLeft: 16,
+    marginLeft: spacing.md,
   },
   content: {
-    padding: 16,
+    padding: spacing.md,
   },
   footerContainer: {
     padding: 12,

@@ -54,8 +54,9 @@ const PhieucanDetailScreen: React.FC = () => {
     try {
       setLoading(true);
       const response = await weighingApi.getWeighingById(weighingId);
-      if (response.success && response.data.data) {
-        setWeighing(response.data.data);
+      // ApiResponse<T>.data returns T directly
+      if (response.success && response.data) {
+        setWeighing(response.data);
       } else {
         Alert.alert("Lỗi", "Không thể tải thông tin phiếu cân");
         navigation.goBack();

@@ -27,6 +27,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { formatWeight } from "@/utils/formatters";
 import { Soxe } from "@/types/api.types";
 import { ReportsStackScreenProps } from "@/types/navigation.types";
+import { spacing } from "@/styles/spacing";
 
 type NavigationProp = ReportsStackScreenProps<"VehicleReports">["navigation"];
 type ViewMode = "list" | "grid" | "table";
@@ -171,7 +172,7 @@ const VehicleReportsScreen: React.FC = () => {
 
   // Table Row Component
   const renderTableRow = ({ item, index }: { item: any; index: number }) => {
-    const vehicle = vehicles.find((v) => v.soxe === item.vehicleNumber);
+    const vehicle = vehicles.find((v) => v.soXe === item.vehicleNumber);
     const percentageOfTotal =
       totalWeight > 0
         ? ((item.totalWeight / totalWeight) * 100).toFixed(1)
@@ -239,7 +240,7 @@ const VehicleReportsScreen: React.FC = () => {
 
   // Grid Item Component
   const renderGridItem = ({ item, index }: { item: any; index: number }) => {
-    const vehicle = vehicles.find((v) => v.soxe === item.vehicleNumber);
+    const vehicle = vehicles.find((v) => v.soXe === item.vehicleNumber);
     const percentageOfTotal =
       totalWeight > 0
         ? ((item.totalWeight / totalWeight) * 100).toFixed(1)
@@ -269,7 +270,6 @@ const VehicleReportsScreen: React.FC = () => {
             </View>
             <View style={styles.gridPercentageContainer}>
               <ThemedText
-                style={styles.gridPercentageText}
                 color={colors.primary}
               >
                 {percentageOfTotal}%
@@ -310,7 +310,7 @@ const VehicleReportsScreen: React.FC = () => {
 
           {vehicle && (
             <ThemedText type="caption" style={styles.gridVehicleInfo}>
-              TL xe: {formatWeight(vehicle.trongluong)}
+              TL xe: {formatWeight(vehicle.trongLuong)}
             </ThemedText>
           )}
         </Card>
@@ -320,7 +320,7 @@ const VehicleReportsScreen: React.FC = () => {
 
   // List Item Component
   const renderListItem = ({ item, index }: { item: any; index: number }) => {
-    const vehicle = vehicles.find((v) => v.soxe === item.vehicleNumber);
+    const vehicle = vehicles.find((v) => v.soXe === item.vehicleNumber);
     const percentageOfTotal =
       totalWeight > 0
         ? ((item.totalWeight / totalWeight) * 100).toFixed(1)
@@ -411,7 +411,7 @@ const VehicleReportsScreen: React.FC = () => {
             style={[styles.vehicleInfo, { borderTopColor: colors.gray200 }]}
           >
             <ThemedText type="caption" style={styles.vehicleInfoText}>
-              Trọng lượng xe: {formatWeight(vehicle.trongluong)}
+              Trọng lượng xe: {formatWeight(vehicle.trongLuong)}
             </ThemedText>
           </View>
         )}

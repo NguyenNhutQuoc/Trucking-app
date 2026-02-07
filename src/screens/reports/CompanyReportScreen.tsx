@@ -27,6 +27,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { formatWeight } from "@/utils/formatters";
 import { Khachhang } from "@/types/api.types";
 import { ReportsStackScreenProps } from "@/types/navigation.types";
+import spacing from "@/styles/spacing";
 
 type NavigationProp = ReportsStackScreenProps<"CompanyReports">["navigation"];
 type ViewMode = "list" | "grid" | "table";

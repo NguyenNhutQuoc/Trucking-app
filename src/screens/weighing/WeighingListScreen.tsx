@@ -28,10 +28,11 @@ import Loading from "@/components/common/Loading";
 import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
 import { useAppTheme } from "@/hooks/useAppTheme";
-import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"; // ✅ NEW
-import LoadMoreButton from "@/components/common/LoadMoreButton"; // ✅ NEW
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import LoadMoreButton from "@/components/common/LoadMoreButton";
 import { Phieucan } from "@/types/api.types";
 import { formatWeight } from "@/utils/formatters";
+import { spacing } from "@/styles/spacing";
 
 // Types
 type FilterState =
@@ -634,46 +635,52 @@ const WeighingListScreen: React.FC = () => {
       { key: "thisMonth", label: "Tháng này", icon: "calendar-outline" },
     ];
 
+    // M3 Filter Chips with proper styling
     return (
       <View style={styles.filtersContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {filters.map((filter) => (
-            <TouchableOpacity
-              key={filter.key}
-              style={[
-                styles.filterTab,
-                {
-                  backgroundColor:
-                    activeFilter === filter.key
-                      ? colors.primary
-                      : "transparent",
-                },
-              ]}
-              onPress={() => onFilterChange(filter.key)}
-            >
-              {filter.icon && (
-                <Ionicons
-                  name={filter.icon as any}
-                  size={14}
-                  color={
-                    activeFilter === filter.key ? colors.white : colors.text
-                  }
-                  style={styles.filterIcon}
-                />
-              )}
-              <ThemedText
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersScrollContent}
+        >
+          {filters.map((filter) => {
+            const isActive = activeFilter === filter.key;
+            return (
+              <TouchableOpacity
+                key={filter.key}
                 style={[
-                  styles.filterText,
+                  styles.filterChip,
                   {
-                    color:
-                      activeFilter === filter.key ? colors.white : colors.text,
+                    backgroundColor: isActive
+                      ? colors.primaryContainer || colors.primary + '20'
+                      : colors.surfaceContainer || colors.gray100,
+                    borderColor: isActive ? colors.primary : 'transparent',
                   },
                 ]}
+                onPress={() => onFilterChange(filter.key)}
               >
-                {filter.label}
-              </ThemedText>
-            </TouchableOpacity>
-          ))}
+                {filter.icon && (
+                  <Ionicons
+                    name={filter.icon as any}
+                    size={16}
+                    color={isActive ? colors.primary : colors.textSecondary}
+                    style={styles.filterChipIcon}
+                  />
+                )}
+                <ThemedText
+                  style={[
+                    styles.filterChipText,
+                    {
+                      color: isActive ? colors.primary : colors.text,
+                      fontWeight: isActive ? '600' : '400',
+                    },
+                  ]}
+                >
+                  {filter.label}
+                </ThemedText>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       </View>
     );
@@ -684,28 +691,29 @@ const WeighingListScreen: React.FC = () => {
       <Header title="Danh Sách Cân" showBack />
 
       <View style={styles.container}>
+        {/* M3 Search Bar */}
         <View
           style={[
             styles.searchContainer,
-            { backgroundColor: colors.card, borderBottomColor: colors.gray200 },
+            { backgroundColor: colors.surface, borderBottomColor: colors.outlineVariant || colors.gray200 },
           ]}
         >
           <View
             style={[
               styles.searchInputContainer,
-              { backgroundColor: colors.gray100 },
+              { backgroundColor: colors.surfaceContainer || colors.gray100 },
             ]}
           >
             <Ionicons
               name="search"
               size={20}
-              color={colors.gray500}
+              color={colors.textSecondary}
               style={styles.searchIcon}
             />
             <TextInput
               style={[styles.searchInput, { color: colors.text }]}
-              placeholder="Tìm kiếm..."
-              placeholderTextColor={colors.gray500}
+              placeholder="Tìm biển số, phiếu, khách hàng..."
+              placeholderTextColor={colors.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
@@ -714,27 +722,27 @@ const WeighingListScreen: React.FC = () => {
                 <Ionicons
                   name="close-circle"
                   size={20}
-                  color={colors.gray500}
+                  color={colors.textSecondary}
                 />
               </TouchableOpacity>
             ) : null}
           </View>
 
           <TouchableOpacity
-            style={[styles.filterButton, { backgroundColor: colors.gray100 }]}
+            style={[styles.actionButton, { backgroundColor: colors.surfaceContainer || colors.gray100 }]}
             onPress={() => setShowFilterModal(true)}
           >
-            <Ionicons name="options-outline" size={20} color={colors.gray700} />
+            <Ionicons name="options-outline" size={20} color={colors.text} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.viewModeButton, { backgroundColor: colors.gray100 }]}
+            style={[styles.actionButton, { backgroundColor: colors.surfaceContainer || colors.gray100 }]}
             onPress={() => setViewMode(viewMode === "list" ? "table" : "list")}
           >
             <Ionicons
               name={viewMode === "list" ? "grid-outline" : "list-outline"}
               size={20}
-              color={colors.gray700}
+              color={colors.text}
             />
           </TouchableOpacity>
         </View>
@@ -849,65 +857,64 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  // M3 Search Bar - 48dp height, rounded corners
   searchContainer: {
     flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderBottomWidth: 1,
     alignItems: "center",
+    gap: spacing.sm,
   },
   searchInputContainer: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    height: 40,
+    borderRadius: 28, // M3 full rounded
+    paddingHorizontal: spacing.md,
+    height: 48, // M3 search bar height
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
     height: "100%",
   },
-  filterButton: {
-    marginLeft: 12,
+  // M3 Icon buttons - 40dp
+  actionButton: {
     justifyContent: "center",
     alignItems: "center",
     width: 40,
     height: 40,
-    borderRadius: 8,
+    borderRadius: 20, // M3 circular
   },
-  viewModeButton: {
-    marginLeft: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-  },
+  // M3 Filter Chips container
   filterTabsContainer: {
-    paddingTop: 8,
+    paddingTop: spacing.sm,
   },
   filtersContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingBottom: spacing.sm,
   },
-  filterTab: {
+  filtersScrollContent: {
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
+  },
+  // M3 Filter Chip - 32dp height, 8dp corner radius
+  filterChip: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    marginRight: 8,
-    borderRadius: 20,
+    height: 32,
+    paddingHorizontal: spacing.md,
+    borderRadius: 8,
+    borderWidth: 1,
   },
-  filterText: {
+  filterChipText: {
     fontSize: 14,
   },
-  filterIcon: {
-    marginRight: 6,
+  filterChipIcon: {
+    marginRight: spacing.xs,
   },
 
   // Table Styles

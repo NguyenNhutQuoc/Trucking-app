@@ -1,6 +1,7 @@
 // src/components/charts/PieChart.tsx
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Dimensions } from "react-native";
+import { PieChart as RNCPieChart } from "react-native-chart-kit";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import ThemedText from "@/components/common/ThemedText";
 
@@ -16,36 +17,44 @@ interface PieChartProps {
 }
 
 /**
- * A simple pie chart component that supports dark mode
+ * A pie chart component using react-native-chart-kit with M3 styling
  */
 const PieChart: React.FC<PieChartProps> = ({
   data,
   colors,
-  height = 150,
+  height = 200,
   showLegend = true,
   showPercentage = true,
 }) => {
   const { colors: themeColors } = useAppTheme();
 
-  // Use provided colors or default theme chart colors
-  const chartColors = colors || [
-    themeColors.chartBlue,
-    themeColors.chartGreen,
-    themeColors.chartYellow,
-    themeColors.chartPurple,
-    themeColors.chartOrange,
-    themeColors.chartRed,
-    themeColors.chartCyan,
-    themeColors.chartPink,
+  // Define chart colors
+  const defaultPalette = [
+    themeColors.chartBlue || "#2196F3",
+    themeColors.chartGreen || "#4CAF50",
+    themeColors.chartYellow || "#FFEB3B",
+    themeColors.chartPurple || "#9C27B0",
+    themeColors.chartOrange || "#FF9800",
+    themeColors.chartRed || "#F44336",
+    themeColors.chartCyan || "#00BCD4",
+    themeColors.chartPink || "#E91E63",
   ];
 
-  // Calculate total for percentages
+  const chartColors = colors || defaultPalette;
+
+  // Transform data for react-native-chart-kit
   const total = data.reduce((sum, item) => sum + item.value, 0);
+  const chartData = data
+    .filter((item) => item.value > 0)
+    .map((item, index) => ({
+      name: item.name,
+      value: item.value,
+      color: chartColors[index % chartColors.length],
+      legendFontColor: themeColors.onSurface,
+      legendFontSize: 12,
+    }));
 
-  // Filter out zero values
-  const filteredData = data.filter((item) => item.value > 0);
-
-  if (filteredData.length === 0) {
+  if (chartData.length === 0) {
     return (
       <View style={[styles.container, { height }]}>
         <ThemedText style={styles.emptyText}>Không có dữ liệu</ThemedText>
@@ -53,57 +62,58 @@ const PieChart: React.FC<PieChartProps> = ({
     );
   }
 
-  return (
-    <View style={[styles.container, { height }]}>
-      <View style={[styles.pieContainer, { height: height * 0.8 }]}>
-        <View
-          style={[styles.pieChart, { backgroundColor: themeColors.gray200 }]}
-        >
-          {filteredData.map((item, index) => {
-            const percentage = item.value / total;
-            const rotation =
-              index === 0
-                ? 0
-                : filteredData
-                    .slice(0, index)
-                    .reduce((sum, prev) => sum + (prev.value / total) * 360, 0);
+  // Calculate percentage for legend
+  const getPercentage = (value: number) => {
+    return ((value / total) * 100).toFixed(1) + "%";
+  };
 
-            return (
-              <View
-                key={index}
-                style={[
-                  styles.pieSlice,
-                  {
-                    backgroundColor: chartColors[index % chartColors.length],
-                    transform: [{ rotate: `${rotation}deg` }],
-                    zIndex: filteredData.length - index,
-                    // Use clip-path to create the slice effect
-                    // But we're using basic rotation for simplicity here
-                  },
-                ]}
-              />
-            );
-          })}
-        </View>
+  const chartWidth = Dimensions.get("window").width;
+  // We use a custom legend layout to handle overflow better than the library
+  // Increased width to prevent clipping
+  const pieWidth = 200; 
+
+  return (
+    <View style={styles.container}>
+      {/* Chart Section */}
+      <View style={styles.chartWrapper}>
+        <RNCPieChart
+          data={chartData}
+          width={pieWidth}
+          height={height}
+          chartConfig={{
+            color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+            decimalPlaces: 0,
+          }}
+          accessor={"value"}
+          backgroundColor={"transparent"}
+          paddingLeft={"40"} // Center the chart in the wrapper - adjusted for increased width
+          center={[0, 0]}
+          absolute={false}
+          hasLegend={false}
+        />
       </View>
 
+      {/* Custom Legend Section */}
       {showLegend && (
         <View style={styles.legendContainer}>
-          {filteredData.map((item, index) => (
+          {chartData.map((item, index) => (
             <View key={index} style={styles.legendItem}>
               <View
                 style={[
                   styles.legendColor,
-                  {
-                    backgroundColor: chartColors[index % chartColors.length],
-                  },
+                  { backgroundColor: item.color },
                 ]}
               />
-              <ThemedText style={styles.legendText}>
-                {item.name}
-                {showPercentage &&
-                  ` (${Math.round((item.value / total) * 100)}%)`}
-              </ThemedText>
+              <View style={styles.legendTextContainer}>
+                <ThemedText style={styles.legendLabel} numberOfLines={2}>
+                  {item.name}
+                </ThemedText>
+                {showPercentage && (
+                  <ThemedText style={styles.legendValue}>
+                    {getPercentage(item.value)}
+                  </ThemedText>
+                )}
+              </View>
             </View>
           ))}
         </View>
@@ -115,52 +125,53 @@ const PieChart: React.FC<PieChartProps> = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start", // Top align to handle different heights
     justifyContent: "space-between",
   },
-  pieContainer: {
+  chartWrapper: {
+    width: 200, // Matched with pieWidth
+    alignItems: "center",
     justifyContent: "center",
-    alignItems: "center",
-    width: "40%",
-  },
-  pieChart: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    position: "relative",
-    overflow: "hidden",
-  },
-  pieSlice: {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    transformOrigin: "center",
-  },
-  legendContainer: {
-    flex: 1,
-    paddingLeft: 20,
-  },
-  legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  legendColor: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    marginRight: 8,
-  },
-  legendText: {
-    fontSize: 12,
+    marginLeft: -20, // Negative margin to offset the extra padding/width and keep visual balance
   },
   emptyText: {
     textAlign: "center",
     flex: 1,
+    textAlignVertical: "center",
+  },
+  legendContainer: {
+    flex: 1,
+    paddingLeft: 16,
+    paddingTop: 8, // Align with top of chart
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center", // Align dot with text center
+    marginBottom: 10,
+    flexWrap: "nowrap",
+  },
+  legendColor: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 8,
+    marginTop: 2, // Slight adjustment for visual alignment with text
+  },
+  legendTextContainer: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  legendLabel: {
+    fontSize: 12,
+    flex: 1,
+    marginRight: 4,
+  },
+  legendValue: {
+    fontSize: 12,
+    fontWeight: "600",
+    opacity: 0.7,
   },
 });
 

@@ -1,4 +1,5 @@
 // src/components/common/Header.tsx
+// Material Design 3 Top App Bar
 import React from "react";
 import {
   View,
@@ -13,9 +14,14 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import spacing from "@/styles/spacing";
+
+// M3 App Bar variants
+type HeaderVariant = "small" | "medium" | "large" | "centerAligned";
 
 interface HeaderProps {
   title: string;
+  variant?: HeaderVariant;
   showBack?: boolean;
   showMenu?: boolean;
   rightComponent?: React.ReactNode;
@@ -24,10 +30,12 @@ interface HeaderProps {
   containerStyle?: ViewStyle;
   titleStyle?: TextStyle;
   backgroundColor?: string;
+  transparent?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({
   title,
+  variant = "small",
   showBack = false,
   showMenu = false,
   rightComponent,
@@ -36,6 +44,7 @@ const Header: React.FC<HeaderProps> = ({
   containerStyle,
   titleStyle,
   backgroundColor,
+  transparent = false,
 }) => {
   const navigation = useNavigation();
   const { colors, isDarkMode } = useAppTheme();
@@ -54,14 +63,54 @@ const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const headerBgColor = backgroundColor || colors.primary;
+  // M3 uses surface color by default, primary for branded headers
+  const headerBgColor = transparent 
+    ? "transparent" 
+    : (backgroundColor || colors.primary);
+  
+  const contentColor = transparent 
+    ? (isDarkMode ? colors.onSurface : colors.onSurface) 
+    : colors.onPrimary || colors.white;
+
+  // Get variant-specific styles
+  const getVariantStyles = () => {
+    switch (variant) {
+      case "medium":
+        return {
+          container: { height: 112 },
+          title: { fontSize: 24, fontWeight: "400" as const },
+        };
+      case "large":
+        return {
+          container: { height: 152 },
+          title: { fontSize: 28, fontWeight: "400" as const },
+        };
+      case "centerAligned":
+        return {
+          container: { height: 64 },
+          title: { fontSize: 22, fontWeight: "500" as const, textAlign: "center" as const },
+        };
+      case "small":
+      default:
+        return {
+          container: { height: 64 },
+          title: { fontSize: 22, fontWeight: "500" as const },
+        };
+    }
+  };
+
+  const variantStyles = getVariantStyles();
 
   return (
     <>
-      <StatusBar backgroundColor={headerBgColor} barStyle="light-content" />
+      <StatusBar 
+        backgroundColor={headerBgColor} 
+        barStyle={transparent || isDarkMode ? "dark-content" : "light-content"} 
+      />
       <View
         style={[
           styles.container,
+          variantStyles.container,
           { backgroundColor: headerBgColor },
           containerStyle,
         ]}
@@ -73,7 +122,7 @@ const Header: React.FC<HeaderProps> = ({
               onPress={handleBackPress}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="arrow-back" size={24} color="white" />
+              <Ionicons name="arrow-back" size={24} color={contentColor} />
             </TouchableOpacity>
           )}
           {showMenu && (
@@ -82,12 +131,20 @@ const Header: React.FC<HeaderProps> = ({
               onPress={handleMenuPress}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="menu" size={24} color="white" />
+              <Ionicons name="menu" size={24} color={contentColor} />
             </TouchableOpacity>
           )}
         </View>
 
-        <Text style={[styles.title, titleStyle]} numberOfLines={1}>
+        <Text 
+          style={[
+            styles.title, 
+            variantStyles.title,
+            { color: contentColor },
+            titleStyle
+          ]} 
+          numberOfLines={1}
+        >
           {title}
         </Text>
 
@@ -104,34 +161,33 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    height: 56,
+    paddingHorizontal: spacing.md,
     width: "100%",
-    paddingTop: Platform.OS === "ios" ? 0 : 0,
   },
   leftContainer: {
     flexDirection: "row",
     alignItems: "center",
-    width: 60,
+    minWidth: 48,
   },
   rightContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-end",
-    width: 60,
+    minWidth: 48,
   },
   iconButton: {
-    marginRight: 8,
+    width: 48,
+    height: 48,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: -12, // Align with edge
   },
   title: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "white",
     flex: 1,
-    textAlign: "center",
+    letterSpacing: 0,
   },
   placeholder: {
-    width: 24,
+    width: 48,
   },
 });
 

@@ -54,17 +54,14 @@ const StationSwitcher: React.FC<StationSwitcherProps> = ({
 
       const response = await stationApi.getMyStations();
       console.log("📋 Stations response:", response);
-      console.log(response.data.tramCans);
+      console.log(response.tramCans);
 
-      if (response.success && response.data.tramCans) {
-        setStations(response.data.tramCans);
-        console.log("✅ Loaded stations count:", response.data.tramCans.length);
+      if (response.tramCans) {
+        setStations(response.tramCans);
+        console.log("✅ Loaded stations count:", response.tramCans.length);
       } else {
-        console.error("❌ Failed to load stations:", response.message);
-        Alert.alert(
-          "Lỗi",
-          response.message || "Không thể tải danh sách trạm cân",
-        );
+        console.error("❌ Failed to load stations:");
+        Alert.alert("Lỗi", "Không thể tải danh sách trạm cân");
       }
     } catch (error) {
       console.error("❌ Load stations error:", error);
@@ -202,7 +199,7 @@ const StationSwitcher: React.FC<StationSwitcherProps> = ({
           Chọn trạm cân
         </Text>
         <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
-          {tenantInfo?.khachHang?.tenKhachHang}
+          {tenantInfo?.khachHang?.tenKhachHang || "Khách hàng"}
         </Text>
       </View>
 

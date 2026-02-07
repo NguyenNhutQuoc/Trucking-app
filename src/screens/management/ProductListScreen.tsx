@@ -43,7 +43,8 @@ const ProductListScreen: React.FC = () => {
   } = useInfiniteScroll<Hanghoa>(
     async (page, pageSize) => {
       const response = await productApi.getProducts({ page, pageSize });
-      return response.success ? response.data : null;
+      console.log("Products response:", response);
+      return response;
     },
     { pageSize: 20 }, // Load 20 items per page
   );

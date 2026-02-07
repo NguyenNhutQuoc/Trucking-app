@@ -43,7 +43,7 @@ const VehicleListScreen: React.FC = () => {
   } = useInfiniteScroll<Soxe>(
     async (page, pageSize) => {
       const response = await vehicleApi.getVehicles({ page, pageSize });
-      return response.success ? response.data : null;
+      return response;
     },
     { pageSize: 20 },
   );

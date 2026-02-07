@@ -159,16 +159,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const selectStation = async (
     sessionToken: string,
     tramCanId: number,
+    isActivated: boolean = false, // ← NEW: Optional parameter
   ): Promise<boolean> => {
     try {
-      const response = await authApi.selectStation({ sessionToken, tramCanId });
+      const response = await authApi.selectStation({
+        sessionToken,
+        tramCanId,
+        isActivated, // ← Pass isActivated to API
+      });
 
       if (response.success) {
-        // ✅ FIXED: Access data directly (.NET flattened format)
+        // ✅ UPDATED: Include kháchHang info from response
         const newTenantInfo: TenantInfo = {
           selectedStation: response.data.selectedStation,
+          khachHang: response.data.khachHang,
           dbConfig: response.data.dbConfig,
         };
+
+        // ✅ Lưu tenant info vào AsyncStorage
+        await authApi.saveTenantInfo(newTenantInfo);
 
         setAuthState({
           isAuthenticated: true,
@@ -178,6 +187,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           userInfo: {
             id: response.data.selectedStation?.maTramCan || 0,
             username: response.data.selectedStation?.tenTramCan || "",
+            // ✅ Store kháchHang info in userInfo if needed
+            hoTen: response.data.khachHang?.tenKhachHang,
           } as Nhanvien,
         });
 
@@ -275,10 +286,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (response.success) {
         // ✅ FIXED: Update auth state with correct structure
-        const newTenantInfo = {
+        const newTenantInfo: TenantInfo = {
           selectedStation: response.data.selectedStation,
           khachHang: response.data.khachHang,
         };
+
+        // ✅ Lưu tenant info vào AsyncStorage
+        await authApi.saveTenantInfo(newTenantInfo);
 
         setAuthState((prev) => ({
           ...prev,
@@ -304,7 +318,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const getMyStations = async () => {
     try {
       const response = await stationApi.getMyStations();
-      return response.success ? response.data.tramCans : [];
+      return response.tramCans || [];
     } catch (error) {
       console.error("Get my stations error:", error);
       return [];

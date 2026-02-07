@@ -10,12 +10,21 @@ export interface TramCan {
   moTa?: string;
 }
 
+export interface KhachHangInfo {
+  maKhachHang: string;
+  tenKhachHang: string;
+}
+
+export interface CurrentStationInfo {
+  id: number;
+  tenTramCan: string;
+}
+
 export interface MyStationsResponse {
-  success: boolean;
-  message: string;
-  data: {
-    tramCans: TramCan[];
-  };
+  khachHang: KhachHangInfo;
+  tramCans: TramCan[];
+  currentStation: CurrentStationInfo | null;
+  sessionType: string; // "temp" or "full"
 }
 
 export interface SwitchStationRequest {
@@ -146,7 +155,7 @@ export const stationApi = {
       console.log("🔄 Refreshing stations...");
 
       const response = await stationApi.getMyStations();
-      return response.success ? response.data.tramCans : [];
+      return response.tramCans;
     } catch (error) {
       console.error("❌ Refresh stations error:", error);
       return [];
@@ -191,7 +200,7 @@ export const useStationApi = () => {
   const loadMyStations = async () => {
     try {
       const response = await stationApi.getMyStations();
-      return response.data;
+      return response.tramCans;
     } catch (error) {
       console.error("❌ useStationApi - loadMyStations error:", error);
       return [];

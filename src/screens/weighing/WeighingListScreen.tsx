@@ -62,7 +62,8 @@ const WeighingListScreen: React.FC = () => {
   } = useInfiniteScroll<Phieucan>(
     async (page, pageSize) => {
       const response = await weighingApi.getWeighings({ page, pageSize });
-      return response.success ? response.data : null;
+      console.log("Weighings response:", response);
+      return response;
     },
     { pageSize: 20 },
   );
@@ -85,6 +86,7 @@ const WeighingListScreen: React.FC = () => {
   );
 
   useEffect(() => {
+    console.log(weighings);
     applyFilters();
   }, [weighings, activeFilter, searchQuery, filterOptions]);
 

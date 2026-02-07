@@ -69,10 +69,13 @@ export interface PaginationParams {
  * Wrapper cho API response có pagination
  */
 export interface ApiPaginatedResponse<T> {
-  success: boolean;
-  message: string;
-  data: PaginatedResponse<T>;
-  statusCode?: number; // ← NEW: Optional field từ .NET API
+  items: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasPrevious: boolean;
+  hasNext: boolean;
 }
 
 // Phiếu cân
@@ -371,6 +374,7 @@ export interface SelectedStation {
 export interface StationSelectionResponse {
   sessionToken: string;
   selectedStation: SelectedStation;
+  khachHang: KhachHang; // ← NEW: Thông tin khách hàng
   dbConfig?: DbConfig;
 }
 
@@ -391,9 +395,10 @@ export interface SessionValidationApiResponse
   extends ApiResponse<SessionValidationResponse> {}
 
 // ✅ UPDATED: Flattened TenantInfo (.NET format)
-// Không còn nested khachHang, chỉ có selectedStation và dbConfig
+// Không còn nested kháchHang, chỉ có selectedStation và dbConfig
 export interface TenantInfo {
   selectedStation: SelectedStation;
+  khachHang?: KhachHang; // ← FIXED: Optional để backward compatible
   dbConfig?: DbConfig; // Optional database configuration
 }
 
@@ -446,6 +451,8 @@ export interface AuthStackParamList {
     tramCans: TramCan[];
   };
 }
+
+export class DbConfig {}
 
 export interface RootStackParamList {
   Auth: NavigatorScreenParams<AuthStackParamList>;

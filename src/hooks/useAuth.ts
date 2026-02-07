@@ -20,7 +20,11 @@ interface UseAuthReturn {
       tramCans: any[];
     };
   }>;
-  selectStation: (sessionToken: string, tramCanId: number) => Promise<boolean>;
+  selectStation: (
+    sessionToken: string,
+    tramCanId: number,
+    isActivated?: boolean,
+  ) => Promise<boolean>;
   switchStation: (tramCanId: number) => Promise<boolean>;
   getMyStations: () => Promise<any[]>;
 

@@ -44,7 +44,7 @@ const CompanyListScreen: React.FC = () => {
   } = useInfiniteScroll<Khachhang>(
     async (page, pageSize) => {
       const response = await customerApi.getCustomers({ page, pageSize });
-      return response.success ? response.data : null;
+      return response;
     },
     { pageSize: 20 },
   );

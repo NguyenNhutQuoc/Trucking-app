@@ -81,10 +81,10 @@ api.interceptors.response.use(
         await AsyncStorage.removeItem("session_token");
         await AsyncStorage.removeItem("tenant_info");
 
-        // Call global handler if available
-        if (typeof global !== "undefined" && global.handleSessionExpired) {
-          global.handleSessionExpired();
-        }
+        // // Call global handler if available
+        // if (typeof global !== "undefined" && global.handleSessionExpired) {
+        //   global.handleSessionExpired();
+        // }
       } catch (clearError) {
         console.error("❌ Error clearing session data:", clearError);
       }
@@ -100,11 +100,11 @@ api.interceptors.response.use(
 );
 
 // ✅ Helper function để set session expired handler
-export const setSessionExpiredHandler = (handler: () => void) => {
-  if (typeof global !== "undefined") {
-    global.handleSessionExpired = handler;
-  }
-};
+// export const setSessionExpiredHandler = (handler: () => void) => {
+//   // if (typeof global !== "undefined") {
+//   //   global.handleSessionExpired = handler;
+//   }
+// };
 
 // ✅ Helper function để get current session info
 export const getCurrentSessionInfo = async () => {

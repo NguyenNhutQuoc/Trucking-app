@@ -40,6 +40,7 @@ export interface TenantLoginResponse {
 export interface StationSelectionRequest {
   sessionToken: string;
   tramCanId: number;
+  isActivated?: boolean; // Optional: cho phép truy cập trạm cân bị khóa
 }
 
 /**
@@ -56,6 +57,11 @@ export interface StationSelectionResponse {
       maTramCan: string; // ← Thêm field này từ .NET
       tenTramCan: string;
       diaChi: string; // ← Thêm field này từ .NET
+    };
+    khachHang: {
+      // ← NEW: Thông tin khách hàng
+      maKhachHang: string;
+      tenKhachHang: string;
     };
     dbConfig?: {
       // ← Optional, .NET có thể trả về
@@ -128,7 +134,8 @@ export const authApi = {
         const tenantInfo = JSON.parse(tenantInfoStr);
         console.log(
           "🏢 Retrieved tenant info:",
-          tenantInfo?.khachHang?.tenKhachHang,
+          tenantInfo?.khachHang?.tenKhachHang ||
+            tenantInfo?.selectedStation?.tenTramCan,
         );
         return tenantInfo;
       }
@@ -137,6 +144,22 @@ export const authApi = {
     } catch (error) {
       console.error("❌ Get tenant info error:", error);
       return null;
+    }
+  },
+
+  /**
+   * ✅ NEW: Lưu thông tin tenant vào AsyncStorage
+   */
+  saveTenantInfo: async (tenantInfo: any) => {
+    try {
+      await AsyncStorage.setItem("tenant_info", JSON.stringify(tenantInfo));
+      console.log(
+        "💾 Saved tenant info:",
+        tenantInfo?.khachHang?.tenKhachHang ||
+          tenantInfo?.selectedStation?.tenTramCan,
+      );
+    } catch (error) {
+      console.error("❌ Save tenant info error:", error);
     }
   },
 

@@ -43,7 +43,7 @@ const UserListScreen: React.FC = () => {
   } = useInfiniteScroll<Nhanvien>(
     async (page, pageSize) => {
       const response = await userApi.getUsers({ page, pageSize });
-      return response.success ? response.data : null;
+      return response;
     },
     { pageSize: 20 },
   );

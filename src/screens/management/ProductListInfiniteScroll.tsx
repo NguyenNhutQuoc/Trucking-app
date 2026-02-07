@@ -55,8 +55,8 @@ const ProductListInfiniteScroll: React.FC = () => {
         pageSize: infiniteScroll.pageSize,
       });
 
-      if (response.success) {
-        infiniteScroll.setData(response.data);
+      if (response) {
+        infiniteScroll.setData(response);
       }
     } catch (error) {
       console.error("Load initial data error:", error);

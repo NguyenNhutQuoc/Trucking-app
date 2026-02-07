@@ -73,9 +73,9 @@ const VehicleReportsScreen: React.FC = () => {
 
   const loadVehicles = async () => {
     try {
-      const response = await vehicleApi.getAllVehicles();
-      if (response.success) {
-        setVehicles(response.data.data);
+      const response = await vehicleApi.getVehicles({ page: 1, pageSize: 100 });
+      if (response.items) {
+        setVehicles(response.items);
       }
     } catch (error) {
       console.error("Load vehicles error:", error);
@@ -85,15 +85,15 @@ const VehicleReportsScreen: React.FC = () => {
   const loadWeightStatistics = async () => {
     try {
       const formattedStartDate = startDate.toISOString();
-      const formattedEndDate = endDate.toISOString();
+      const formattedEndDate = endDate.toISOString().split("T")[0] + "T23:59:59";
 
       const response = await weighingApi.getWeightStatistics(
         formattedStartDate,
         formattedEndDate,
       );
 
-      if (response.success) {
-        const stats = response.data.data;
+      if (response) {
+        const stats = response.data;
         setTotalWeight(stats.totalWeight);
         setTotalVehicles(stats.totalVehicles);
 

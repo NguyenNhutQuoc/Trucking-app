@@ -26,6 +26,7 @@ const ReportsHomeScreen: React.FC = () => {
 
   const [loading, setLoading] = useState(true);
   const [statistics, setStatistics] = useState<PhieucanStatistics | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<"today" | "week" | "month">(
     "week",
   );
@@ -37,12 +38,49 @@ const ReportsHomeScreen: React.FC = () => {
   const loadStatistics = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await weighingApi.getTodayStatistics();
-      if (response.success) {
-        setStatistics(response.data.data);
+      console.log("API response:", response);
+      if (response) {
+        console.log("Today statistics:", response.data);
+
+        // API trả về array, cần transform sang PhieucanStatistics format
+        const rawData = response.data as any;
+
+        console.log("Transformed statistics:", rawData);
+
+        // Nếu data là array (format từ API hiện tại)
+        if (Array.isArray(rawData)) {
+          const transformedStats: PhieucanStatistics = {
+            totalVehicles: rawData.reduce(
+              (sum: number, item: any) => sum + (item.weighCount || 0),
+              0,
+            ),
+            totalWeight: rawData.reduce(
+              (sum: number, item: any) => sum + (item.totalWeight || 0),
+              0,
+            ),
+            byCompany: [],
+            byProduct: rawData.map((item: any) => ({
+              productName: item.productName || item.loaihang || "N/A",
+              weighCount: item.weighCount || 0,
+              totalWeight: item.totalWeight || 0,
+              totalPrice: item.totalPrice || 0,
+            })),
+            byVehicle: [],
+            byDay: [],
+          };
+          setStatistics(transformedStats);
+        } else {
+          // Nếu data đã đúng format PhieucanStatistics
+          setStatistics(rawData);
+        }
+      } else {
+        setError("Không thể tải dữ liệu thống kê");
       }
     } catch (error) {
       console.error("Load statistics error:", error);
+      setError("Lỗi kết nối. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -160,106 +198,135 @@ const ReportsHomeScreen: React.FC = () => {
         {loading ? (
           <Loading loading />
         ) : (
-          statistics && (
-            <>
+          <>
+            {error && (
               <Card style={styles.summaryCard}>
-                <View style={styles.summaryRow}>
-                  <View style={styles.summaryItem}>
-                    <ThemedText type="subtitle" style={styles.summaryLabel}>
-                      Tổng xe:
-                    </ThemedText>
-                    <ThemedText style={styles.summaryValue}>
-                      {statistics.totalVehicles}
-                    </ThemedText>
-                  </View>
-
-                  <View
-                    style={[
-                      styles.summaryDivider,
-                      { backgroundColor: colors.gray200 },
-                    ]}
+                <View style={styles.errorContainer}>
+                  <Ionicons
+                    name="alert-circle-outline"
+                    size={48}
+                    color={colors.gray400}
                   />
-
-                  <View style={styles.summaryItem}>
-                    <ThemedText type="subtitle" style={styles.summaryLabel}>
-                      Tổng trọng lượng:
-                    </ThemedText>
-                    <ThemedText style={styles.summaryValue}>
-                      {formatWeight(statistics.totalWeight, true)}
-                    </ThemedText>
-                  </View>
+                  <ThemedText
+                    style={[styles.errorText, { color: colors.gray600 }]}
+                  >
+                    {error}
+                  </ThemedText>
+                  <Button
+                    title="Thử lại"
+                    variant="primary"
+                    onPress={loadStatistics}
+                    style={{ marginTop: 12 }}
+                  />
                 </View>
               </Card>
+            )}
 
-              <Card style={styles.chartCard}>
-                <ThemedText style={styles.chartTitle}>
-                  Phân bố theo loại hàng
-                </ThemedText>
+            {statistics && (
+              <>
+                <Card style={styles.summaryCard}>
+                  <View style={styles.summaryRow}>
+                    <View style={styles.summaryItem}>
+                      <ThemedText type="subtitle" style={styles.summaryLabel}>
+                        Tổng xe:
+                      </ThemedText>
+                      <ThemedText style={styles.summaryValue}>
+                        {statistics.totalVehicles}
+                      </ThemedText>
+                    </View>
 
-                <PieChart
-                  data={statistics.byProduct.map((item) => ({
-                    name: item.productName,
-                    value: item.totalWeight,
-                  }))}
-                  height={150}
-                />
-              </Card>
+                    <View
+                      style={[
+                        styles.summaryDivider,
+                        { backgroundColor: colors.gray200 },
+                      ]}
+                    />
 
-              <Card style={styles.chartCard}>
-                <ThemedText style={styles.chartTitle}>
-                  Hoạt động theo ngày
-                </ThemedText>
+                    <View style={styles.summaryItem}>
+                      <ThemedText type="subtitle" style={styles.summaryLabel}>
+                        Tổng trọng lượng:
+                      </ThemedText>
+                      <ThemedText style={styles.summaryValue}>
+                        {formatWeight(statistics.totalWeight, true)}
+                      </ThemedText>
+                    </View>
+                  </View>
+                </Card>
 
-                <BarChart
-                  data={statistics.byDay.map((day) => ({
-                    label: day.date.split("-")[2], // Day of month
-                    value: day.weighCount,
-                  }))}
-                  height={150}
-                  barColor={colors.primary}
-                />
-              </Card>
+                {statistics.byProduct.length > 0 && (
+                  <Card style={styles.chartCard}>
+                    <ThemedText style={styles.chartTitle}>
+                      Phân bố theo loại hàng
+                    </ThemedText>
 
-              <ThemedText type="title" style={styles.reportsTitle}>
-                Báo cáo chi tiết
-              </ThemedText>
-
-              <Card style={styles.reportsCard}>
-                {renderReportItem(
-                  "Theo khách hàng",
-                  "business-outline",
-                  "CompanyReports",
+                    <PieChart
+                      data={statistics.byProduct.map((item) => ({
+                        name: item.productName,
+                        value: item.totalWeight,
+                      }))}
+                      height={150}
+                    />
+                  </Card>
                 )}
-                {renderReportItem(
-                  "Theo hàng hóa",
-                  "cube-outline",
-                  "ProductReports",
-                )}
-                {renderReportItem("Theo xe", "car-outline", "VehicleReports")}
-                {renderReportItem(
-                  "Theo khoảng thời gian",
-                  "calendar-outline",
-                  "DateRangeReports",
-                )}
-                {renderReportItem(
-                  "Báo cáo tùy chỉnh",
-                  "options-outline",
-                  "CustomReport",
-                )}
-              </Card>
 
-              <View style={styles.exportContainer}>
-                <Button
-                  title="Xuất báo cáo"
-                  variant="primary"
-                  icon={
-                    <Ionicons name="download-outline" size={20} color="white" />
-                  }
-                  fullWidth
-                />
-              </View>
-            </>
-          )
+                {statistics.byDay.length > 0 && (
+                  <Card style={styles.chartCard}>
+                    <ThemedText style={styles.chartTitle}>
+                      Hoạt động theo ngày
+                    </ThemedText>
+
+                    <BarChart
+                      data={statistics.byDay.map((day) => ({
+                        label: day.date.split("-")[2],
+                        value: day.weighCount,
+                      }))}
+                      height={150}
+                      barColor={colors.primary}
+                    />
+                  </Card>
+                )}
+              </>
+            )}
+
+            <ThemedText type="title" style={styles.reportsTitle}>
+              Báo cáo chi tiết
+            </ThemedText>
+
+            <Card style={styles.reportsCard}>
+              {renderReportItem(
+                "Theo khách hàng",
+                "business-outline",
+                "CompanyReports",
+              )}
+              {renderReportItem(
+                "Theo hàng hóa",
+                "cube-outline",
+                "ProductReports",
+              )}
+              {renderReportItem("Theo xe", "car-outline", "VehicleReports")}
+              {renderReportItem(
+                "Theo khoảng thời gian",
+                "calendar-outline",
+                "DateRangeReports",
+              )}
+              {renderReportItem(
+                "Báo cáo tùy chỉnh",
+                "options-outline",
+                "CustomReport",
+              )}
+            </Card>
+
+            <View style={styles.exportContainer}>
+              <Button
+                title="Xuất báo cáo"
+                variant="primary"
+                icon={
+                  <Ionicons name="download-outline" size={20} color="white" />
+                }
+                fullWidth
+              />
+            </View>
+          </>
         )}
       </ScrollView>
     </ThemedView>
@@ -361,6 +428,15 @@ const styles = StyleSheet.create({
   },
   exportContainer: {
     marginTop: 4,
+  },
+  errorContainer: {
+    alignItems: "center",
+    paddingVertical: 32,
+  },
+  errorText: {
+    marginTop: 12,
+    fontSize: 14,
+    textAlign: "center",
   },
 });
 

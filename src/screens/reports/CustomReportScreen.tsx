@@ -70,6 +70,13 @@ const CustomReportScreen: React.FC = () => {
   const [reportData, setReportData] = useState<any>(null);
   const [showResults, setShowResults] = useState(false);
   const [phieucanList, setPhieucanList] = useState<Phieucan[]>([]);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
+  const PAGE_SIZE = 20;
   const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   // Load filter options on mount
@@ -83,24 +90,24 @@ const CustomReportScreen: React.FC = () => {
     try {
       setLoading(true);
 
-      // Load all data for filters
+      // Load all data for filters using new paginated APIs
       const [companyResponse, productResponse, vehicleResponse] =
         await Promise.all([
-          customerApi.getAllCustomers(),
-          productApi.getAllProducts(),
-          vehicleApi.getAllVehicles(),
+          customerApi.getCustomers({ page: 1, pageSize: 100 }),
+          productApi.getProducts({ page: 1, pageSize: 100 }),
+          vehicleApi.getVehicles({ page: 1, pageSize: 100 }),
         ]);
 
-      if (companyResponse.success) {
-        setCompanies(companyresponse.data.data);
+      if (companyResponse.items) {
+        setCompanies(companyResponse.items);
       }
 
-      if (productResponse.success) {
-        setProducts(productresponse.data.data);
+      if (productResponse.items) {
+        setProducts(productResponse.items);
       }
 
-      if (vehicleResponse.success) {
-        setVehicles(vehicleresponse.data.data);
+      if (vehicleResponse.items) {
+        setVehicles(vehicleResponse.items);
       }
     } catch (error) {
       console.error("Load filter options error:", error);
@@ -149,21 +156,28 @@ const CustomReportScreen: React.FC = () => {
     setShowResults(false);
     setReportData(null);
     setPhieucanList([]);
+    setCurrentPage(1);
+    setHasMore(true);
+    setTotalItems(0);
   };
 
-  const loadPhieucanList = async () => {
+  const loadPhieucanList = async (page: number = 1, isLoadMore: boolean = false) => {
     try {
-      // Get all weighings from API first
-      const response = await weighingApi.getAllWeighings({
-        page: 1,
-        pageSize: 100,
+      if (isLoadMore) {
+        setLoadingMore(true);
+      }
+
+      // Get weighings with pagination using new API
+      const response = await weighingApi.getWeighings({
+        page,
+        pageSize: PAGE_SIZE,
       });
 
-      if (response.success && response.data.items) {
-        let allWeighings: Phieucan[] = response.data.items;
+      if (response.items) {
+        let weighings: Phieucan[] = response.items;
 
         // Apply client-side filtering
-        const filteredWeighings = allWeighings.filter((item) => {
+        const filteredWeighings = weighings.filter((item) => {
           // Safety check for item
           if (!item || !item.ngaycan1) return false;
 
@@ -231,16 +245,35 @@ const CustomReportScreen: React.FC = () => {
             new Date(b.ngaycan1).getTime() - new Date(a.ngaycan1).getTime(),
         );
 
-        setPhieucanList(filteredWeighings);
+        if (isLoadMore) {
+          setPhieucanList((prev) => [...prev, ...filteredWeighings]);
+        } else {
+          setPhieucanList(filteredWeighings);
+        }
+
+        // Update pagination info
+        setCurrentPage(page);
+        setTotalItems(response.totalCount);
+        setHasMore(page < response.totalPages);
       } else {
         // Fallback to mock data if API fails or doesn't exist
         console.log("API failed, using mock data for demo");
         generateMockData();
+        setHasMore(false);
       }
     } catch (error) {
       console.error("Load phieucan list error:", error);
       // Generate mock data as fallback
       generateMockData();
+      setHasMore(false);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMorePhieucan = () => {
+    if (!loadingMore && hasMore) {
+      loadPhieucanList(currentPage + 1, true);
     }
   };
 
@@ -341,6 +374,7 @@ const CustomReportScreen: React.FC = () => {
     );
 
     setPhieucanList(mockPhieucanList);
+    setHasMore(false);
   };
 
   const handleGenerateReport = async () => {
@@ -349,7 +383,7 @@ const CustomReportScreen: React.FC = () => {
 
       // Format dates for API
       const formattedStartDate = startDate.toISOString();
-      const formattedEndDate = endDate.toISOString();
+      const formattedEndDate = endDate.toISOString().split("T")[0] + "T23:59:59";
 
       // Get base statistics
       const response = await weighingApi.getWeightStatistics(
@@ -357,10 +391,10 @@ const CustomReportScreen: React.FC = () => {
         formattedEndDate,
       );
 
-      if (response.success) {
-        let filteredData: any = { ...response.data.data };
-        let totalVehicles = response.data.data.totalVehicles;
-        let totalWeight = response.data.data.totalWeight;
+      if (response) {
+        let filteredData: any = { ...response.data };
+        let totalVehicles = response.data.totalVehicles;
+        let totalWeight = response.data.totalWeight;
 
         // Apply company filter
         if (selectedCompany) {
@@ -368,7 +402,7 @@ const CustomReportScreen: React.FC = () => {
             (c) => c.id.toString() === selectedCompany,
           );
           if (company) {
-            const companyStats = response.data.data.byCompany.find(
+            const companyStats = response.data.byCompany.find(
               (c: any) => c.companyName === company.ten,
             );
 
@@ -392,7 +426,7 @@ const CustomReportScreen: React.FC = () => {
             (p) => p.id.toString() === selectedProduct,
           );
           if (product) {
-            const productStats = response.data.data.byProduct.find(
+            const productStats = response.data.byProduct.find(
               (p: any) => p.productName === product.ten,
             );
 
@@ -428,7 +462,7 @@ const CustomReportScreen: React.FC = () => {
             (v) => v.id.toString() === selectedVehicle,
           );
           if (vehicle) {
-            const vehicleStats = response.data.data.byVehicle.find(
+            const vehicleStats = response.data.byVehicle.find(
               (v: any) => v.vehicleNumber === vehicle.soxe,
             );
 
@@ -493,8 +527,10 @@ const CustomReportScreen: React.FC = () => {
         setReportData(filteredData);
         setShowResults(true);
 
-        // Load phieucan list
-        await loadPhieucanList();
+        // Reset pagination and load phieucan list
+        setCurrentPage(1);
+        setHasMore(true);
+        await loadPhieucanList(1, false);
       }
     } catch (error) {
       console.error("Generate report error:", error);
@@ -507,7 +543,9 @@ const CustomReportScreen: React.FC = () => {
   const onRefresh = async () => {
     if (!showResults) return;
     setRefreshing(true);
-    await loadPhieucanList();
+    setCurrentPage(1);
+    setHasMore(true);
+    await loadPhieucanList(1, false);
     setRefreshing(false);
   };
 
@@ -1121,7 +1159,7 @@ const CustomReportScreen: React.FC = () => {
 
             <View style={styles.listHeader}>
               <ThemedText style={styles.listTitle}>
-                Danh sách phiếu cân ({phieucanList.length})
+                Danh sách phiếu cân ({phieucanList.length}{totalItems > 0 ? `/${totalItems}` : ""})
               </ThemedText>
               <Button
                 title="Làm mới bộ lọc"
@@ -1170,10 +1208,28 @@ const CustomReportScreen: React.FC = () => {
                 refreshing={refreshing}
                 onRefresh={onRefresh}
                 colors={[colors.primary]}
-                tintColor={colors.primary}
-                progressBackgroundColor={colors.card}
-              />
-            }
+              tintColor={colors.primary}
+              progressBackgroundColor={colors.card}
+            />
+          }
+          ListFooterComponent={
+            hasMore && phieucanList.length > 0 ? (
+              <View style={styles.loadMoreContainer}>
+                <Button
+                  title={loadingMore ? "Đang tải..." : "Xem thêm"}
+                  variant="outline"
+                  onPress={loadMorePhieucan}
+                  loading={loadingMore}
+                  disabled={loadingMore}
+                  icon={
+                    !loadingMore ? (
+                      <Ionicons name="chevron-down" size={18} color={colors.primary} />
+                    ) : undefined
+                  }
+                />
+              </View>
+            ) : null
+          }
           />
         </View>
       )}
@@ -1542,6 +1598,10 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 14,
     textAlign: "center",
+  },
+  loadMoreContainer: {
+    paddingVertical: 16,
+    alignItems: "center",
   },
 });
 

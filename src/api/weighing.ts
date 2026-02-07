@@ -9,6 +9,7 @@ import {
   PhieucanComplete,
   PhieucanCancel,
   PhieucanStatistics,
+  DailyCountStat,
 } from "@/types/api.types";
 
 /**
@@ -362,7 +363,7 @@ export const weighingApi = {
         "/phieucan/statistics/today",
       );
 
-      console.log("Today statistics:", response.data.data.byProduct);
+      console.log("Today statistics:", response.data);
       return response.data;
     } catch (error) {
       console.error("Get today statistics error:", error);
@@ -387,6 +388,27 @@ export const weighingApi = {
       return response.data;
     } catch (error) {
       console.error("Get weight statistics error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thống kê số lượng phiếu cân theo ngày (lightweight cho chart)
+   * @param startDate Ngày bắt đầu
+   * @param endDate Ngày kết thúc
+   */
+  getDailyCountStatistics: async (
+    startDate: string,
+    endDate: string,
+  ): Promise<ApiResponse<DailyCountStat[]>> => {
+    try {
+      const response = await api.get<ApiResponse<DailyCountStat[]>>(
+        "/phieucan/statistics/daily-counts",
+        { params: { startDate, endDate } },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Get daily count statistics error:", error);
       throw error;
     }
   },

@@ -43,6 +43,7 @@ const HomeScreen: React.FC = () => {
     totalVehicles: 0,
     totalWeight: 0,
   });
+  const [weeklyActivity, setWeeklyActivity] = useState<{ day: string; count: number; date: string }[]>([]);
   const [menuVisible, setMenuVisible] = useState(false);
 
   useEffect(() => {
@@ -60,7 +61,7 @@ const HomeScreen: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      await Promise.all([loadPendingWeighings(), loadTodayStats()]);
+      await Promise.all([loadPendingWeighings(), loadTodayStats(), loadWeeklyActivity()]);
     } catch (error) {
       console.error("Load data error:", error);
     } finally {
@@ -71,7 +72,7 @@ const HomeScreen: React.FC = () => {
   const onRefresh = async () => {
     try {
       setRefreshing(true);
-      await Promise.all([loadPendingWeighings(), loadTodayStats()]);
+      await Promise.all([loadPendingWeighings(), loadTodayStats(), loadWeeklyActivity()]);
     } catch (error) {
       console.error("Refresh data error:", error);
     } finally {
@@ -97,14 +98,13 @@ const HomeScreen: React.FC = () => {
   const loadTodayStats = async () => {
     try {
       const today = new Date().toISOString().split("T")[0];
-      const response: any = await weighingApi.getWeighingsByDateRange(
-        today,
-        today,
-        { page: 1, pageSize: 100 },
-      );
+      const response = await weighingApi.getWeighingsByDateRange(today, today, {
+        page: 1,
+        pageSize: 100,
+      });
       console.log(response);
-      if (response.success) {
-        const data = response.data.items;
+      if (response) {
+        const data = response.items;
         interface WeighingItem {
           tlcan1: number;
           tlcan2?: number;
@@ -128,6 +128,62 @@ const HomeScreen: React.FC = () => {
     } catch (error) {
       console.error("Load today stats error:", error);
       setTodayStats({ totalVehicles: 0, totalWeight: 0 });
+    }
+  };
+
+  const loadWeeklyActivity = async () => {
+    try {
+      // Get last 7 days
+      const today = new Date();
+      const dayNames = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+
+      // Calculate date range for last 7 days
+      const endDate = new Date(today);
+      const startDate = new Date(today);
+      startDate.setDate(startDate.getDate() - 6); // 7 days including today
+
+      const formattedStartDate = startDate.toISOString().split("T")[0];
+      const formattedEndDate = endDate.toISOString().split("T")[0] + "T23:59:59";
+
+      // Use new lightweight daily counts API
+      const response = await weighingApi.getDailyCountStatistics(
+        formattedStartDate,
+        formattedEndDate
+      );
+
+      // Create a map from API response
+      const countsByDate: { [key: string]: number } = {};
+      
+      if (response && response.data) {
+        response.data.forEach(item => {
+          countsByDate[item.date] = item.count;
+        });
+      }
+
+      // Build data for last 7 days
+      const weekData: { day: string; count: number; date: string }[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        // Use local date format to match API response
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const dateKey = `${year}-${month}-${day}`;
+        const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, ...
+        
+        weekData.push({
+          day: dayNames[dayOfWeek],
+          count: countsByDate[dateKey] || 0,
+          date: dateKey,
+        });
+      }
+
+      setWeeklyActivity(weekData);
+    } catch (error) {
+      console.error("Load weekly activity error:", error);
+      // Set empty data on error
+      setWeeklyActivity([]);
     }
   };
 
@@ -235,21 +291,36 @@ const HomeScreen: React.FC = () => {
   );
 
   const renderActivityChart = () => {
-    const days = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
-    const data = [45, 52, 38, 48, 56, 42, 35];
-    const maxValue = Math.max(...data);
+    // Use real data from weeklyActivity or fallback to zeros
+    const data = weeklyActivity.length > 0 
+      ? weeklyActivity 
+      : [{ day: "T2", count: 0 }, { day: "T3", count: 0 }, { day: "T4", count: 0 }, { day: "T5", count: 0 }, { day: "T6", count: 0 }, { day: "T7", count: 0 }, { day: "CN", count: 0 }];
+    
+    const maxValue = Math.max(...data.map(d => d.count), 1); // At least 1 to avoid division by zero
+    const totalWeekCount = data.reduce((sum, d) => sum + d.count, 0);
 
     return (
       <View style={styles.chartPlaceholder}>
+        {/* Total count summary */}
+        <View style={{ marginBottom: 12, alignItems: "center" }}>
+          <ThemedText style={{ fontSize: 14, color: colors.textSecondary }}>
+            Tổng: <ThemedText style={{ fontWeight: "bold", color: colors.primary }}>{totalWeekCount}</ThemedText> lượt cân
+          </ThemedText>
+        </View>
         <View style={styles.barChart}>
-          {days.map((day, index) => (
-            <View key={day} style={styles.barContainer}>
+          {data.map((item, index) => (
+            <View key={`${item.day}-${index}`} style={styles.barContainer}>
+              <View style={{ alignItems: "center", marginBottom: 4 }}>
+                <ThemedText style={{ fontSize: 10, color: colors.textSecondary }}>
+                  {item.count > 0 ? item.count : ""}
+                </ThemedText>
+              </View>
               <View
                 style={[
                   styles.bar,
                   {
-                    height: `${(data[index] / maxValue) * 100}%`,
-                    backgroundColor: colors.primary,
+                    height: item.count > 0 ? `${(item.count / maxValue) * 60}%` : 4,
+                    backgroundColor: item.count > 0 ? colors.primary : colors.gray300,
                     opacity: isDarkMode ? 0.8 : 0.7,
                   },
                 ]}
@@ -265,7 +336,7 @@ const HomeScreen: React.FC = () => {
                   },
                 ]}
               >
-                {day}
+                {item.day}
               </ThemedText>
             </View>
           ))}
@@ -614,7 +685,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   chartPlaceholder: {
-    height: 150,
+    height: 200,
     justifyContent: "flex-end",
   },
   barChart: {

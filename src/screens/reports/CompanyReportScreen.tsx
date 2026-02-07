@@ -81,9 +81,10 @@ const CompanyReportScreen: React.FC = () => {
 
   const loadCompanies = async () => {
     try {
-      const response = await customerApi.getAllCustomers();
-      if (response.success) {
-        setCompanies(response.data.data);
+      const response = await customerApi.getCustomers({ page: 1, pageSize: 100 });
+      console.log("🚀 ~ loadCompanies ~ response:", response);
+      if (response.items) {
+        setCompanies(response.items);
       }
     } catch (error) {
       console.error("Load companies error:", error);
@@ -93,15 +94,15 @@ const CompanyReportScreen: React.FC = () => {
   const loadWeightStatistics = async () => {
     try {
       const formattedStartDate = startDate.toISOString();
-      const formattedEndDate = endDate.toISOString();
+      const formattedEndDate = endDate.toISOString().split("T")[0] + "T23:59:59";
 
       const response = await weighingApi.getWeightStatistics(
         formattedStartDate,
         formattedEndDate,
       );
 
-      if (response.success) {
-        const stats = response.data.data;
+      if (response) {
+        const stats = response.data;
         setTotalWeight(stats.totalWeight);
         setTotalVehicles(stats.totalVehicles);
 

@@ -79,9 +79,9 @@ const ProductReportScreen: React.FC = () => {
 
   const loadProducts = async () => {
     try {
-      const response = await productApi.getAllProducts();
-      if (response.success) {
-        setProducts(response.data.data);
+      const response = await productApi.getProducts({ page: 1, pageSize: 100 });
+      if (response.items) {
+        setProducts(response.items);
       }
     } catch (error) {
       console.error("Load products error:", error);
@@ -91,13 +91,13 @@ const ProductReportScreen: React.FC = () => {
   const loadWeightStatistics = async () => {
     try {
       const formattedStartDate = startDate.toISOString();
-      const formattedEndDate = endDate.toISOString();
+      const formattedEndDate = endDate.toISOString().split("T")[0] + "T23:59:59";
 
       let productData = products;
       if (productData.length === 0) {
-        const productResponse = await productApi.getAllProducts();
-        if (productResponse.success) {
-          productData = productResponse.data.data;
+        const productResponse = await productApi.getProducts({ page: 1, pageSize: 100 });
+        if (productResponse.items) {
+          productData = productResponse.items;
           setProducts(productData);
         }
       }
@@ -107,8 +107,8 @@ const ProductReportScreen: React.FC = () => {
         formattedEndDate,
       );
 
-      if (response.success) {
-        const stats = response.data.data;
+      if (response) {
+        const stats = response.data;
         setTotalWeight(stats.totalWeight);
         setTotalVehicles(stats.totalVehicles);
 

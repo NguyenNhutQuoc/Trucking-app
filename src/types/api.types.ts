@@ -150,6 +150,12 @@ export interface PhieucanStatistics {
   }[];
 }
 
+// Daily count statistics - lightweight for chart
+export interface DailyCountStat {
+  date: string;
+  count: number;
+}
+
 // Hàng hóa
 export interface Hanghoa {
   id: number;

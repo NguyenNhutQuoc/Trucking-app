@@ -1,5 +1,11 @@
 // src/screens/weighing/WeighingListScreen.tsx
-import React, { useState, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   View,
   StyleSheet,
@@ -50,25 +56,6 @@ const WeighingListScreen: React.FC = () => {
   const navigation = useNavigation();
   const { colors } = useAppTheme();
 
-  // ✅ UPDATED: Use infinite scroll pagination hook
-  const {
-    items: weighings,
-    loading,
-    loadingMore,
-    hasMore,
-    loadMore,
-    refresh,
-    isRefreshing,
-  } = useInfiniteScroll<Phieucan>(
-    async (page, pageSize) => {
-      const response = await weighingApi.getWeighings({ page, pageSize });
-      console.log("Weighings response:", response);
-      return response;
-    },
-    { pageSize: 20 },
-  );
-
-  const [filteredWeighings, setFilteredWeighings] = useState<Phieucan[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterState>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -78,17 +65,89 @@ const WeighingListScreen: React.FC = () => {
     sortOrder: "desc",
   });
 
+  const dateOnly = (date: Date) => date.toISOString().split("T")[0];
+
+  const getDateRangeForFilter = (filter: FilterState) => {
+    const now = new Date();
+
+    switch (filter) {
+      case "today": {
+        const today = dateOnly(now);
+        return { startDate: today, endDate: today + "T23:59:59" };
+      }
+      case "yesterday": {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const day = dateOnly(yesterday);
+        return { startDate: day, endDate: day + "T23:59:59" };
+      }
+      case "thisWeek": {
+        const startOfWeek = new Date();
+        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+        return { startDate: dateOnly(startOfWeek), endDate: dateOnly(now) + "T23:59:59" };
+      }
+      case "thisMonth": {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        return { startDate: dateOnly(startOfMonth), endDate: dateOnly(now) + "T23:59:59" };
+      }
+      default:
+        return null;
+    }
+  };
+
+  const fetchWeighings = useCallback(
+    async (page: number, pageSize: number) => {
+      const dateRange = getDateRangeForFilter(activeFilter);
+
+      if (dateRange) {
+        return weighingApi.getWeighingsByDateRange(
+          dateRange.startDate,
+          dateRange.endDate,
+          { page, pageSize },
+        );
+      }
+
+      if (activeFilter === "completed") {
+        return weighingApi.getCompletedWeighings({ page, pageSize });
+      }
+
+      if (activeFilter === "pending") {
+        return weighingApi.getPendingWeighings({ page, pageSize });
+      }
+
+      return weighingApi.getWeighings({ page, pageSize });
+    },
+    [activeFilter],
+  );
+
+  const infiniteScrollOptions = useMemo(() => ({ pageSize: 20 }), []);
+
+  // ✅ UPDATED: Use infinite scroll pagination hook
+  const {
+    items: weighings,
+    loading,
+    loadingMore,
+    hasMore,
+    loadMore,
+    refresh,
+    isRefreshing,
+  } = useInfiniteScroll<Phieucan>(fetchWeighings, infiniteScrollOptions);
+
   // Effects
   useFocusEffect(
     useCallback(() => {
       refresh();
-    }, []),
+    }, [refresh]),
   );
 
+  const didInitFilterRefresh = useRef(false);
   useEffect(() => {
-    console.log(weighings);
-    applyFilters();
-  }, [weighings, activeFilter, searchQuery, filterOptions]);
+    if (!didInitFilterRefresh.current) {
+      didInitFilterRefresh.current = true;
+      return;
+    }
+    refresh();
+  }, [activeFilter, refresh]);
 
   // Helper Functions
   const getImportExportColor = (type: string): string => {
@@ -122,50 +181,17 @@ const WeighingListScreen: React.FC = () => {
     return "Đang chờ";
   };
 
-  // Data Functions
-  const applyFilters = () => {
+  const filteredWeighings = useMemo(() => {
     let result = [...weighings];
 
-    // Apply active filter
-    if (activeFilter === "completed") {
-      result = result.filter((item) => item.ngaycan2);
-    } else if (activeFilter === "pending") {
-      result = result.filter((item) => !item.ngaycan2);
-    } else if (activeFilter === "today") {
-      const today = new Date().toISOString().split("T")[0];
-      result = result.filter((item) => {
-        const itemDate = new Date(item.ngaycan1).toISOString().split("T")[0];
-        return itemDate === today;
-      });
-    } else if (activeFilter === "yesterday") {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split("T")[0];
-      result = result.filter((item) => {
-        const itemDate = new Date(item.ngaycan1).toISOString().split("T")[0];
-        return itemDate === yesterdayStr;
-      });
-    } else if (activeFilter === "thisWeek") {
-      const now = new Date();
-      const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-      result = result.filter((item) => {
-        const itemDate = new Date(item.ngaycan1);
-        return itemDate >= startOfWeek;
-      });
-    } else if (activeFilter === "thisMonth") {
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      result = result.filter((item) => {
-        const itemDate = new Date(item.ngaycan1);
-        return itemDate >= startOfMonth;
-      });
-    } else if (activeFilter === "import") {
+    // Import/Export filters are applied client-side (no API endpoint)
+    if (activeFilter === "import") {
       result = result.filter((item) => item.xuatnhap.toLowerCase() === "nhập");
     } else if (activeFilter === "export") {
       result = result.filter((item) => item.xuatnhap.toLowerCase() === "xuất");
     }
 
-    // Apply search query
+    // Apply search query client-side
     if (searchQuery) {
       const normalizedQuery = searchQuery.toLowerCase();
       result = result.filter(
@@ -202,8 +228,8 @@ const WeighingListScreen: React.FC = () => {
       return filterOptions.sortOrder === "desc" ? -comparison : comparison;
     });
 
-    setFilteredWeighings(result);
-  };
+    return result;
+  }, [weighings, activeFilter, searchQuery, filterOptions]);
 
   // Event Handlers
   const handleFilterChange = (filter: FilterState) => {

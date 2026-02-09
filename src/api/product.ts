@@ -17,9 +17,9 @@ export const productApi = {
    * Lấy danh sách tất cả hàng hóa (DEPRECATED - use getProducts instead)
    * @deprecated Sử dụng getProducts với pagination
    */
-  getAllProducts: async (): Promise<ApiResponse<Hanghoa[]>> => {
+  getAllProducts: async (): Promise<Hanghoa[]> => {
     try {
-      const response = await api.get<ApiResponse<Hanghoa[]>>("/hanghoa");
+      const response = await api.get<Hanghoa[]>("/hanghoa");
       return response.data;
     } catch (error) {
       console.error("Get all products error:", error);
@@ -82,9 +82,9 @@ export const productApi = {
    * Lấy thông tin chi tiết hàng hóa theo ID
    * @param id ID của hàng hóa
    */
-  getProductById: async (id: number): Promise<ApiResponse<Hanghoa>> => {
+  getProductById: async (id: number): Promise<Hanghoa> => {
     try {
-      const response = await api.get<ApiResponse<Hanghoa>>(`/hanghoa/${id}`);
+      const response = await api.get<Hanghoa>(`/hanghoa/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Get product ${id} error:`, error);
@@ -96,11 +96,9 @@ export const productApi = {
    * Lấy thông tin chi tiết hàng hóa theo mã
    * @param code Mã hàng hóa
    */
-  getProductByCode: async (code: string): Promise<ApiResponse<Hanghoa>> => {
+  getProductByCode: async (code: string): Promise<Hanghoa> => {
     try {
-      const response = await api.get<ApiResponse<Hanghoa>>(
-        `/hanghoa/code/${code}`,
-      );
+      const response = await api.get<Hanghoa>(`/hanghoa/code/${code}`);
       return response.data;
     } catch (error) {
       console.error(`Get product by code ${code} error:`, error);
@@ -112,14 +110,9 @@ export const productApi = {
    * Tạo hàng hóa mới
    * @param productData Dữ liệu hàng hóa mới
    */
-  createProduct: async (
-    productData: HanghoaCreate,
-  ): Promise<ApiResponse<Hanghoa>> => {
+  createProduct: async (productData: HanghoaCreate): Promise<Hanghoa> => {
     try {
-      const response = await api.post<ApiResponse<Hanghoa>>(
-        "/hanghoa",
-        productData,
-      );
+      const response = await api.post<Hanghoa>("/hanghoa", productData);
       return response.data;
     } catch (error) {
       console.error("Create product error:", error);
@@ -135,12 +128,9 @@ export const productApi = {
   updateProduct: async (
     id: number,
     productData: HanghoaUpdate,
-  ): Promise<ApiResponse<Hanghoa>> => {
+  ): Promise<Hanghoa> => {
     try {
-      const response = await api.put<ApiResponse<Hanghoa>>(
-        `/hanghoa/${id}`,
-        productData,
-      );
+      const response = await api.put<Hanghoa>(`/hanghoa/${id}`, productData);
       return response.data;
     } catch (error) {
       console.error(`Update product ${id} error:`, error);
@@ -152,10 +142,9 @@ export const productApi = {
    * Xóa hàng hóa
    * @param id ID của hàng hóa
    */
-  deleteProduct: async (id: number): Promise<ApiResponse<null>> => {
+  deleteProduct: async (id: number): Promise<void> => {
     try {
-      const response = await api.delete<ApiResponse<null>>(`/hanghoa/${id}`);
-      return response.data;
+      await api.delete(`/hanghoa/${id}`);
     } catch (error) {
       console.error(`Delete product ${id} error:`, error);
       throw error;

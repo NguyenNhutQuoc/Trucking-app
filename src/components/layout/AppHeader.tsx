@@ -32,32 +32,33 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   showStationSwitcher = true,
   rightComponent,
 }) => {
-  const { tenantInfo, logout, getTenantDisplayName } = useAuth();
+  const { tenantInfo, logout, logoutStationUser, getTenantDisplayName } =
+    useAuth();
   const { colors, isDarkMode } = useAppTheme();
 
   const handleLogout = () => {
     Alert.alert(
       "Đăng xuất",
-      "Bạn có chắc chắn muốn đăng xuất không?",
+      "Bạn muốn đăng xuất ở mức nào?",
       [
-        {
-          text: "Hủy",
-          style: "cancel",
-        },
+        { text: "Hủy", style: "cancel" },
         {
           text: "Đăng xuất",
+          onPress: () => {
+            logoutStationUser().catch((error) =>
+              console.error("Logout error:", error),
+            );
+          },
+        },
+        {
+          text: "Đăng xuất hoàn toàn",
           style: "destructive",
-          onPress: async () => {
-            try {
-              await logout();
-            } catch (error) {
-              console.error("Logout error:", error);
-            }
+          onPress: () => {
+            logout().catch((error) => console.error("Logout error:", error));
           },
         },
       ],
       {
-        // ✅ FIXED: Alert styling for dark mode
         userInterfaceStyle: isDarkMode ? "dark" : "light",
       },
     );

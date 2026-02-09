@@ -24,7 +24,7 @@ import { RootStackParamList } from "@/types/navigation.types";
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const AppNavigator: React.FC = () => {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { isLoading, authLevel } = useAuth();
   const { isDarkMode, colors } = useAppTheme();
 
   // Create custom navigation theme
@@ -54,7 +54,7 @@ const AppNavigator: React.FC = () => {
             contentStyle: { backgroundColor: colors.background },
           }}
         >
-          {isAuthenticated ? (
+          {authLevel === "full" ? (
             <>
               <Stack.Screen name="Main" component={MainNavigator} />
               <Stack.Screen

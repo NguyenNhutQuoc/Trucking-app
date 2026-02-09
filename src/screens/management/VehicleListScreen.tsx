@@ -18,6 +18,7 @@ import Loading from "@/components/common/Loading";
 import Button from "@/components/common/Button";
 import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
+import ResultModal, { ResultModalType } from "@/components/common/ResultModal";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"; // ✅ NEW
 import LoadMoreButton from "@/components/common/LoadMoreButton"; // ✅ NEW
@@ -51,6 +52,24 @@ const VehicleListScreen: React.FC = () => {
   const [filteredVehicles, setFilteredVehicles] = useState<Soxe[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+
+  // ✅ NEW: Result Modal state
+  const [resultModalVisible, setResultModalVisible] = useState(false);
+  const [resultModalMessage, setResultModalMessage] = useState("");
+  const [resultModalType, setResultModalType] =
+    useState<ResultModalType>("success");
+  const [resultModalTitle, setResultModalTitle] = useState("");
+
+  const showResultModal = (
+    title: string,
+    message: string,
+    type: ResultModalType,
+  ) => {
+    setResultModalTitle(title);
+    setResultModalMessage(message);
+    setResultModalType(type);
+    setResultModalVisible(true);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -95,16 +114,16 @@ const VehicleListScreen: React.FC = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              const response = await vehicleApi.deleteVehicle(vehicle.id);
-              if (response.success) {
-                Alert.alert("Thành công", "Xóa xe thành công");
-                refresh();
-              } else {
-                Alert.alert("Lỗi", "Không thể xóa xe");
-              }
+              await vehicleApi.deleteVehicle(vehicle.id);
+              showResultModal(
+                "Thành công",
+                `Đã xóa xe ${vehicle.soXe} thành công`,
+                "success",
+              );
+              refresh();
             } catch (error) {
               console.error("Delete vehicle error:", error);
-              Alert.alert("Lỗi", "Không thể xóa xe");
+              showResultModal("Lỗi", "Không thể xóa xe", "error");
             }
           },
         },
@@ -386,6 +405,15 @@ const VehicleListScreen: React.FC = () => {
       </View>
 
       <Loading loading={loading && !isRefreshing} />
+
+      {/* ✅ NEW: Result Modal */}
+      <ResultModal
+        visible={resultModalVisible}
+        onClose={() => setResultModalVisible(false)}
+        type={resultModalType}
+        title={resultModalTitle}
+        message={resultModalMessage}
+      />
     </ThemedView>
   );
 };

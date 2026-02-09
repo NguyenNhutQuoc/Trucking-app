@@ -18,6 +18,7 @@ import Loading from "@/components/common/Loading";
 import Button from "@/components/common/Button";
 import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
+import ResultModal, { ResultModalType } from "@/components/common/ResultModal";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"; // ✅ NEW
 import LoadMoreButton from "@/components/common/LoadMoreButton"; // ✅ NEW
@@ -52,6 +53,25 @@ const CompanyListScreen: React.FC = () => {
   const [filteredCompanies, setFilteredCompanies] = useState<Khachhang[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+
+  // ✅ NEW: Result Modal state
+  const [resultModalVisible, setResultModalVisible] = useState(false);
+  const [resultModalMessage, setResultModalMessage] = useState("");
+  const [resultModalType, setResultModalType] =
+    useState<ResultModalType>("success");
+  const [resultModalTitle, setResultModalTitle] = useState("");
+
+  // ✅ NEW: Show result modal helper
+  const showResultModal = (
+    title: string,
+    message: string,
+    type: ResultModalType,
+  ) => {
+    setResultModalTitle(title);
+    setResultModalMessage(message);
+    setResultModalType(type);
+    setResultModalVisible(true);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -104,13 +124,13 @@ const CompanyListScreen: React.FC = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              const response = await customerApi.deleteCustomer(company.id);
-              if (response.success) {
-                Alert.alert("Thành công", "Xóa Khách Hàng thành công");
-                refresh();
-              } else {
-                Alert.alert("Lỗi", "Không thể xóa Khách Hàng");
-              }
+              await customerApi.deleteCustomer(company.id);
+              showResultModal(
+                "Đã xóa",
+                `Khách Hàng "${company.ten}" đã được xóa thành công`,
+                "error",
+              );
+              refresh();
             } catch (error) {
               console.error("Delete company error:", error);
               Alert.alert("Lỗi", "Không thể xóa Khách Hàng");
@@ -434,6 +454,15 @@ const CompanyListScreen: React.FC = () => {
       </View>
 
       <Loading loading={loading && !isRefreshing} />
+
+      {/* ✅ NEW: Result Modal for delete success */}
+      <ResultModal
+        visible={resultModalVisible}
+        onClose={() => setResultModalVisible(false)}
+        type={resultModalType}
+        title={resultModalTitle}
+        message={resultModalMessage}
+      />
     </ThemedView>
   );
 };

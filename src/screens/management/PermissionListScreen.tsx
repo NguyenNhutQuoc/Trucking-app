@@ -52,33 +52,40 @@ const UserPermissionsScreen: React.FC = () => {
 
       // Load user permissions
       const userResponse = await userApi.getUserPermissions(user.nvId);
-      if (userResponse.success) {
-        // ApiResponse<T>.data returns T directly
-        const userWithPermissions = userResponse.data;
+      if (userResponse) {
+        // Response directly contains the user data
+        const userWithPermissions = userResponse;
         setUserDetail(userWithPermissions);
 
         // Extract form IDs from user permissions with explicit type
-        interface Permission { formId: number; }
+        interface Permission {
+          formId: number;
+        }
         const formIds =
-          userWithPermissions.permissions?.map((perm: Permission) => perm.formId) || [];
+          userWithPermissions.permissions?.map(
+            (perm: Permission) => perm.formId,
+          ) || [];
         setUserPermissions(formIds);
       }
 
       // Load all available forms
       const formsResponse = await permissionApi.getAllForms();
-      if (formsResponse.success) {
-        // ApiResponse<T>.data returns T directly
-        const forms = formsResponse.data;
+      if (formsResponse) {
+        // Response directly contains the forms data
+        const forms = formsResponse;
         setAllForms(forms);
 
-        const categories = forms.reduce((acc: Record<string, Form[]>, form: Form) => {
-          const category = form.vitri;
-          if (!acc[category]) {
-            acc[category] = [];
-          }
-          acc[category].push(form);
-          return acc;
-        }, {});
+        const categories = forms.reduce(
+          (acc: Record<string, Form[]>, form: Form) => {
+            const category = form.vitri;
+            if (!acc[category]) {
+              acc[category] = [];
+            }
+            acc[category].push(form);
+            return acc;
+          },
+          {},
+        );
 
         setFormsByCategory(categories);
       }
@@ -111,24 +118,17 @@ const UserPermissionsScreen: React.FC = () => {
       }
 
       // Cập nhật quyền cho nhóm của người dùng
-      const response = await permissionApi.updateGroupPermissions(
+      await permissionApi.updateGroupPermissions(
         userDetail.nhomId,
         userPermissions,
       );
 
-      if (response.success) {
-        Alert.alert("Thành công", "Cập nhật quyền người dùng thành công", [
-          {
-            text: "OK",
-            onPress: () => navigation.goBack(),
-          },
-        ]);
-      } else {
-        Alert.alert(
-          "Lỗi",
-          response.message || "Có lỗi xảy ra khi cập nhật quyền",
-        );
-      }
+      Alert.alert("Thành công", "Cập nhật quyền người dùng thành công", [
+        {
+          text: "OK",
+          onPress: () => navigation.goBack(),
+        },
+      ]);
     } catch (error) {
       console.error("Update user permissions error:", error);
       Alert.alert("Lỗi", "Có lỗi xảy ra khi cập nhật quyền");

@@ -17,11 +17,11 @@ import spacing from "@/styles/spacing";
 
 // M3 Button variants
 type ButtonVariant =
-  | "filled"      // Primary filled button (default)
-  | "tonal"       // Tonal/secondary container button
-  | "outlined"    // Outlined button
-  | "text"        // Text-only button
-  | "elevated"    // Elevated button with shadow
+  | "filled" // Primary filled button (default)
+  | "tonal" // Tonal/secondary container button
+  | "outlined" // Outlined button
+  | "text" // Text-only button
+  | "elevated" // Elevated button with shadow
   // Legacy variants (kept for backwards compatibility)
   | "primary"
   | "secondary"
@@ -59,8 +59,8 @@ const Button: React.FC<ButtonProps> = ({
   const { colors } = useAppTheme();
 
   // M3 variant styles
-  const getVariantStyles = (): { 
-    container: ViewStyle; 
+  const getVariantStyles = (): {
+    container: ViewStyle;
     text: TextStyle;
     iconColor: string;
   } => {
@@ -70,7 +70,8 @@ const Button: React.FC<ButtonProps> = ({
       case "secondary":
         return {
           container: {
-            backgroundColor: colors.secondaryContainer || colors.secondary + "20",
+            backgroundColor:
+              colors.secondaryContainer || colors.secondary + "20",
             elevation: 0,
             shadowOpacity: 0,
           },
@@ -175,7 +176,11 @@ const Button: React.FC<ButtonProps> = ({
   };
 
   // M3 size styles with proper padding
-  const getSizeStyles = (): { container: ViewStyle; text: TextStyle; iconSize: number } => {
+  const getSizeStyles = (): {
+    container: ViewStyle;
+    text: TextStyle;
+    iconSize: number;
+  } => {
     switch (size) {
       case "small":
         return {
@@ -227,24 +232,28 @@ const Button: React.FC<ButtonProps> = ({
   const sizeStyles = getSizeStyles();
 
   // Determine if this variant should have shadow
-  const shouldHaveShadow = variant === "elevated" || variant === "filled" || variant === "primary";
+  const shouldHaveShadow =
+    variant === "elevated" || variant === "filled" || variant === "primary";
 
   // Render icon
   const renderIcon = () => {
     if (!icon) return null;
 
-    const iconElement = typeof icon === "string" ? (
-      <Ionicons 
-        name={icon as any} 
-        size={sizeStyles.iconSize} 
-        color={disabled ? colors.textDisabled : variantStyles.iconColor} 
-      />
-    ) : (
-      icon
-    );
+    const iconElement =
+      typeof icon === "string" ? (
+        <Ionicons
+          name={icon as any}
+          size={sizeStyles.iconSize}
+          color={disabled ? colors.textDisabled : variantStyles.iconColor}
+        />
+      ) : (
+        icon
+      );
 
     return (
-      <View style={iconPosition === "right" ? styles.iconRight : styles.iconLeft}>
+      <View
+        style={iconPosition === "right" ? styles.iconRight : styles.iconLeft}
+      >
         {iconElement}
       </View>
     );
@@ -259,7 +268,7 @@ const Button: React.FC<ButtonProps> = ({
         sizeStyles.container,
         fullWidth && styles.fullWidth,
         disabled && styles.disabled,
-        disabled && { backgroundColor: colors.surfaceVariant || colors.gray300 },
+        disabled && { backgroundColor: "#BDBDBD" }, // Gray color that's visible on white background
         contentStyle,
       ]}
       disabled={disabled || loading}
@@ -268,9 +277,13 @@ const Button: React.FC<ButtonProps> = ({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === "outlined" || variant === "outline" || variant === "text" 
-            ? colors.primary 
-            : variantStyles.iconColor}
+          color={
+            variant === "outlined" ||
+            variant === "outline" ||
+            variant === "text"
+              ? colors.primary
+              : variantStyles.iconColor
+          }
           size="small"
         />
       ) : (
@@ -281,7 +294,7 @@ const Button: React.FC<ButtonProps> = ({
               styles.text,
               variantStyles.text,
               sizeStyles.text,
-              disabled && { color: colors.textDisabled },
+              disabled && { color: "#616161" }, // Dark gray for better contrast on disabled background
               textStyle,
             ]}
           >

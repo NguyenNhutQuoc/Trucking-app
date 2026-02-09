@@ -18,9 +18,9 @@ export const userApi = {
    * Lấy danh sách tất cả người dùng (DEPRECATED - use getUsers instead)
    * @deprecated Sử dụng getUsers với pagination
    */
-  getAllUsers: async (): Promise<ApiResponse<Nhanvien[]>> => {
+  getAllUsers: async (): Promise<Nhanvien[]> => {
     try {
-      const response = await api.get<ApiResponse<Nhanvien[]>>("/nhanvien");
+      const response = await api.get<Nhanvien[]>("/nhanvien");
       return response.data;
     } catch (error) {
       console.error("Get all users error:", error);
@@ -56,9 +56,9 @@ export const userApi = {
    * Lấy thông tin chi tiết người dùng theo ID
    * @param id ID của người dùng
    */
-  getUserById: async (id: string): Promise<ApiResponse<Nhanvien>> => {
+  getUserById: async (id: string): Promise<Nhanvien> => {
     try {
-      const response = await api.get<ApiResponse<Nhanvien>>(`/nhanvien/${id}`);
+      const response = await api.get<Nhanvien>(`/nhanvien/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Get user ${id} error:`, error);
@@ -70,11 +70,9 @@ export const userApi = {
    * Lấy thông tin chi tiết người dùng cùng với quyền
    * @param id ID của người dùng
    */
-  getUserPermissions: async (
-    id: string,
-  ): Promise<ApiResponse<NhanvienWithPermissions>> => {
+  getUserPermissions: async (id: string): Promise<NhanvienWithPermissions> => {
     try {
-      const response = await api.get<ApiResponse<NhanvienWithPermissions>>(
+      const response = await api.get<NhanvienWithPermissions>(
         `/nhanvien/${id}/permissions`,
       );
       return response.data;
@@ -88,14 +86,9 @@ export const userApi = {
    * Tạo người dùng mới
    * @param userData Dữ liệu người dùng mới
    */
-  createUser: async (
-    userData: NhanvienCreate,
-  ): Promise<ApiResponse<Nhanvien>> => {
+  createUser: async (userData: NhanvienCreate): Promise<Nhanvien> => {
     try {
-      const response = await api.post<ApiResponse<Nhanvien>>(
-        "/nhanvien",
-        userData,
-      );
+      const response = await api.post<Nhanvien>("/nhanvien", userData);
       return response.data;
     } catch (error) {
       console.error("Create user error:", error);
@@ -111,12 +104,10 @@ export const userApi = {
   updateUser: async (
     id: string,
     userData: NhanvienUpdate,
-  ): Promise<ApiResponse<Nhanvien>> => {
+  ): Promise<Nhanvien> => {
     try {
-      const response = await api.put<ApiResponse<Nhanvien>>(
-        `/nhanvien/${id}`,
-        userData,
-      );
+      console.log("userData", userData);
+      const response = await api.put<Nhanvien>(`/nhanvien/${id}`, userData);
       return response.data;
     } catch (error) {
       console.error(`Update user ${id} error:`, error);
@@ -128,10 +119,9 @@ export const userApi = {
    * Xóa người dùng
    * @param id ID của người dùng
    */
-  deleteUser: async (id: string): Promise<ApiResponse<null>> => {
+  deleteUser: async (id: string): Promise<void> => {
     try {
-      const response = await api.delete<ApiResponse<null>>(`/nhanvien/${id}`);
-      return response.data;
+      await api.delete(`/nhanvien/${id}`);
     } catch (error) {
       console.error(`Delete user ${id} error:`, error);
       throw error;

@@ -17,9 +17,9 @@ export const customerApi = {
    * Lấy danh sách tất cả khách hàng (DEPRECATED - use getCustomers instead)
    * @deprecated Sử dụng getCustomers với pagination
    */
-  getAllCustomers: async (): Promise<ApiResponse<Khachhang[]>> => {
+  getAllCustomers: async (): Promise<Khachhang[]> => {
     try {
-      const response = await api.get<ApiResponse<Khachhang[]>>("/khachhang");
+      const response = await api.get<Khachhang[]>("/khachhang");
       return response.data;
     } catch (error) {
       console.error("Get all customers error:", error);
@@ -82,11 +82,9 @@ export const customerApi = {
    * Lấy thông tin chi tiết khách hàng theo ID
    * @param id ID của khách hàng
    */
-  getCustomerById: async (id: number): Promise<ApiResponse<Khachhang>> => {
+  getCustomerById: async (id: number): Promise<Khachhang> => {
     try {
-      const response = await api.get<ApiResponse<Khachhang>>(
-        `/khachhang/${id}`,
-      );
+      const response = await api.get<Khachhang>(`/khachhang/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Get customer ${id} error:`, error);
@@ -98,11 +96,9 @@ export const customerApi = {
    * Lấy thông tin chi tiết khách hàng theo mã
    * @param code Mã khách hàng
    */
-  getCustomerByCode: async (code: string): Promise<ApiResponse<Khachhang>> => {
+  getCustomerByCode: async (code: string): Promise<Khachhang> => {
     try {
-      const response = await api.get<ApiResponse<Khachhang>>(
-        `/khachhang/code/${code}`,
-      );
+      const response = await api.get<Khachhang>(`/khachhang/code/${code}`);
       return response.data;
     } catch (error) {
       console.error(`Get customer by code ${code} error:`, error);
@@ -114,14 +110,9 @@ export const customerApi = {
    * Tạo khách hàng mới
    * @param customerData Dữ liệu khách hàng mới
    */
-  createCustomer: async (
-    customerData: KhachhangCreate,
-  ): Promise<ApiResponse<Khachhang>> => {
+  createCustomer: async (customerData: KhachhangCreate): Promise<Khachhang> => {
     try {
-      const response = await api.post<ApiResponse<Khachhang>>(
-        "/khachhang",
-        customerData,
-      );
+      const response = await api.post<Khachhang>("/khachhang", customerData);
       return response.data;
     } catch (error) {
       console.error("Create customer error:", error);
@@ -137,9 +128,9 @@ export const customerApi = {
   updateCustomer: async (
     id: number,
     customerData: KhachhangUpdate,
-  ): Promise<ApiResponse<Khachhang>> => {
+  ): Promise<Khachhang> => {
     try {
-      const response = await api.put<ApiResponse<Khachhang>>(
+      const response = await api.put<Khachhang>(
         `/khachhang/${id}`,
         customerData,
       );
@@ -154,10 +145,9 @@ export const customerApi = {
    * Xóa khách hàng
    * @param id ID của khách hàng
    */
-  deleteCustomer: async (id: number): Promise<ApiResponse<null>> => {
+  deleteCustomer: async (id: number): Promise<void> => {
     try {
-      const response = await api.delete<ApiResponse<null>>(`/khachhang/${id}`);
-      return response.data;
+      await api.delete(`/khachhang/${id}`);
     } catch (error) {
       console.error(`Delete customer ${id} error:`, error);
       throw error;

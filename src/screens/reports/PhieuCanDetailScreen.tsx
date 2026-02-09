@@ -142,17 +142,14 @@ Trọng lượng hàng: ${formatWeight(netWeight)}
 
   const netWeight = calculateNetWeight(weighing);
   const isCompleted = !!weighing.ngaycan2;
-  const isCancelled = weighing.uploadStatus === 1;
   const revenue = netWeight > 0 ? (netWeight / 1000) * weighing.dongia : 0;
 
   const getStatusColor = () => {
-    if (isCancelled) return colors.error;
     if (isCompleted) return colors.success;
     return colors.warning;
   };
 
   const getStatusText = () => {
-    if (isCancelled) return "Đã hủy";
     if (isCompleted) return "Hoàn thành";
     return "Đang chờ";
   };

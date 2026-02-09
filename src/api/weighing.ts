@@ -412,4 +412,38 @@ export const weighingApi = {
       throw error;
     }
   },
+
+  /**
+   * Tìm kiếm phiếu cân với nhiều bộ lọc kết hợp
+   * @param filters Các bộ lọc tùy chọn (startDate, endDate, soXe, maHang, makh, xuatNhap)
+   * @param params Pagination parameters (page, pageSize)
+   */
+  searchWeighings: async (
+    filters: {
+      startDate?: string;
+      endDate?: string;
+      soXe?: string;
+      maHang?: string;
+      makh?: string;
+      xuatNhap?: string;
+    },
+    params?: PaginationParams,
+  ): Promise<ApiPaginatedResponse<Phieucan>> => {
+    try {
+      const response = await api.get<ApiPaginatedResponse<Phieucan>>(
+        "/phieucan/search",
+        {
+          params: {
+            ...filters,
+            page: params?.page || 1,
+            pageSize: params?.pageSize || 10,
+          },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Search weighings error:", error);
+      throw error;
+    }
+  },
 };

@@ -99,19 +99,21 @@ const ProductForm: React.FC<ProductFormProps> = ({
       let response;
 
       if (editMode && product) {
-        const updateData: HanghoaUpdate = {
-          ma: formData.ma !== product.ma ? formData.ma : undefined,
-          ten: formData.ten !== product.ten ? formData.ten : undefined,
-          dongia:
-            formData.dongia !== product.dongia ? formData.dongia : undefined,
-        };
+        // Only include fields that have actually changed
+        const updateData: HanghoaUpdate = {};
 
-        // Only include fields that have changed
-        const hasChanges = Object.values(updateData).some(
-          (value) => value !== undefined,
-        );
+        if (formData.ma !== product.ma) {
+          updateData.ma = formData.ma;
+        }
+        if (formData.ten !== product.ten) {
+          updateData.ten = formData.ten;
+        }
+        if (formData.dongia !== product.dongia) {
+          updateData.dongia = formData.dongia;
+        }
 
-        if (!hasChanges) {
+        // Check if there are any changes
+        if (Object.keys(updateData).length === 0) {
           Alert.alert("Thông báo", "Không có thay đổi nào để cập nhật");
           return;
         }
@@ -121,7 +123,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
         response = await productApi.createProduct(formData as HanghoaCreate);
       }
 
-      if (response.success) {
+      if (response) {
         Alert.alert(
           "Thành công",
           editMode
@@ -132,7 +134,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
               text: "OK",
               onPress: () => {
                 if (onSubmitSuccess) {
-                  onSubmitSuccess(response.data);
+                  onSubmitSuccess(response);
                 }
               },
             },

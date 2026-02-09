@@ -24,6 +24,7 @@ import DateRangeSelector from "@/components/reports/DateRangeSelector";
 import FilterSelector from "@/components/reports/FilterSelector";
 import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
+import ResultModal, { ResultModalType } from "@/components/common/ResultModal";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import {
   formatWeight,
@@ -80,6 +81,24 @@ const CustomReportScreen: React.FC = () => {
   const PAGE_SIZE = 20;
   const [viewMode, setViewMode] = useState<ViewMode>("list");
 
+  // ✅ NEW: Result Modal state
+  const [resultModalVisible, setResultModalVisible] = useState(false);
+  const [resultModalMessage, setResultModalMessage] = useState("");
+  const [resultModalType, setResultModalType] =
+    useState<ResultModalType>("error");
+  const [resultModalTitle, setResultModalTitle] = useState("");
+
+  const showResultModal = (
+    title: string,
+    message: string,
+    type: ResultModalType,
+  ) => {
+    setResultModalTitle(title);
+    setResultModalMessage(message);
+    setResultModalType(type);
+    setResultModalVisible(true);
+  };
+
   // Load filter options on mount
   useFocusEffect(
     useCallback(() => {
@@ -112,7 +131,11 @@ const CustomReportScreen: React.FC = () => {
       }
     } catch (error) {
       console.error("Load filter options error:", error);
-      Alert.alert("Lỗi", "Không thể tải dữ liệu bộ lọc. Vui lòng thử lại sau.");
+      showResultModal(
+        "Lỗi",
+        "Không thể tải dữ liệu bộ lọc. Vui lòng thử lại sau.",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -162,94 +185,74 @@ const CustomReportScreen: React.FC = () => {
     setTotalItems(0);
   };
 
-  const loadPhieucanList = async (page: number = 1, isLoadMore: boolean = false) => {
+  const loadPhieucanList = async (
+    page: number = 1,
+    isLoadMore: boolean = false,
+  ) => {
     try {
       if (isLoadMore) {
         setLoadingMore(true);
       }
 
-      // Get weighings with pagination using new API
-      const response = await weighingApi.getWeighings({
+      // Build server-side filters
+      const filters: {
+        startDate?: string;
+        endDate?: string;
+        soXe?: string;
+        maHang?: string;
+        makh?: string;
+        xuatNhap?: string;
+      } = {
+        startDate: startDate.toISOString().split("T")[0] + "T00:00:00",
+        endDate: endDate.toISOString().split("T")[0] + "T23:59:59",
+      };
+
+      // Vehicle filter
+      if (selectedVehicle) {
+        const vehicle = vehicles.find(
+          (v) => v.id.toString() === selectedVehicle,
+        );
+        if (vehicle) {
+          filters.soXe = vehicle.soXe;
+        }
+      }
+
+      // Product filter
+      if (selectedProduct) {
+        const product = products.find(
+          (p) => p.id.toString() === selectedProduct,
+        );
+        if (product) {
+          filters.maHang = product.ma;
+        }
+      }
+
+      // Company filter
+      if (selectedCompany) {
+        const company = companies.find(
+          (c) => c.id.toString() === selectedCompany,
+        );
+        if (company) {
+          filters.makh = company.ma;
+        }
+      }
+
+      // Type filter (Xuất/Nhập)
+      if (selectedType) {
+        filters.xuatNhap = selectedType === "export" ? "Xuất" : "Nhập";
+      }
+
+      // Call server-side search API with all filters
+      const response = await weighingApi.searchWeighings(filters, {
         page,
         pageSize: PAGE_SIZE,
       });
 
       if (response.items) {
-        let weighings: Phieucan[] = response.items;
-
-        // Apply client-side filtering
-        const filteredWeighings = weighings.filter((item) => {
-          // Safety check for item
-          if (!item || !item.ngaycan1) return false;
-
-          // Date range filter
-          const itemDate = new Date(item.ngaycan1);
-          if (
-            isNaN(itemDate.getTime()) ||
-            itemDate < startDate ||
-            itemDate > endDate
-          )
-            return false;
-
-          // Company filter
-          if (selectedCompany) {
-            const company = companies.find(
-              (c) => c.id.toString() === selectedCompany,
-            );
-            if (
-              company &&
-              item.makh !== company.ma &&
-              item.khachhang !== company.ten
-            ) {
-              return false;
-            }
-          }
-
-          // Product filter
-          if (selectedProduct) {
-            const product = products.find(
-              (p) => p.id.toString() === selectedProduct,
-            );
-            if (
-              product &&
-              item.mahang !== product.ma &&
-              item.loaihang !== product.ten
-            ) {
-              return false;
-            }
-          }
-
-          // Vehicle filter
-          if (selectedVehicle) {
-            const vehicle = vehicles.find(
-              (v) => v.id.toString() === selectedVehicle,
-            );
-            if (vehicle && item.soxe !== vehicle.soXe) {
-              return false;
-            }
-          }
-
-          // Type filter (Xuất/Nhập)
-          if (selectedType) {
-            const typeValue = selectedType === "export" ? "Xuất" : "Nhập";
-            if (item.xuatnhap !== typeValue) {
-              return false;
-            }
-          }
-
-          return true;
-        });
-
-        // Sort by date descending (newest first)
-        filteredWeighings.sort(
-          (a, b) =>
-            new Date(b.ngaycan1).getTime() - new Date(a.ngaycan1).getTime(),
-        );
-
         if (isLoadMore) {
-          setPhieucanList((prev) => [...prev, ...filteredWeighings]);
+          setPhieucanList((prev) => [...prev, ...response.items]);
         } else {
-          setPhieucanList(filteredWeighings);
+          setPhieucanList(response.items);
         }
 
         // Update pagination info
@@ -257,15 +260,21 @@ const CustomReportScreen: React.FC = () => {
         setTotalItems(response.totalCount);
         setHasMore(page < response.totalPages);
       } else {
-        // Fallback to mock data if API fails or doesn't exist
-        console.log("API failed, using mock data for demo");
-        generateMockData();
+        if (!isLoadMore) {
+          setPhieucanList([]);
+        }
         setHasMore(false);
       }
     } catch (error) {
       console.error("Load phieucan list error:", error);
-      // Generate mock data as fallback
-      generateMockData();
+      showResultModal(
+        "Lỗi",
+        "Không thể tải danh sách phiếu cân. Vui lòng thử lại sau.",
+        "error",
+      );
+      if (!isLoadMore) {
+        setPhieucanList([]);
+      }
       setHasMore(false);
     } finally {
       setLoadingMore(false);
@@ -278,241 +287,122 @@ const CustomReportScreen: React.FC = () => {
     }
   };
 
-  const generateMockData = () => {
-    const mockPhieucanList: Phieucan[] = [];
-
-    // Generate sample data based on filters
-    const companyFilter = selectedCompany
-      ? companies.find((c) => c.id.toString() === selectedCompany)
-      : null;
-    const productFilter = selectedProduct
-      ? products.find((p) => p.id.toString() === selectedProduct)
-      : null;
-    const vehicleFilter = selectedVehicle
-      ? vehicles.find((v) => v.id.toString() === selectedVehicle)
-      : null;
-    const typeFilter =
-      selectedType === "export"
-        ? "Xuất"
-        : selectedType === "import"
-          ? "Nhập"
-          : null;
-
-    // Create sample data
-    const sampleCount = Math.floor(Math.random() * 20) + 5; // 5-25 items
-
-    for (let i = 0; i < sampleCount; i++) {
-      const randomDate = new Date(
-        startDate.getTime() +
-          Math.random() * (endDate.getTime() - startDate.getTime()),
-      );
-      const isCompleted = Math.random() > 0.3; // 70% completion rate
-      const isCancelled = Math.random() > 0.9; // 10% cancellation rate
-
-      const mockPhieucan: Phieucan = {
-        stt: i + 1,
-        sophieu: 1000 + i,
-        soxe: vehicleFilter
-          ? vehicleFilter.soXe
-          : `51A-${Math.floor(Math.random() * 9999)
-              .toString()
-              .padStart(4, "0")}`,
-        makh: companyFilter
-          ? companyFilter.ma
-          : `KH${Math.floor(Math.random() * 999)
-              .toString()
-              .padStart(3, "0")}`,
-        khachhang: companyFilter
-          ? companyFilter.ten
-          : `Công ty TNHH ${["ABC", "XYZ", "DEF", "GHI"][Math.floor(Math.random() * 4)]}`,
-        mahang: productFilter
-          ? productFilter.ma
-          : `HH${Math.floor(Math.random() * 99)
-              .toString()
-              .padStart(2, "0")}`,
-        loaihang: productFilter
-          ? productFilter.ten
-          : ["Cát xây dựng", "Đá 1x2", "Gạch block", "Xi măng"][
-              Math.floor(Math.random() * 4)
-            ],
-        ngaycan1: randomDate.toISOString(),
-        ngaycan2:
-          isCompleted && !isCancelled
-            ? new Date(
-                randomDate.getTime() + Math.random() * 3600000,
-              ).toISOString()
-            : "",
-        tlcan1: Math.floor(Math.random() * 20000) + 5000, // 5-25 tons
-        tlcan2:
-          isCompleted && !isCancelled
-            ? Math.floor(Math.random() * 15000) + 2000
-            : undefined,
-        xuatnhap: typeFilter || (Math.random() > 0.5 ? "Xuất" : "Nhập"),
-        ghichu: Math.random() > 0.7 ? `Ghi chú phiếu ${i + 1}` : undefined,
-        nhanvien: "Nhân viên cân",
-        kho:
-          Math.random() > 0.5
-            ? `Kho ${Math.ceil(Math.random() * 3)}`
-            : undefined,
-        sochungtu:
-          Math.random() > 0.6
-            ? `CT${Math.floor(Math.random() * 9999)
-                .toString()
-                .padStart(4, "0")}`
-            : undefined,
-        uploadStatus: isCancelled ? 1 : 0,
-        dongia: productFilter
-          ? productFilter.dongia
-          : Math.floor(Math.random() * 500000) + 100000, // 100k-600k per ton
-      };
-
-      mockPhieucanList.push(mockPhieucan);
-    }
-
-    // Sort by date descending
-    mockPhieucanList.sort(
-      (a, b) => new Date(b.ngaycan1).getTime() - new Date(a.ngaycan1).getTime(),
-    );
-
-    setPhieucanList(mockPhieucanList);
-    setHasMore(false);
-  };
-
   const handleGenerateReport = async () => {
     try {
       setLoading(true);
 
       // Format dates for API
-      const formattedStartDate = startDate.toISOString();
-      const formattedEndDate = endDate.toISOString().split("T")[0] + "T23:59:59";
+      const formattedStartDate =
+        startDate.toISOString().split("T")[0] + "T00:00:00";
+      const formattedEndDate =
+        endDate.toISOString().split("T")[0] + "T23:59:59";
 
-      // Get base statistics
-      const response = await weighingApi.getWeightStatistics(
-        formattedStartDate,
-        formattedEndDate,
-      );
+      // Build search filters (same as loadPhieucanList)
+      const searchFilters: {
+        startDate?: string;
+        endDate?: string;
+        soXe?: string;
+        maHang?: string;
+        makh?: string;
+        xuatNhap?: string;
+      } = {
+        startDate: formattedStartDate,
+        endDate: formattedEndDate,
+      };
 
-      if (response) {
-        let filteredData: any = { ...response.data };
-        let totalVehicles = response.data.totalVehicles;
-        let totalWeight = response.data.totalWeight;
+      if (selectedVehicle) {
+        const vehicle = vehicles.find(
+          (v) => v.id.toString() === selectedVehicle,
+        );
+        if (vehicle) searchFilters.soXe = vehicle.soXe;
+      }
+      if (selectedProduct) {
+        const product = products.find(
+          (p) => p.id.toString() === selectedProduct,
+        );
+        if (product) searchFilters.maHang = product.ma;
+      }
+      if (selectedCompany) {
+        const company = companies.find(
+          (c) => c.id.toString() === selectedCompany,
+        );
+        if (company) searchFilters.makh = company.ma;
+      }
+      if (selectedType) {
+        searchFilters.xuatNhap = selectedType === "export" ? "Xuất" : "Nhập";
+      }
 
-        // Apply company filter
+      // Fetch both statistics and first page of filtered results in parallel
+      const [statsResponse, searchResponse] = await Promise.all([
+        weighingApi.getWeightStatistics(formattedStartDate, formattedEndDate),
+        weighingApi.searchWeighings(searchFilters, {
+          page: 1,
+          pageSize: PAGE_SIZE,
+        }),
+      ]);
+
+      if (statsResponse && searchResponse) {
+        let filteredData: any = { ...statsResponse.data };
+
+        // Use the search totalCount as the real filtered vehicle count
+        const filteredTotalVehicles = searchResponse.totalCount;
+
+        // Compute actual total weight from the loaded items
+        let filteredTotalWeight = 0;
+        if (searchResponse.items) {
+          filteredTotalWeight = searchResponse.items.reduce((sum, item) => {
+            if (item.ngaycan2 && typeof item.tlcan2 === "number") {
+              return sum + Math.abs(item.tlcan2 - item.tlcan1);
+            }
+            return sum;
+          }, 0);
+        }
+
+        // If there are more pages, use statistics to approximate total weight
+        // For the case with filters applied, use proportional estimate from first page
+        if (searchResponse.totalPages > 1 && filteredTotalVehicles > 0) {
+          const completedInPage = searchResponse.items.filter(
+            (item) => item.ngaycan2 && typeof item.tlcan2 === "number",
+          ).length;
+          const avgWeightPerItem =
+            completedInPage > 0 ? filteredTotalWeight / completedInPage : 0;
+          // Estimate total by average weight × total filtered count
+          const estimatedCompleted = Math.round(
+            (completedInPage / searchResponse.items.length) *
+              filteredTotalVehicles,
+          );
+          filteredTotalWeight = Math.round(
+            avgWeightPerItem * estimatedCompleted,
+          );
+        }
+
+        // Add filter info for display
         if (selectedCompany) {
           const company = companies.find(
             (c) => c.id.toString() === selectedCompany,
           );
-          if (company) {
-            const companyStats = response.data.byCompany.find(
-              (c: any) => c.companyName === company.ten,
-            );
-
-            if (companyStats) {
-              totalVehicles = companyStats.weighCount;
-              totalWeight = companyStats.totalWeight;
-              filteredData.companyFilter = {
-                company,
-                stats: companyStats,
-              };
-            } else {
-              totalVehicles = 0;
-              totalWeight = 0;
-            }
-          }
+          filteredData.companyFilter = { company };
         }
-
-        // Apply product filter
         if (selectedProduct) {
           const product = products.find(
             (p) => p.id.toString() === selectedProduct,
           );
-          if (product) {
-            const productStats = response.data.byProduct.find(
-              (p: any) => p.productName === product.ten,
-            );
-
-            if (productStats) {
-              // If company is already filtered, further restrict
-              if (selectedCompany) {
-                // We'd need custom API endpoint for combined filters
-                // This is a simplification
-                totalVehicles = Math.min(
-                  totalVehicles,
-                  productStats.weighCount,
-                );
-                totalWeight = Math.min(totalWeight, productStats.totalWeight);
-              } else {
-                totalVehicles = productStats.weighCount;
-                totalWeight = productStats.totalWeight;
-              }
-
-              filteredData.productFilter = {
-                product,
-                stats: productStats,
-              };
-            } else {
-              totalVehicles = 0;
-              totalWeight = 0;
-            }
-          }
+          filteredData.productFilter = { product };
         }
-
-        // Apply vehicle filter
         if (selectedVehicle) {
           const vehicle = vehicles.find(
             (v) => v.id.toString() === selectedVehicle,
           );
-          if (vehicle) {
-            const vehicleStats = response.data.byVehicle.find(
-              (v: any) => v.vehicleNumber === vehicle.soXe,
-            );
-
-            if (vehicleStats) {
-              // If other filters are applied, further restrict
-              if (selectedCompany || selectedProduct) {
-                // Simplification
-                totalVehicles = Math.min(
-                  totalVehicles,
-                  vehicleStats.weighCount,
-                );
-                totalWeight = Math.min(totalWeight, vehicleStats.totalWeight);
-              } else {
-                totalVehicles = vehicleStats.weighCount;
-                totalWeight = vehicleStats.totalWeight;
-              }
-
-              filteredData.vehicleFilter = {
-                vehicle,
-                stats: vehicleStats,
-              };
-            } else {
-              totalVehicles = 0;
-              totalWeight = 0;
-            }
-          }
+          filteredData.vehicleFilter = { vehicle };
         }
-
-        // Apply type filter (Xuất/Nhập)
         if (selectedType) {
-          // Assuming we'd need a custom API endpoint for type filtering
-          // This is a simplification
           filteredData.typeFilter = {
             type: selectedType === "export" ? "Xuất" : "Nhập",
           };
-
-          // Reduce by estimated percentage for demo
-          if (selectedType === "export") {
-            totalVehicles = Math.round(totalVehicles * 0.6);
-            totalWeight = Math.round(totalWeight * 0.6);
-          } else {
-            totalVehicles = Math.round(totalVehicles * 0.4);
-            totalWeight = Math.round(totalWeight * 0.4);
-          }
         }
 
-        // Update the filtered data with new totals
-        filteredData.filteredTotalVehicles = totalVehicles;
-        filteredData.filteredTotalWeight = totalWeight;
+        filteredData.filteredTotalVehicles = filteredTotalVehicles;
+        filteredData.filteredTotalWeight = filteredTotalWeight;
 
         // Calculate revenue if product is selected
         if (selectedProduct) {
@@ -520,7 +410,7 @@ const CustomReportScreen: React.FC = () => {
             (p) => p.id.toString() === selectedProduct,
           );
           if (product) {
-            const revenue = totalWeight * product.dongia;
+            const revenue = filteredTotalWeight * product.dongia;
             filteredData.estimatedRevenue = revenue;
           }
         }
@@ -528,14 +418,19 @@ const CustomReportScreen: React.FC = () => {
         setReportData(filteredData);
         setShowResults(true);
 
-        // Reset pagination and load phieucan list
+        // Set phieucan list from the search response (already loaded)
+        setPhieucanList(searchResponse.items || []);
         setCurrentPage(1);
-        setHasMore(true);
-        await loadPhieucanList(1, false);
+        setTotalItems(searchResponse.totalCount);
+        setHasMore(1 < searchResponse.totalPages);
       }
     } catch (error) {
       console.error("Generate report error:", error);
-      Alert.alert("Lỗi", "Không thể tạo báo cáo. Vui lòng thử lại sau.");
+      showResultModal(
+        "Lỗi",
+        "Không thể tạo báo cáo. Vui lòng thử lại sau.",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -592,16 +487,13 @@ const CustomReportScreen: React.FC = () => {
 
     const netWeight = calculateNetWeight(item);
     const isCompleted = !!item.ngaycan2;
-    const isCancelled = item.uploadStatus === 1;
 
     const getStatusColor = () => {
-      if (isCancelled) return colors.error;
       if (isCompleted) return colors.success;
       return colors.warning;
     };
 
     const getStatusText = () => {
-      if (isCancelled) return "Hủy";
       if (isCompleted) return "Hoàn thành";
       return "Chờ";
     };
@@ -655,16 +547,13 @@ const CustomReportScreen: React.FC = () => {
 
     const netWeight = calculateNetWeight(item);
     const isCompleted = !!item.ngaycan2;
-    const isCancelled = item.uploadStatus === 1;
 
     const getStatusColor = () => {
-      if (isCancelled) return colors.error;
       if (isCompleted) return colors.success;
       return colors.warning;
     };
 
     const getStatusText = () => {
-      if (isCancelled) return "Đã hủy";
       if (isCompleted) return "Hoàn thành";
       return "Đang chờ";
     };
@@ -742,16 +631,13 @@ const CustomReportScreen: React.FC = () => {
 
     const netWeight = calculateNetWeight(item);
     const isCompleted = !!item.ngaycan2;
-    const isCancelled = item.uploadStatus === 1;
 
     const getStatusColor = () => {
-      if (isCancelled) return colors.error;
       if (isCompleted) return colors.success;
       return colors.warning;
     };
 
     const getStatusText = () => {
-      if (isCancelled) return "Đã hủy";
       if (isCompleted) return "Hoàn thành";
       return "Đang chờ";
     };
@@ -1160,7 +1046,8 @@ const CustomReportScreen: React.FC = () => {
 
             <View style={styles.listHeader}>
               <ThemedText style={styles.listTitle}>
-                Danh sách phiếu cân ({phieucanList.length}{totalItems > 0 ? `/${totalItems}` : ""})
+                Danh sách phiếu cân ({phieucanList.length}
+                {totalItems > 0 ? `/${totalItems}` : ""})
               </ThemedText>
               <Button
                 title="Làm mới bộ lọc"
@@ -1209,33 +1096,46 @@ const CustomReportScreen: React.FC = () => {
                 refreshing={refreshing}
                 onRefresh={onRefresh}
                 colors={[colors.primary]}
-              tintColor={colors.primary}
-              progressBackgroundColor={colors.card}
-            />
-          }
-          ListFooterComponent={
-            hasMore && phieucanList.length > 0 ? (
-              <View style={styles.loadMoreContainer}>
-                <Button
-                  title={loadingMore ? "Đang tải..." : "Xem thêm"}
-                  variant="outline"
-                  onPress={loadMorePhieucan}
-                  loading={loadingMore}
-                  disabled={loadingMore}
-                  icon={
-                    !loadingMore ? (
-                      <Ionicons name="chevron-down" size={18} color={colors.primary} />
-                    ) : undefined
-                  }
-                />
-              </View>
-            ) : null
-          }
+                tintColor={colors.primary}
+                progressBackgroundColor={colors.card}
+              />
+            }
+            ListFooterComponent={
+              hasMore && phieucanList.length > 0 ? (
+                <View style={styles.loadMoreContainer}>
+                  <Button
+                    title={loadingMore ? "Đang tải..." : "Xem thêm"}
+                    variant="outline"
+                    onPress={loadMorePhieucan}
+                    loading={loadingMore}
+                    disabled={loadingMore}
+                    icon={
+                      !loadingMore ? (
+                        <Ionicons
+                          name="chevron-down"
+                          size={18}
+                          color={colors.primary}
+                        />
+                      ) : undefined
+                    }
+                  />
+                </View>
+              ) : null
+            }
           />
         </View>
       )}
 
       <Loading loading={loading} overlay message="Đang xử lý..." />
+
+      {/* ✅ NEW: Result Modal */}
+      <ResultModal
+        visible={resultModalVisible}
+        onClose={() => setResultModalVisible(false)}
+        type={resultModalType}
+        title={resultModalTitle}
+        message={resultModalMessage}
+      />
     </ThemedView>
   );
 };

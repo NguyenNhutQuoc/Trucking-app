@@ -17,9 +17,9 @@ export const vehicleApi = {
    * Lấy danh sách tất cả xe (DEPRECATED - use getVehicles instead)
    * @deprecated Sử dụng getVehicles với pagination
    */
-  getAllVehicles: async (): Promise<ApiResponse<Soxe[]>> => {
+  getAllVehicles: async (): Promise<Soxe[]> => {
     try {
-      const response = await api.get<ApiResponse<Soxe[]>>("/soxe");
+      const response = await api.get<Soxe[]>("/soxe");
       return response.data;
     } catch (error) {
       console.error("Get all vehicles error:", error);
@@ -52,9 +52,9 @@ export const vehicleApi = {
    * Lấy thông tin chi tiết xe theo ID
    * @param id ID của xe
    */
-  getVehicleById: async (id: number): Promise<ApiResponse<Soxe>> => {
+  getVehicleById: async (id: number): Promise<Soxe> => {
     try {
-      const response = await api.get<ApiResponse<Soxe>>(`/soxe/${id}`);
+      const response = await api.get<Soxe>(`/soxe/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Get vehicle ${id} error:`, error);
@@ -66,13 +66,9 @@ export const vehicleApi = {
    * Lấy thông tin chi tiết xe theo biển số
    * @param plateNumber Biển số xe
    */
-  getVehicleByPlateNumber: async (
-    plateNumber: string,
-  ): Promise<ApiResponse<Soxe>> => {
+  getVehicleByPlateNumber: async (plateNumber: string): Promise<Soxe> => {
     try {
-      const response = await api.get<ApiResponse<Soxe>>(
-        `/soxe/number/${plateNumber}`,
-      );
+      const response = await api.get<Soxe>(`/soxe/number/${plateNumber}`);
       return response.data;
     } catch (error) {
       console.error(`Get vehicle by plate number ${plateNumber} error:`, error);
@@ -84,11 +80,9 @@ export const vehicleApi = {
    * Tạo xe mới
    * @param vehicleData Dữ liệu xe mới
    */
-  createVehicle: async (
-    vehicleData: SoxeCreate,
-  ): Promise<ApiResponse<Soxe>> => {
+  createVehicle: async (vehicleData: SoxeCreate): Promise<Soxe> => {
     try {
-      const response = await api.post<ApiResponse<Soxe>>("/soxe", vehicleData);
+      const response = await api.post<Soxe>("/soxe", vehicleData);
       return response.data;
     } catch (error) {
       console.error("Create vehicle error:", error);
@@ -101,15 +95,9 @@ export const vehicleApi = {
    * @param id ID của xe
    * @param vehicleData Dữ liệu cập nhật
    */
-  updateVehicle: async (
-    id: number,
-    vehicleData: SoxeUpdate,
-  ): Promise<ApiResponse<Soxe>> => {
+  updateVehicle: async (id: number, vehicleData: SoxeUpdate): Promise<Soxe> => {
     try {
-      const response = await api.put<ApiResponse<Soxe>>(
-        `/soxe/${id}`,
-        vehicleData,
-      );
+      const response = await api.put<Soxe>(`/soxe/${id}`, vehicleData);
       return response.data;
     } catch (error) {
       console.error(`Update vehicle ${id} error:`, error);
@@ -121,10 +109,9 @@ export const vehicleApi = {
    * Xóa xe
    * @param id ID của xe
    */
-  deleteVehicle: async (id: number): Promise<ApiResponse<null>> => {
+  deleteVehicle: async (id: number): Promise<void> => {
     try {
-      const response = await api.delete<ApiResponse<null>>(`/soxe/${id}`);
-      return response.data;
+      await api.delete(`/soxe/${id}`);
     } catch (error) {
       console.error(`Delete vehicle ${id} error:`, error);
       throw error;

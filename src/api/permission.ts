@@ -21,9 +21,9 @@ export const permissionApi = {
    * Lấy danh sách tất cả nhóm quyền (DEPRECATED - use getGroups instead)
    * @deprecated Sử dụng getGroups với pagination
    */
-  getAllGroups: async (): Promise<ApiResponse<NhomQuyen[]>> => {
+  getAllGroups: async (): Promise<NhomQuyen[]> => {
     try {
-      const response = await api.get<ApiResponse<NhomQuyen[]>>("/nhomquyen");
+      const response = await api.get<NhomQuyen[]>("/nhomquyen");
       return response.data;
     } catch (error) {
       console.error("Get all permission groups error:", error);
@@ -59,11 +59,9 @@ export const permissionApi = {
    * Lấy thông tin chi tiết nhóm quyền theo ID
    * @param id ID của nhóm quyền
    */
-  getGroupById: async (id: number): Promise<ApiResponse<NhomQuyen>> => {
+  getGroupById: async (id: number): Promise<NhomQuyen> => {
     try {
-      const response = await api.get<ApiResponse<NhomQuyen>>(
-        `/nhomquyen/${id}`,
-      );
+      const response = await api.get<NhomQuyen>(`/nhomquyen/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Get permission group ${id} error:`, error);
@@ -77,9 +75,9 @@ export const permissionApi = {
    */
   getGroupPermissions: async (
     id: number,
-  ): Promise<ApiResponse<NhomQuyenWithPermissions>> => {
+  ): Promise<NhomQuyenWithPermissions> => {
     try {
-      const response = await api.get<ApiResponse<NhomQuyenWithPermissions>>(
+      const response = await api.get<NhomQuyenWithPermissions>(
         `/nhomquyen/${id}/permissions`,
       );
       return response.data;
@@ -93,14 +91,9 @@ export const permissionApi = {
    * Tạo nhóm quyền mới
    * @param groupData Dữ liệu nhóm quyền mới
    */
-  createGroup: async (
-    groupData: NhomQuyenCreate,
-  ): Promise<ApiResponse<NhomQuyen>> => {
+  createGroup: async (groupData: NhomQuyenCreate): Promise<NhomQuyen> => {
     try {
-      const response = await api.post<ApiResponse<NhomQuyen>>(
-        "/nhomquyen",
-        groupData,
-      );
+      const response = await api.post<NhomQuyen>("/nhomquyen", groupData);
       return response.data;
     } catch (error) {
       console.error("Create permission group error:", error);
@@ -116,12 +109,9 @@ export const permissionApi = {
   updateGroup: async (
     id: number,
     groupData: NhomQuyenUpdate,
-  ): Promise<ApiResponse<NhomQuyen>> => {
+  ): Promise<NhomQuyen> => {
     try {
-      const response = await api.put<ApiResponse<NhomQuyen>>(
-        `/nhomquyen/${id}`,
-        groupData,
-      );
+      const response = await api.put<NhomQuyen>(`/nhomquyen/${id}`, groupData);
       return response.data;
     } catch (error) {
       console.error(`Update permission group ${id} error:`, error);
@@ -133,10 +123,9 @@ export const permissionApi = {
    * Xóa nhóm quyền
    * @param id ID của nhóm quyền
    */
-  deleteGroup: async (id: number): Promise<ApiResponse<null>> => {
+  deleteGroup: async (id: number): Promise<void> => {
     try {
-      const response = await api.delete<ApiResponse<null>>(`/nhomquyen/${id}`);
-      return response.data;
+      await api.delete(`/nhomquyen/${id}`);
     } catch (error) {
       console.error(`Delete permission group ${id} error:`, error);
       throw error;
@@ -151,9 +140,9 @@ export const permissionApi = {
   addPermissionToGroup: async (
     nhomId: number,
     formId: number,
-  ): Promise<ApiResponse<Quyen>> => {
+  ): Promise<Quyen> => {
     try {
-      const response = await api.post<ApiResponse<Quyen>>(
+      const response = await api.post<Quyen>(
         `/nhomquyen/${nhomId}/permissions/${formId}`,
       );
       return response.data;
@@ -171,12 +160,9 @@ export const permissionApi = {
   removePermissionFromGroup: async (
     nhomId: number,
     formId: number,
-  ): Promise<ApiResponse<null>> => {
+  ): Promise<void> => {
     try {
-      const response = await api.delete<ApiResponse<null>>(
-        `/nhomquyen/${nhomId}/permissions/${formId}`,
-      );
-      return response.data;
+      await api.delete(`/nhomquyen/${nhomId}/permissions/${formId}`);
     } catch (error) {
       console.error(`Remove permission from group error:`, error);
       throw error;
@@ -191,13 +177,9 @@ export const permissionApi = {
   updateGroupPermissions: async (
     nhomId: number,
     formIds: number[],
-  ): Promise<ApiResponse<null>> => {
+  ): Promise<void> => {
     try {
-      const response = await api.put<ApiResponse<null>>(
-        `/nhomquyen/${nhomId}/permissions`,
-        { formIds },
-      );
-      return response.data;
+      await api.put(`/nhomquyen/${nhomId}/permissions`, { formIds });
     } catch (error) {
       console.error(`Update group permissions error:`, error);
       throw error;
@@ -207,9 +189,9 @@ export const permissionApi = {
   /**
    * Lấy danh sách tất cả form (quyền)
    */
-  getAllForms: async (): Promise<ApiResponse<Form[]>> => {
+  getAllForms: async (): Promise<Form[]> => {
     try {
-      const response = await api.get<ApiResponse<Form[]>>("/forms");
+      const response = await api.get<Form[]>("/forms");
       return response.data;
     } catch (error) {
       console.error("Get all forms error:", error);

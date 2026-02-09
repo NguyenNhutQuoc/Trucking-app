@@ -18,6 +18,7 @@ import Loading from "@/components/common/Loading";
 import Button from "@/components/common/Button";
 import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
+import ResultModal, { ResultModalType } from "@/components/common/ResultModal";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"; // ✅ NEW: Use infinite scroll hook
 import LoadMoreButton from "@/components/common/LoadMoreButton"; // ✅ NEW: Load more button
@@ -52,6 +53,24 @@ const ProductListScreen: React.FC = () => {
   const [filteredProducts, setFilteredProducts] = useState<Hanghoa[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+
+  // ✅ NEW: Result Modal state
+  const [resultModalVisible, setResultModalVisible] = useState(false);
+  const [resultModalMessage, setResultModalMessage] = useState("");
+  const [resultModalType, setResultModalType] =
+    useState<ResultModalType>("success");
+  const [resultModalTitle, setResultModalTitle] = useState("");
+
+  const showResultModal = (
+    title: string,
+    message: string,
+    type: ResultModalType,
+  ) => {
+    setResultModalTitle(title);
+    setResultModalMessage(message);
+    setResultModalType(type);
+    setResultModalVisible(true);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -102,16 +121,16 @@ const ProductListScreen: React.FC = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              const response = await productApi.deleteProduct(product.id);
-              if (response.success) {
-                Alert.alert("Thành công", "Xóa hàng hóa thành công");
-                refresh();
-              } else {
-                Alert.alert("Lỗi", "Không thể xóa hàng hóa");
-              }
+              await productApi.deleteProduct(product.id);
+              showResultModal(
+                "Thành công",
+                `Đã xóa hàng hóa "${product.ten}" thành công`,
+                "success",
+              );
+              refresh();
             } catch (error) {
               console.error("Delete product error:", error);
-              Alert.alert("Lỗi", "Không thể xóa hàng hóa");
+              showResultModal("Lỗi", "Không thể xóa hàng hóa", "error");
             }
           },
         },
@@ -408,6 +427,15 @@ const ProductListScreen: React.FC = () => {
       </View>
 
       <Loading loading={loading && !isRefreshing} />
+
+      {/* ✅ NEW: Result Modal */}
+      <ResultModal
+        visible={resultModalVisible}
+        onClose={() => setResultModalVisible(false)}
+        type={resultModalType}
+        title={resultModalTitle}
+        message={resultModalMessage}
+      />
     </ThemedView>
   );
 };

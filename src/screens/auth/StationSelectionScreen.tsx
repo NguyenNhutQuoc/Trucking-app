@@ -20,11 +20,10 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { stationApi, TramCan } from "@/api/station";
 import Button from "@/components/common/Button";
 import Loading from "@/components/common/Loading";
-import { spacing } from "@/styles/spacing";
 
 interface StationSelectionScreenProps {
-  route: {
-    params: {
+  route?: {
+    params?: {
       sessionToken: string;
       khachHang: {
         maKhachHang: string;
@@ -39,16 +38,19 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
   route,
 }) => {
   const navigation = useNavigation();
-  const { selectStation } = useAuth();
+  const { selectStation, tenantSessionData, authLevel, logout } = useAuth();
   const { colors, isDarkMode } = useAppTheme();
 
-  // ✅ FIXED: Add null/undefined checks for route.params
-  const sessionToken = route?.params?.sessionToken || "";
-  const khachHang = route?.params?.khachHang || {
-    maKhachHang: "",
-    tenKhachHang: "N/A",
-  };
-  const initialStations = route?.params?.tramCans || [];
+  // Get data from route params OR from auth context (for app reopen)
+  const sessionToken =
+    route?.params?.sessionToken || tenantSessionData?.sessionToken || "";
+  const khachHang = route?.params?.khachHang ||
+    tenantSessionData?.khachHang || {
+      maKhachHang: "",
+      tenKhachHang: "N/A",
+    };
+  const initialStations =
+    route?.params?.tramCans || tenantSessionData?.tramCans || [];
 
   const [selectedStationId, setSelectedStationId] = useState<number | null>(
     null,
@@ -56,38 +58,66 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [stations, setStations] = useState<TramCan[]>(initialStations);
+  const [initialLoading, setInitialLoading] = useState(
+    initialStations.length === 0,
+  );
 
-  // ✅ NEW: Validate route params on mount
+  // Load stations if we don't have them (app reopen case)
   useEffect(() => {
-    if (!sessionToken || !khachHang?.maKhachHang) {
+    if (initialStations.length === 0 && sessionToken) {
+      loadStations();
+    }
+  }, []);
+
+  const loadStations = async () => {
+    try {
+      setInitialLoading(true);
+      const response = await stationApi.getMyStations();
+      if (response?.tramCans) {
+        setStations(response.tramCans);
+      }
+    } catch (error) {
+      console.error("Load stations error:", error);
+    } finally {
+      setInitialLoading(false);
+    }
+  };
+
+  // Validate session on mount
+  useEffect(() => {
+    if (!sessionToken) {
       Alert.alert(
         "Lỗi",
         "Thông tin đăng nhập không hợp lệ. Vui lòng đăng nhập lại.",
         [
           {
             text: "OK",
-            onPress: () => navigation.navigate("Login" as never),
+            onPress: () => {
+              if (authLevel === "none") {
+                navigation.navigate("Login" as never);
+              } else {
+                logout();
+              }
+            },
           },
         ],
       );
     }
-  }, [sessionToken, khachHang, navigation]);
+  }, [sessionToken, navigation]);
 
-  // Auto-select nếu chỉ có 1 trạm cân
+  // Auto-select if only 1 station
   useEffect(() => {
     if (stations.length === 1) {
       setSelectedStationId(stations[0].id);
     }
   }, [stations]);
 
-  // ✅ Refresh stations function
   const handleRefresh = async () => {
     try {
       setRefreshing(true);
       const response = await stationApi.getMyStations();
 
-      // getMyStations returns MyStationsResponse directly (not wrapped in ApiResponse)
-      if (response && response.tramCans) {
+      if (response?.tramCans) {
         setStations(response.tramCans);
       } else {
         Alert.alert("Lỗi", "Không thể tải lại danh sách trạm cân");
@@ -113,7 +143,7 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
       if (!success) {
         Alert.alert("Lỗi", "Không thể chọn trạm cân. Vui lòng thử lại.");
       }
-      // Navigation sẽ được handle bởi AuthContext
+      // Navigation will be handled by AuthContext → authLevel changes to "station"
     } catch (error) {
       console.error("Station selection error:", error);
       Alert.alert("Lỗi", "Có lỗi xảy ra khi chọn trạm cân. Vui lòng thử lại.");
@@ -123,7 +153,21 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
   };
 
   const handleBack = () => {
-    navigation.goBack();
+    if (authLevel === "tenant") {
+      // If at tenant level (app reopen), go back to login = full logout
+      Alert.alert("Đăng xuất", "Bạn có muốn quay về màn hình đăng nhập?", [
+        { text: "Hủy", style: "cancel" },
+        {
+          text: "Đăng xuất",
+          style: "destructive",
+          onPress: () => {
+            logout().catch((e) => console.error("Logout error:", e));
+          },
+        },
+      ]);
+    } else {
+      navigation.goBack();
+    }
   };
 
   const renderStationItem = ({ item }: { item: TramCan }) => (
@@ -219,30 +263,62 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
           Vui lòng chọn trạm cân để tiếp tục làm việc
         </Text>
 
-        <FlatList
-          data={stations}
-          renderItem={renderStationItem}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.stationsList}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              colors={[colors.primary]}
-            />
-          }
-        />
-
-        <View style={styles.buttonContainer}>
-          <Button
-            title="Tiếp tục"
-            onPress={handleContinue}
-            loading={loading}
-            disabled={loading || !selectedStationId}
-            style={styles.continueButton}
+        {initialLoading ? (
+          <View style={styles.loadingContainer}>
+            <Loading loading message="Đang tải danh sách trạm cân..." />
+          </View>
+        ) : (
+          <FlatList
+            data={stations}
+            renderItem={renderStationItem}
+            keyExtractor={(item) => item.id.toString()}
+            contentContainerStyle={styles.stationsList}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                colors={[colors.primary]}
+              />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Ionicons
+                  name="business-outline"
+                  size={48}
+                  color={colors.gray400}
+                />
+                <Text
+                  style={[styles.emptyText, { color: colors.textSecondary }]}
+                >
+                  Không tìm thấy trạm cân nào
+                </Text>
+                <TouchableOpacity
+                  onPress={handleRefresh}
+                  style={styles.retryButton}
+                >
+                  <Text style={[styles.retryText, { color: colors.primary }]}>
+                    Thử lại
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            }
           />
-        </View>
+        )}
+      </View>
+
+      {/* ✅ FIXED: Button container moved outside content, fixed at bottom */}
+      <View
+        style={[styles.buttonContainer, { backgroundColor: colors.background }]}
+      >
+        <Button
+          title="Tiếp tục"
+          onPress={handleContinue}
+          loading={loading}
+          disabled={loading || !selectedStationId}
+          style={styles.continueButton}
+          fullWidth
+        />
       </View>
 
       {/* Loading overlay */}
@@ -363,13 +439,39 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   buttonContainer: {
-    paddingTop: 20, // ✅ Tăng padding top
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 24, // ✅ Extra padding for safe area
     borderTopWidth: 1,
     borderTopColor: "#E5E5E5",
-    marginTop: 8, // ✅ Thêm margin top
   },
   continueButton: {
     marginTop: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 15,
+    marginTop: 12,
+    textAlign: "center",
+  },
+  retryButton: {
+    marginTop: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  retryText: {
+    fontSize: 15,
+    fontWeight: "500",
   },
 });
 

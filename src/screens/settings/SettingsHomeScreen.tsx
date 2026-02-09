@@ -26,7 +26,7 @@ import { APP_VERSION, BUILD_NUMBER } from "@/constants/config";
 import ThemedView from "@components/common/ThemedView";
 
 const SettingsHomeScreen: React.FC = () => {
-  const { userInfo, logout } = useAuth();
+  const { userInfo, logout, logoutStationUser } = useAuth();
   const { colors, isDarkMode, toggleTheme } = useAppTheme();
   const {
     safeNavigate,
@@ -166,11 +166,7 @@ const SettingsHomeScreen: React.FC = () => {
           </Text>
         </View>
 
-        <Ionicons
-          name="chevron-forward"
-          size={16}
-          color={colors.gray500}
-        />
+        <Ionicons name="chevron-forward" size={16} color={colors.gray500} />
       </TouchableOpacity>
     );
   };
@@ -185,14 +181,24 @@ const SettingsHomeScreen: React.FC = () => {
     return (
       <View style={styles.switchItem}>
         <View style={styles.switchLeft}>
-          <View style={[styles.switchIcon, { backgroundColor: colors.primary + "15" }]}>
+          <View
+            style={[
+              styles.switchIcon,
+              { backgroundColor: colors.primary + "15" },
+            ]}
+          >
             <Ionicons name={icon as any} size={20} color={colors.primary} />
           </View>
           <View style={styles.switchContent}>
             <Text style={[styles.switchTitle, { color: colors.text }]}>
               {title}
             </Text>
-            <Text style={[styles.switchDescription, { color: colors.textSecondary }]}>
+            <Text
+              style={[
+                styles.switchDescription,
+                { color: colors.textSecondary },
+              ]}
+            >
               {description}
             </Text>
           </View>
@@ -240,12 +246,22 @@ const SettingsHomeScreen: React.FC = () => {
   };
 
   const handleLogout = () => {
-    Alert.alert("Đăng xuất", "Bạn có chắc chắn muốn đăng xuất?", [
+    Alert.alert("Đăng xuất", "Bạn muốn đăng xuất ở mức nào?", [
       { text: "Hủy", style: "cancel" },
       {
         text: "Đăng xuất",
+        onPress: () => {
+          logoutStationUser().catch((error) =>
+            console.error("Logout error:", error),
+          );
+        },
+      },
+      {
+        text: "Đăng xuất hoàn toàn",
         style: "destructive",
-        onPress: () => logout(),
+        onPress: () => {
+          logout().catch((error) => console.error("Logout error:", error));
+        },
       },
     ]);
   };
@@ -262,7 +278,12 @@ const SettingsHomeScreen: React.FC = () => {
         {/* Profile Card */}
         <Card style={styles.profileCard}>
           <View style={styles.profileSection}>
-            <View style={[styles.profileAvatar, { backgroundColor: colors.primary + "15" }]}>
+            <View
+              style={[
+                styles.profileAvatar,
+                { backgroundColor: colors.primary + "15" },
+              ]}
+            >
               <Ionicons name="person" size={40} color={colors.primary} />
             </View>
 
@@ -270,8 +291,12 @@ const SettingsHomeScreen: React.FC = () => {
               <Text style={[styles.profileName, { color: colors.text }]}>
                 {userInfo?.hoTen || "User"}
               </Text>
-              <Text style={[styles.profileRole, { color: colors.textSecondary }]}>
-                {userInfo?.vaiTro === "QUAN_TRI" ? "Quản trị viên" : "Nhân viên"}
+              <Text
+                style={[styles.profileRole, { color: colors.textSecondary }]}
+              >
+                {userInfo?.vaiTro === "QUAN_TRI"
+                  ? "Quản trị viên"
+                  : "Nhân viên"}
               </Text>
             </View>
           </View>
@@ -289,7 +314,9 @@ const SettingsHomeScreen: React.FC = () => {
             onPress={handleAccountSettings}
           >
             <View style={styles.accountButtonContent}>
-              <View style={[styles.devBadge, { backgroundColor: colors.warning }]}>
+              <View
+                style={[styles.devBadge, { backgroundColor: colors.warning }]}
+              >
                 <Text style={styles.devBadgeText}>DEV</Text>
               </View>
               <Ionicons
@@ -298,7 +325,9 @@ const SettingsHomeScreen: React.FC = () => {
                 color={colors.warning}
                 style={styles.accountButtonIcon}
               />
-              <Text style={[styles.accountButtonText, { color: colors.warning }]}>
+              <Text
+                style={[styles.accountButtonText, { color: colors.warning }]}
+              >
                 Quản lý tài khoản
               </Text>
             </View>
@@ -344,9 +373,7 @@ const SettingsHomeScreen: React.FC = () => {
         </Card>
 
         {/* Other Settings */}
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Khác
-        </Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Khác</Text>
         <Card style={styles.settingsCard}>
           <TouchableOpacity
             style={[
@@ -359,19 +386,34 @@ const SettingsHomeScreen: React.FC = () => {
             ]}
             onPress={handleHelp}
           >
-            <View style={[styles.settingIconContainer, { backgroundColor: colors.warning + "15" }]}>
-              <Ionicons name="help-circle-outline" size={24} color={colors.warning} />
+            <View
+              style={[
+                styles.settingIconContainer,
+                { backgroundColor: colors.warning + "15" },
+              ]}
+            >
+              <Ionicons
+                name="help-circle-outline"
+                size={24}
+                color={colors.warning}
+              />
             </View>
             <View style={styles.settingContent}>
               <View style={styles.titleRow}>
-                <Text style={[styles.settingTitle, { color: colors.text + "80" }]}>
+                <Text
+                  style={[styles.settingTitle, { color: colors.text + "80" }]}
+                >
                   Trợ giúp & Hỗ trợ
                 </Text>
-                <View style={[styles.devBadge, { backgroundColor: colors.warning }]}>
+                <View
+                  style={[styles.devBadge, { backgroundColor: colors.warning }]}
+                >
                   <Text style={styles.devBadgeText}>DEV</Text>
                 </View>
               </View>
-              <Text style={[styles.settingDescription, { color: colors.warning }]}>
+              <Text
+                style={[styles.settingDescription, { color: colors.warning }]}
+              >
                 Đang phát triển
               </Text>
             </View>
@@ -389,19 +431,34 @@ const SettingsHomeScreen: React.FC = () => {
             ]}
             onPress={handleTerms}
           >
-            <View style={[styles.settingIconContainer, { backgroundColor: colors.warning + "15" }]}>
-              <Ionicons name="document-text-outline" size={24} color={colors.warning} />
+            <View
+              style={[
+                styles.settingIconContainer,
+                { backgroundColor: colors.warning + "15" },
+              ]}
+            >
+              <Ionicons
+                name="document-text-outline"
+                size={24}
+                color={colors.warning}
+              />
             </View>
             <View style={styles.settingContent}>
               <View style={styles.titleRow}>
-                <Text style={[styles.settingTitle, { color: colors.text + "80" }]}>
+                <Text
+                  style={[styles.settingTitle, { color: colors.text + "80" }]}
+                >
                   Điều khoản & Quy định
                 </Text>
-                <View style={[styles.devBadge, { backgroundColor: colors.warning }]}>
+                <View
+                  style={[styles.devBadge, { backgroundColor: colors.warning }]}
+                >
                   <Text style={styles.devBadgeText}>DEV</Text>
                 </View>
               </View>
-              <Text style={[styles.settingDescription, { color: colors.warning }]}>
+              <Text
+                style={[styles.settingDescription, { color: colors.warning }]}
+              >
                 Đang phát triển
               </Text>
             </View>
@@ -419,19 +476,37 @@ const SettingsHomeScreen: React.FC = () => {
             ]}
             onPress={handleAppInfo}
           >
-            <View style={[styles.settingIconContainer, { backgroundColor: colors.warning + "15" }]}>
-              <Ionicons name="information-circle-outline" size={24} color={colors.warning} />
+            <View
+              style={[
+                styles.settingIconContainer,
+                { backgroundColor: colors.warning + "15" },
+              ]}
+            >
+              <Ionicons
+                name="information-circle-outline"
+                size={24}
+                color={colors.warning}
+              />
             </View>
             <View style={styles.settingContent}>
               <View style={styles.titleRow}>
-                <Text style={[styles.settingTitle, { color: colors.text + "80" }]}>
+                <Text
+                  style={[styles.settingTitle, { color: colors.text + "80" }]}
+                >
                   Thông tin ứng dụng
                 </Text>
-                <View style={[styles.devBadge, { backgroundColor: colors.warning }]}>
+                <View
+                  style={[styles.devBadge, { backgroundColor: colors.warning }]}
+                >
                   <Text style={styles.devBadgeText}>DEV</Text>
                 </View>
               </View>
-              <Text style={[styles.settingDescription, { color: colors.textSecondary + "80" }]}>
+              <Text
+                style={[
+                  styles.settingDescription,
+                  { color: colors.textSecondary + "80" },
+                ]}
+              >
                 Phiên bản {APP_VERSION} (Build {BUILD_NUMBER})
               </Text>
               <Text style={[styles.devStatus, { color: colors.warning }]}>
@@ -449,7 +524,9 @@ const SettingsHomeScreen: React.FC = () => {
             variant="outline"
             contentStyle={{ ...styles.logoutButton, borderColor: colors.error }}
             onPress={handleLogout}
-            icon={<Ionicons name="log-out-outline" size={18} color={colors.error} />}
+            icon={
+              <Ionicons name="log-out-outline" size={18} color={colors.error} />
+            }
             textStyle={{ color: colors.error }}
           />
         </View>

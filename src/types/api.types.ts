@@ -202,8 +202,8 @@ export interface KhachhangUpdate {
 // Số xe
 export interface Soxe {
   id: number;
-  soXe: string;        // API returns camelCase
-  trongLuong: number;  // API returns camelCase
+  soXe: string; // API returns camelCase
+  trongLuong: number; // API returns camelCase
 }
 
 export interface SoxeCreate {
@@ -241,6 +241,7 @@ export interface NhanvienUpdate {
   trangthai?: number;
   type?: number;
   nhomId?: number;
+  nvId: string;
 }
 
 export interface NhanvienWithPermissions extends Nhanvien {

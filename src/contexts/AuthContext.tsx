@@ -7,7 +7,6 @@ import React, {
   ReactNode,
 } from "react";
 import { Alert } from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import { authApi } from "@/api/auth";
 import { stationApi } from "@/api/station";
 import {
@@ -17,11 +16,36 @@ import {
   Nhanvien,
   LoginRequest,
   KhachHang,
+  TramCan,
 } from "@/types/api.types";
 
-// ✅ THAY ĐỔI: Updated context interface
+// Auth levels:
+// "none" - not logged in at all
+// "tenant" - logged in with maKhachHang/password, session token exists, but no station selected
+// "station" - station selected but station user not yet authenticated
+// "full" - fully authenticated (tenant + station + station user)
+export type AuthLevel = "none" | "tenant" | "station" | "full";
+
+export interface StationUserInfo {
+  nvId: string;
+  tenNV: string | null;
+  trangthai: number | null;
+  type: number | null;
+  nhomId: number | null;
+}
+
+export interface TenantSessionData {
+  sessionToken: string;
+  khachHang: KhachHang;
+  tramCans: TramCan[];
+}
+
+// ✅ Updated context interface
 export interface AuthContextType {
-  // New multi-tenant methods
+  // Auth level
+  authLevel: AuthLevel;
+
+  // Multi-tenant methods
   tenantLogin: (credentials: TenantLoginRequest) => Promise<{
     success: boolean;
     data?: {
@@ -32,6 +56,7 @@ export interface AuthContextType {
     };
   }>;
   selectStation: (sessionToken: string, tramCanId: number) => Promise<boolean>;
+  stationUserLogin: (nvId: string, password: string) => Promise<boolean>;
   switchStation: (tramCanId: number) => Promise<boolean>;
   getMyStations: () => Promise<any[]>;
 
@@ -40,10 +65,13 @@ export interface AuthContextType {
   isLoading: boolean;
   sessionToken: string | null;
   tenantInfo: TenantInfo | null;
+  tenantSessionData: TenantSessionData | null;
+  stationUserInfo: StationUserInfo | null;
 
-  // Legacy methods (for backward compatibility)
+  // Legacy methods
   login: (credentials: LoginRequest) => Promise<boolean>;
   logout: () => Promise<void>;
+  logoutStationUser: () => Promise<void>;
   userInfo: Nhanvien | null;
 
   // Session management
@@ -70,48 +98,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     userInfo: null,
   });
 
+  const [authLevel, setAuthLevel] = useState<AuthLevel>("none");
+  const [tenantSessionData, setTenantSessionData] =
+    useState<TenantSessionData | null>(null);
+  const [stationUserInfo, setStationUserInfo] =
+    useState<StationUserInfo | null>(null);
   const [showTokenExpiredModal, setShowTokenExpiredModal] = useState(false);
 
-  // ✅ THAY ĐỔI: Updated bootstrap logic
+  // Bootstrap: check existing session on app start
   useEffect(() => {
     const bootstrapAsync = async () => {
       try {
         setAuthState((prev) => ({ ...prev, isLoading: true }));
 
-        // Check for existing session
         const sessionToken = await authApi.getSessionToken();
-        const tenantInfo = await authApi.getTenantInfo();
 
-        if (sessionToken && tenantInfo) {
-          // Validate existing session
-          const isSessionValid = await authApi.validateToken();
-
-          if (isSessionValid) {
-            // ✅ FIXED: Access properties directly (.NET flattened format)
-            setAuthState({
-              isAuthenticated: true,
-              isLoading: false,
-              sessionToken,
-              tenantInfo,
-              userInfo: {
-                id: tenantInfo.selectedStation?.maTramCan || 0,
-                username: tenantInfo.selectedStation?.tenTramCan || "",
-              } as Nhanvien,
-            });
-          } else {
-            // Invalid session - clear and show expired modal
-            await authApi.logout();
-            setAuthState({
-              isAuthenticated: false,
-              isLoading: false,
-              sessionToken: null,
-              tenantInfo: null,
-              userInfo: null,
-            });
-            setShowTokenExpiredModal(true);
-          }
-        } else {
-          // No existing session
+        if (!sessionToken) {
+          // No session at all
+          setAuthLevel("none");
           setAuthState({
             isAuthenticated: false,
             isLoading: false,
@@ -119,9 +123,98 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             tenantInfo: null,
             userInfo: null,
           });
+          return;
         }
-      } catch (error) {
-        console.error("Bootstrap error:", error);
+
+        // Validate the session (could be temp or full)
+        const validationResult = await authApi.validateAnySession(sessionToken);
+
+        if (!validationResult.success || !validationResult.data) {
+          // Session invalid - clear everything
+          await authApi.logout();
+          setAuthLevel("none");
+          setAuthState({
+            isAuthenticated: false,
+            isLoading: false,
+            sessionToken: null,
+            tenantInfo: null,
+            userInfo: null,
+          });
+          return;
+        }
+
+        const sessionData = validationResult.data;
+
+        if (sessionData.sessionType === "temp") {
+          // Temp session: tenant logged in, no station selected yet
+          // User should see StationSelection screen
+          setAuthLevel("tenant");
+          setTenantSessionData({
+            sessionToken: sessionData.sessionToken,
+            khachHang: {
+              maKhachHang: sessionData.maKhachHang,
+              tenKhachHang: sessionData.tenKhachHang,
+            },
+            tramCans: [], // Will be loaded by StationSelection screen
+          });
+          setAuthState({
+            isAuthenticated: false,
+            isLoading: false,
+            sessionToken: sessionData.sessionToken,
+            tenantInfo: null,
+            userInfo: null,
+          });
+          return;
+        }
+
+        if (sessionData.sessionType === "full") {
+          // Full session: station selected
+          const tenantInfo = await authApi.getTenantInfo();
+          const savedStationUser = await authApi.getStationUserInfo();
+
+          if (tenantInfo && savedStationUser) {
+            // Full auth: tenant + station + station user
+            setAuthLevel("full");
+            setStationUserInfo(savedStationUser);
+            setAuthState({
+              isAuthenticated: true,
+              isLoading: false,
+              sessionToken: sessionData.sessionToken,
+              tenantInfo,
+              userInfo: {
+                id: tenantInfo.selectedStation?.maTramCan || 0,
+                username: tenantInfo.selectedStation?.tenTramCan || "",
+                hoTen: savedStationUser.tenNV,
+              } as Nhanvien,
+            });
+          } else if (tenantInfo) {
+            // Station selected but no station user login yet
+            setAuthLevel("station");
+            setAuthState({
+              isAuthenticated: false,
+              isLoading: false,
+              sessionToken: sessionData.sessionToken,
+              tenantInfo,
+              userInfo: null,
+            });
+          } else {
+            // Something wrong, clear
+            await authApi.logout();
+            setAuthLevel("none");
+            setAuthState({
+              isAuthenticated: false,
+              isLoading: false,
+              sessionToken: null,
+              tenantInfo: null,
+              userInfo: null,
+            });
+          }
+          return;
+        }
+
+        // Unknown session type
+        await authApi.logout();
+        setAuthLevel("none");
         setAuthState({
           isAuthenticated: false,
           isLoading: false,
@@ -129,19 +222,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           tenantInfo: null,
           userInfo: null,
         });
-        setShowTokenExpiredModal(true);
+      } catch (error) {
+        console.error("Bootstrap error:", error);
+        setAuthLevel("none");
+        setAuthState({
+          isAuthenticated: false,
+          isLoading: false,
+          sessionToken: null,
+          tenantInfo: null,
+          userInfo: null,
+        });
       }
     };
 
     bootstrapAsync();
   }, []);
 
-  // ✅ NEW: Tenant login (step 1)
+  // Step 1: Tenant login
   const tenantLogin = async (credentials: TenantLoginRequest) => {
     try {
       const response = await authApi.tenantLogin(credentials);
 
       if (response.success) {
+        setAuthLevel("tenant");
+        setTenantSessionData({
+          sessionToken: response.data.sessionToken,
+          khachHang: {
+            maKhachHang: response.data.maKhachHang,
+            tenKhachHang: response.data.tenKhachHang,
+          },
+          tramCans: response.data.tramCans,
+        });
+        setAuthState((prev) => ({
+          ...prev,
+          sessionToken: response.data.sessionToken,
+        }));
+
         return {
           success: true,
           data: response.data,
@@ -155,41 +271,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // ✅ NEW: Station selection (step 2)
+  // Step 2: Station selection
   const selectStation = async (
     sessionToken: string,
     tramCanId: number,
-    isActivated: boolean = false, // ← NEW: Optional parameter
+    isActivated: boolean = false,
   ): Promise<boolean> => {
     try {
       const response = await authApi.selectStation({
         sessionToken,
         tramCanId,
-        isActivated, // ← Pass isActivated to API
+        isActivated,
       });
 
       if (response.success) {
-        // ✅ UPDATED: Include kháchHang info from response
         const newTenantInfo: TenantInfo = {
           selectedStation: response.data.selectedStation,
           khachHang: response.data.khachHang,
           dbConfig: response.data.dbConfig,
         };
 
-        // ✅ Lưu tenant info vào AsyncStorage
         await authApi.saveTenantInfo(newTenantInfo);
 
+        // After station selection, move to "station" level (need station user login)
+        setAuthLevel("station");
         setAuthState({
-          isAuthenticated: true,
+          isAuthenticated: false,
           isLoading: false,
           sessionToken: response.data.sessionToken,
           tenantInfo: newTenantInfo,
-          userInfo: {
-            id: response.data.selectedStation?.maTramCan || 0,
-            username: response.data.selectedStation?.tenTramCan || "",
-            // ✅ Store kháchHang info in userInfo if needed
-            hoTen: response.data.khachHang?.tenKhachHang,
-          } as Nhanvien,
+          userInfo: null,
         });
 
         return true;
@@ -201,10 +312,51 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // ✅ LEGACY: Backward compatibility login
+  // Step 3: Station user login
+  const stationUserLogin = async (
+    nvId: string,
+    password: string,
+  ): Promise<boolean> => {
+    try {
+      const currentToken = authState.sessionToken;
+      if (!currentToken) {
+        console.error("No session token for station user login");
+        return false;
+      }
+
+      const response = await authApi.stationUserLogin(
+        currentToken,
+        nvId,
+        password,
+      );
+
+      if (response.success && response.data) {
+        const userInfo: StationUserInfo = response.data.stationUser;
+        setStationUserInfo(userInfo);
+        setAuthLevel("full");
+        setAuthState((prev) => ({
+          ...prev,
+          isAuthenticated: true,
+          sessionToken: response.data.sessionToken,
+          userInfo: {
+            id: 0,
+            username: userInfo.nvId,
+            hoTen: userInfo.tenNV,
+          } as Nhanvien,
+        }));
+
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Station user login error:", error);
+      return false;
+    }
+  };
+
+  // Legacy login
   const login = async (credentials: LoginRequest): Promise<boolean> => {
     try {
-      // Convert old login to new tenant login
       const tenantCredentials: TenantLoginRequest = {
         maKhachHang: credentials.username,
         password: credentials.password,
@@ -213,16 +365,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const loginResult = await tenantLogin(tenantCredentials);
 
       if (loginResult.success && loginResult.data) {
-        // If only one station, auto-select it
         if (loginResult.data.tramCans.length === 1) {
           return await selectStation(
             loginResult.data.sessionToken,
             loginResult.data.tramCans[0].id,
           );
         } else {
-          // Multiple stations - need to navigate to selection screen
-          // This will be handled by the LoginScreen component
-          return false; // Return false to indicate additional step needed
+          return false;
         }
       }
       return false;
@@ -232,20 +381,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // ✅ UPDATED: Logout
+  // Full logout (clear everything)
   const logout = async (): Promise<void> => {
     try {
       await authApi.logout();
-      setAuthState({
-        isAuthenticated: false,
-        isLoading: false,
-        sessionToken: null,
-        tenantInfo: null,
-        userInfo: null,
-      });
     } catch (error) {
       console.error("Logout error:", error);
-      // Even if API call fails, clear local state
+    } finally {
+      setAuthLevel("none");
+      setTenantSessionData(null);
+      setStationUserInfo(null);
       setAuthState({
         isAuthenticated: false,
         isLoading: false,
@@ -256,7 +401,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // ✅ NEW: Session validation
+  // Logout only station user (go back to station user login)
+  const logoutStationUser = async (): Promise<void> => {
+    try {
+      await authApi.logoutStationUser();
+    } catch (error) {
+      console.error("Station user logout error:", error);
+    } finally {
+      setStationUserInfo(null);
+      // Go back to station level (station user login screen)
+      setAuthLevel("station");
+      setAuthState((prev) => ({
+        ...prev,
+        isAuthenticated: false,
+        userInfo: null,
+      }));
+    }
+  };
+
+  // Session validation
   const validateSession = async (): Promise<boolean> => {
     try {
       return await authApi.validateToken();
@@ -266,9 +429,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // ✅ NEW: Handle token expired
+  // Handle token expired
   const handleTokenExpired = () => {
     setShowTokenExpiredModal(true);
+    setAuthLevel("none");
+    setTenantSessionData(null);
+    setStationUserInfo(null);
     setAuthState({
       isAuthenticated: false,
       isLoading: false,
@@ -279,30 +445,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     authApi.logout();
   };
 
-  // ✅ NEW: Station switching
+  // Station switching
   const switchStation = async (tramCanId: number): Promise<boolean> => {
     try {
       const response = await stationApi.switchStation(tramCanId);
 
       if (response.success) {
-        // ✅ FIXED: Update auth state with correct structure
         const newTenantInfo: TenantInfo = {
           selectedStation: response.data.selectedStation,
           khachHang: response.data.khachHang,
         };
 
-        // ✅ Lưu tenant info vào AsyncStorage
         await authApi.saveTenantInfo(newTenantInfo);
 
+        // After switching station, need to re-login as station user
+        setStationUserInfo(null);
+        setAuthLevel("station");
         setAuthState((prev) => ({
           ...prev,
+          isAuthenticated: false,
           sessionToken: response.data.sessionToken,
           tenantInfo: newTenantInfo,
-          userInfo: {
-            ...prev.userInfo,
-            id: response.data.selectedStation?.id || 0,
-            username: response.data.selectedStation?.tenTramCan || "",
-          } as Nhanvien,
+          userInfo: null,
         }));
 
         return true;
@@ -314,7 +478,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // ✅ NEW: Get station list
+  // Get station list
   const getMyStations = async () => {
     try {
       const response = await stationApi.getMyStations();
@@ -327,43 +491,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const contextValue = React.useMemo<AuthContextType>(
     () => ({
-      // New multi-tenant methods
+      authLevel,
       tenantLogin,
       selectStation,
+      stationUserLogin,
       switchStation,
       getMyStations,
-
-      // State
       isAuthenticated: authState.isAuthenticated,
       isLoading: authState.isLoading,
       sessionToken: authState.sessionToken,
       tenantInfo: authState.tenantInfo,
-
-      // Legacy methods
+      tenantSessionData,
+      stationUserInfo,
       login,
       logout,
+      logoutStationUser,
       userInfo: authState.userInfo,
-
-      // Session management
       validateSession,
       handleTokenExpired,
       showTokenExpiredModal,
       hideTokenExpiredModal: () => setShowTokenExpiredModal(false),
     }),
     [
-      tenantLogin,
-      selectStation,
-      switchStation,
-      getMyStations,
+      authLevel,
       authState.isAuthenticated,
       authState.isLoading,
       authState.sessionToken,
       authState.tenantInfo,
-      login,
-      logout,
       authState.userInfo,
-      validateSession,
-      handleTokenExpired,
+      tenantSessionData,
+      stationUserInfo,
       showTokenExpiredModal,
     ],
   );

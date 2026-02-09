@@ -72,24 +72,6 @@ api.interceptors.response.use(
   async (error) => {
     console.error(error);
 
-    // ✅ KEY POINT: Handle session expired (401)
-    if (error.response?.status === 401) {
-      console.log("🔐 Session expired, clearing local storage...");
-
-      try {
-        // Clear session data
-        await AsyncStorage.removeItem("session_token");
-        await AsyncStorage.removeItem("tenant_info");
-
-        // // Call global handler if available
-        // if (typeof global !== "undefined" && global.handleSessionExpired) {
-        //   global.handleSessionExpired();
-        // }
-      } catch (clearError) {
-        console.error("❌ Error clearing session data:", clearError);
-      }
-    }
-
     // Handle tenant connection errors
     if (error.response?.data?.errorCode === "DB_CONNECTION_FAILED") {
       console.error("🏢 Tenant database connection failed");

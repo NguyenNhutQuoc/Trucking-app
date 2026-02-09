@@ -14,6 +14,7 @@ import { customerApi } from "@/api/customer";
 import Input from "@/components/common/Input";
 import Button from "@/components/common/Button";
 import Loading from "@/components/common/Loading";
+import ResultModal, { ResultModalType } from "@/components/common/ResultModal";
 import colors from "@/constants/colors";
 import { Khachhang, KhachhangCreate, KhachhangUpdate } from "@/types/api.types";
 import { formatPhoneNumber } from "@/utils/formatters";
@@ -42,6 +43,16 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // ✅ NEW: Result Modal state
+  const [resultModalVisible, setResultModalVisible] = useState(false);
+  const [resultModalMessage, setResultModalMessage] = useState("");
+  const [resultModalType, setResultModalType] =
+    useState<ResultModalType>("success");
+  const [resultModalTitle, setResultModalTitle] = useState("");
+  const [pendingResponse, setPendingResponse] = useState<Khachhang | null>(
+    null,
+  );
 
   useEffect(() => {
     if (company && editMode) {
@@ -97,26 +108,29 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
       let response;
 
       if (editMode && company) {
-        const updateData: KhachhangUpdate = {
-          ma: formData.ma !== company.ma ? formData.ma : undefined,
-          ten: formData.ten !== company.ten ? formData.ten : undefined,
-          diachi:
-            formData.diachi !== company.diachi ? formData.diachi : undefined,
-          dienthoai:
-            formData.dienthoai !== company.dienthoai
-              ? formData.dienthoai
-              : undefined,
-        };
+        // Only include fields that have actually changed
+        const updateData: KhachhangUpdate = {};
 
-        // Only include fields that have changed
-        const hasChanges = Object.values(updateData).some(
-          (value) => value !== undefined,
-        );
+        if (formData.ma !== company.ma) {
+          updateData.ma = formData.ma;
+        }
+        if (formData.ten !== company.ten) {
+          updateData.ten = formData.ten;
+        }
+        if (formData.diachi !== company.diachi) {
+          updateData.diachi = formData.diachi;
+        }
+        if (formData.dienthoai !== company.dienthoai) {
+          updateData.dienthoai = formData.dienthoai;
+        }
 
-        if (!hasChanges) {
+        // Check if there are any changes
+        if (Object.keys(updateData).length === 0) {
           Alert.alert("Thông báo", "Không có thay đổi nào để cập nhật");
           return;
         }
+
+        console.log("Update data:", updateData);
 
         response = await customerApi.updateCustomer(company.id, updateData);
       } else {
@@ -125,23 +139,19 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
         );
       }
 
-      if (response.success) {
-        Alert.alert(
-          "Thành công",
-          editMode
-            ? "Cập nhật thông tin Khách Hàng thành công"
-            : "Tạo Khách Hàng mới thành công",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                if (onSubmitSuccess) {
-                  onSubmitSuccess(response.data);
-                }
-              },
-            },
-          ],
+      if (response) {
+        // ✅ UPDATED: Use ResultModal instead of Alert
+        setResultModalTitle(
+          editMode ? "Cập nhật thành công" : "Thêm mới thành công",
         );
+        setResultModalMessage(
+          editMode
+            ? `Thông tin Khách Hàng "${formData.ten}" đã được cập nhật thành công`
+            : `Khách Hàng "${formData.ten}" đã được tạo thành công`,
+        );
+        setResultModalType(editMode ? "warning" : "success");
+        setPendingResponse(response);
+        setResultModalVisible(true);
       } else {
         Alert.alert("Lỗi", "Có lỗi xảy ra khi lưu thông tin Khách Hàng");
       }
@@ -157,6 +167,14 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
     // Remove non-numeric characters
     const phoneNumber = text.replace(/\D/g, "");
     return phoneNumber;
+  };
+
+  // ✅ NEW: Handle result modal close
+  const handleResultModalClose = () => {
+    setResultModalVisible(false);
+    if (pendingResponse && onSubmitSuccess) {
+      onSubmitSuccess(pendingResponse);
+    }
   };
 
   return (
@@ -242,6 +260,15 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
         loading={loading}
         overlay
         message={editMode ? "Đang cập nhật..." : "Đang tạo..."}
+      />
+
+      {/* ✅ NEW: Result Modal */}
+      <ResultModal
+        visible={resultModalVisible}
+        onClose={handleResultModalClose}
+        type={resultModalType}
+        title={resultModalTitle}
+        message={resultModalMessage}
       />
     </KeyboardAvoidingView>
   );

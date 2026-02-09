@@ -48,7 +48,10 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
     }
   }, [vehicle, editMode]);
 
-  const handleInputChange = (key: keyof (SoxeCreate & SoxeUpdate), value: string | number) => {
+  const handleInputChange = (
+    key: keyof (SoxeCreate & SoxeUpdate),
+    value: string | number,
+  ) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
 
     // Clear error for this field if exists
@@ -87,20 +90,18 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
       let response;
 
       if (editMode && vehicle) {
-        const updateData: SoxeUpdate = {
-          soXe: formData.soXe !== vehicle.soXe ? formData.soXe : undefined,
-          trongLuong:
-            formData.trongLuong !== vehicle.trongLuong
-              ? formData.trongLuong
-              : undefined,
-        };
+        // Only include fields that have actually changed
+        const updateData: SoxeUpdate = {};
 
-        // Only include fields that have changed
-        const hasChanges = Object.values(updateData).some(
-          (value) => value !== undefined,
-        );
+        if (formData.soXe !== vehicle.soXe) {
+          updateData.soXe = formData.soXe;
+        }
+        if (formData.trongLuong !== vehicle.trongLuong) {
+          updateData.trongLuong = formData.trongLuong;
+        }
 
-        if (!hasChanges) {
+        // Check if there are any changes
+        if (Object.keys(updateData).length === 0) {
           Alert.alert("Thông báo", "Không có thay đổi nào để cập nhật");
           return;
         }
@@ -110,7 +111,7 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
         response = await vehicleApi.createVehicle(formData as SoxeCreate);
       }
 
-      if (response.success) {
+      if (response) {
         Alert.alert(
           "Thành công",
           editMode
@@ -121,7 +122,7 @@ const VehicleForm: React.FC<VehicleFormProps> = ({
               text: "OK",
               onPress: () => {
                 if (onSubmitSuccess) {
-                  onSubmitSuccess(response.data);
+                  onSubmitSuccess(response);
                 }
               },
             },

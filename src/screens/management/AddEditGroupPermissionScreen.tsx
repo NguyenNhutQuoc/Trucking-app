@@ -103,7 +103,7 @@ const AddPermissionGroupScreen: React.FC = () => {
         response = await permissionApi.createGroup(createData);
       }
 
-      if (response.success) {
+      if (response) {
         Alert.alert(
           "Thành công",
           editMode
@@ -117,10 +117,7 @@ const AddPermissionGroupScreen: React.FC = () => {
           ],
         );
       } else {
-        Alert.alert(
-          "Lỗi",
-          response.message || "Có lỗi xảy ra khi lưu thông tin nhóm quyền",
-        );
+        Alert.alert("Lỗi", "Có lỗi xảy ra khi lưu thông tin nhóm quyền");
       }
     } catch (error) {
       console.error("Save permission group error:", error);

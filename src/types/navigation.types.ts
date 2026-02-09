@@ -26,6 +26,7 @@ export type AuthStackParamList = {
     };
     tramCans: TramCan[];
   };
+  StationUserLogin: undefined;
 };
 
 // Tab Navigation

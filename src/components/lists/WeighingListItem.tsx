@@ -20,16 +20,13 @@ const WeighingListItem: React.FC<WeighingListItemProps> = ({
   onCompletePress,
 }) => {
   const isCompleted = !!weighing.ngaycan2;
-  const isCancelled = weighing.uploadStatus === 1;
 
   const getStatusColor = () => {
-    if (isCancelled) return colors.error;
     if (isCompleted) return colors.success;
     return colors.warning;
   };
 
   const getStatusText = () => {
-    if (isCancelled) return "Hủy";
     if (isCompleted) return "Hoàn thành";
     return "Đang chờ";
   };
@@ -106,7 +103,7 @@ const WeighingListItem: React.FC<WeighingListItemProps> = ({
         <Text style={styles.customerName}>{weighing.khachhang}</Text>
       </View>
 
-      {!isCompleted && !isCancelled && onCompletePress && (
+      {!isCompleted && onCompletePress && (
         <TouchableOpacity
           style={styles.completeButton}
           onPress={() => onCompletePress(weighing.stt)}

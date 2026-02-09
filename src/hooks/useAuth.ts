@@ -6,11 +6,20 @@ import {
   TenantInfo,
   Nhanvien,
 } from "@/types/api.types";
-import { AuthContext, AuthContextType } from "@/contexts/AuthContext";
+import {
+  AuthContext,
+  AuthContextType,
+  AuthLevel,
+  StationUserInfo,
+  TenantSessionData,
+} from "@/contexts/AuthContext";
 
-// ✅ THAY ĐỔI: Updated hook interface
+// ✅ Updated hook interface with auth levels
 interface UseAuthReturn {
-  // New multi-tenant methods
+  // Auth level
+  authLevel: AuthLevel;
+
+  // Multi-tenant methods
   tenantLogin: (credentials: TenantLoginRequest) => Promise<{
     success: boolean;
     data?: {
@@ -25,6 +34,7 @@ interface UseAuthReturn {
     tramCanId: number,
     isActivated?: boolean,
   ) => Promise<boolean>;
+  stationUserLogin: (nvId: string, password: string) => Promise<boolean>;
   switchStation: (tramCanId: number) => Promise<boolean>;
   getMyStations: () => Promise<any[]>;
 
@@ -33,10 +43,13 @@ interface UseAuthReturn {
   isLoading: boolean;
   sessionToken: string | null;
   tenantInfo: TenantInfo | null;
+  tenantSessionData: TenantSessionData | null;
+  stationUserInfo: StationUserInfo | null;
 
   // Legacy methods (for backward compatibility)
   login: (credentials: LoginRequest) => Promise<boolean>;
   logout: () => Promise<void>;
+  logoutStationUser: () => Promise<void>;
   userInfo: Nhanvien | null;
 
   // Session management
@@ -45,7 +58,7 @@ interface UseAuthReturn {
   showTokenExpiredModal: boolean;
   hideTokenExpiredModal: () => void;
 
-  // ✅ NEW: Helper methods
+  // Helper methods
   getTenantDisplayName: () => string;
   getStationDisplayName: () => string;
   isSessionValid: () => Promise<boolean>;
@@ -58,7 +71,7 @@ export const useAuth = (): UseAuthReturn => {
     throw new Error("useAuth must be used within an AuthProvider");
   }
 
-  // ✅ NEW: Helper methods
+  // Helper methods
   const getTenantDisplayName = (): string => {
     return context.tenantInfo?.khachHang?.tenKhachHang || "N/A";
   };
@@ -78,9 +91,13 @@ export const useAuth = (): UseAuthReturn => {
   };
 
   return {
+    // Auth level
+    authLevel: context.authLevel,
+
     // Multi-tenant methods
     tenantLogin: context.tenantLogin,
     selectStation: context.selectStation,
+    stationUserLogin: context.stationUserLogin,
     switchStation: context.switchStation,
     getMyStations: context.getMyStations,
 
@@ -89,10 +106,13 @@ export const useAuth = (): UseAuthReturn => {
     isLoading: context.isLoading,
     sessionToken: context.sessionToken,
     tenantInfo: context.tenantInfo,
+    tenantSessionData: context.tenantSessionData,
+    stationUserInfo: context.stationUserInfo,
 
     // Legacy methods
     login: context.login,
     logout: context.logout,
+    logoutStationUser: context.logoutStationUser,
     userInfo: context.userInfo,
 
     // Session management

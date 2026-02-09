@@ -1,6 +1,6 @@
 // src/constants/config.ts - Updated with dark mode support
 // API configuration
-export const API_URL = "http://192.168.1.3:5075/api/v1"; // Development server
+export const API_URL = "http://192.168.1.49:5075/api/v1"; // Development server
 // export const API_URL = 'https://api.example.com/api'; // Production server
 console.log("API URL:", API_URL);
 // App configuration

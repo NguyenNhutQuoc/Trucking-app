@@ -20,6 +20,7 @@ import Button from "@/components/common/Button";
 import Loading from "@/components/common/Loading";
 import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
+import ResultModal, { ResultModalType } from "@/components/common/ResultModal";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { ManagementStackParamList } from "@/types/navigation.types";
 import { NhanvienCreate, NhanvienUpdate, NhomQuyen } from "@/types/api.types";
@@ -46,6 +47,30 @@ const AddUserScreen: React.FC = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // ✅ NEW: Result Modal state
+  const [resultModalVisible, setResultModalVisible] = useState(false);
+  const [resultModalMessage, setResultModalMessage] = useState("");
+  const [resultModalType, setResultModalType] =
+    useState<ResultModalType>("success");
+  const [resultModalTitle, setResultModalTitle] = useState("");
+
+  // ✅ NEW: Show result modal and navigate back when closed
+  const showResultModalAndGoBack = (
+    title: string,
+    message: string,
+    type: ResultModalType,
+  ) => {
+    setResultModalTitle(title);
+    setResultModalMessage(message);
+    setResultModalType(type);
+    setResultModalVisible(true);
+  };
+
+  const handleResultModalClose = () => {
+    setResultModalVisible(false);
+    navigation.goBack();
+  };
+
   useEffect(() => {
     loadGroups();
     if (editMode && user) {
@@ -64,18 +89,26 @@ const AddUserScreen: React.FC = () => {
   const loadGroups = async () => {
     try {
       setLoading(true);
-      const response = await permissionApi.getAllGroups();
-      if (response.success) {
-        setGroups(response.data);
+      const response = await permissionApi.getGroups({
+        page: 1,
+        pageSize: 100,
+      });
+      if (response) {
+        setGroups(response.items);
       } else {
-        Alert.alert(
+        showResultModalAndGoBack(
           "Lỗi",
-          response.message || "Không thể tải danh sách nhóm quyền",
+          "Không thể tải danh sách nhóm quyền",
+          "error",
         );
       }
     } catch (error) {
       console.error("Load groups error:", error);
-      Alert.alert("Lỗi", "Có lỗi xảy ra khi tải danh sách nhóm quyền");
+      showResultModalAndGoBack(
+        "Lỗi",
+        "Có lỗi xảy ra khi tải danh sách nhóm quyền",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -142,6 +175,7 @@ const AddUserScreen: React.FC = () => {
           trangthai: formData.trangthai,
           type: formData.type,
           nhomId: formData.nhomId,
+          nvId: formData.nvId,
         };
 
         // Only include password if provided
@@ -149,19 +183,21 @@ const AddUserScreen: React.FC = () => {
           updateData.matkhau = formData.matkhau;
         }
 
+        console.log("updateData", updateData);
         const response = await userApi.updateUser(user.nvId, updateData);
 
-        if (response.success) {
-          Alert.alert("Thành công", "Cập nhật người dùng thành công", [
-            {
-              text: "OK",
-              onPress: () => navigation.goBack(),
-            },
-          ]);
+        if (response) {
+          // ✅ UPDATED: Use ResultModal with yellow gradient for edit
+          showResultModalAndGoBack(
+            "Cập nhật thành công",
+            `Người dùng "${formData.tenNV}" đã được cập nhật thành công`,
+            "warning",
+          );
         } else {
-          Alert.alert(
+          showResultModalAndGoBack(
             "Lỗi",
-            response.message || "Có lỗi xảy ra khi cập nhật người dùng",
+            "Có lỗi xảy ra khi cập nhật người dùng",
+            "error",
           );
         }
       } else {
@@ -177,23 +213,28 @@ const AddUserScreen: React.FC = () => {
 
         const response = await userApi.createUser(createData);
 
-        if (response.success) {
-          Alert.alert("Thành công", "Tạo người dùng mới thành công", [
-            {
-              text: "OK",
-              onPress: () => navigation.goBack(),
-            },
-          ]);
+        if (response) {
+          // ✅ UPDATED: Use ResultModal with green gradient for create
+          showResultModalAndGoBack(
+            "Thêm mới thành công",
+            `Người dùng "${formData.tenNV}" đã được tạo thành công`,
+            "success",
+          );
         } else {
-          Alert.alert(
+          showResultModalAndGoBack(
             "Lỗi",
-            response.message || "Có lỗi xảy ra khi tạo người dùng mới",
+            "Có lỗi xảy ra khi tạo người dùng mới",
+            "error",
           );
         }
       }
     } catch (error) {
       console.error("Save user error:", error);
-      Alert.alert("Lỗi", "Có lỗi xảy ra khi lưu thông tin người dùng");
+      showResultModalAndGoBack(
+        "Lỗi",
+        "Có lỗi xảy ra khi lưu thông tin người dùng",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -424,43 +465,6 @@ const AddUserScreen: React.FC = () => {
               <TouchableOpacity
                 style={[
                   styles.switchOption,
-                  formData.trangthai === 0 && {
-                    backgroundColor: colors.primary + "15",
-                  },
-                ]}
-                onPress={() => handleInputChange("trangthai", 0)}
-              >
-                <Ionicons
-                  name={
-                    formData.trangthai === 0
-                      ? "radio-button-on"
-                      : "radio-button-off"
-                  }
-                  size={20}
-                  color={
-                    formData.trangthai === 0 ? colors.primary : colors.gray500
-                  }
-                />
-                <ThemedText
-                  style={[
-                    styles.switchOptionText,
-                    formData.trangthai === 0
-                      ? {
-                          fontWeight: "600",
-                          color: colors.primary,
-                        }
-                      : {
-                          color: colors.text,
-                        },
-                  ]}
-                >
-                  Hoạt động
-                </ThemedText>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.switchOption,
                   formData.trangthai === 1 && {
                     backgroundColor: colors.primary + "15",
                   },
@@ -482,6 +486,43 @@ const AddUserScreen: React.FC = () => {
                   style={[
                     styles.switchOptionText,
                     formData.trangthai === 1
+                      ? {
+                          fontWeight: "600",
+                          color: colors.primary,
+                        }
+                      : {
+                          color: colors.text,
+                        },
+                  ]}
+                >
+                  Hoạt động
+                </ThemedText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.switchOption,
+                  formData.trangthai === 0 && {
+                    backgroundColor: colors.primary + "15",
+                  },
+                ]}
+                onPress={() => handleInputChange("trangthai", 0)}
+              >
+                <Ionicons
+                  name={
+                    formData.trangthai === 0
+                      ? "radio-button-on"
+                      : "radio-button-off"
+                  }
+                  size={20}
+                  color={
+                    formData.trangthai === 0 ? colors.primary : colors.gray500
+                  }
+                />
+                <ThemedText
+                  style={[
+                    styles.switchOptionText,
+                    formData.trangthai === 0
                       ? {
                           fontWeight: "600",
                           color: colors.primary,
@@ -516,6 +557,15 @@ const AddUserScreen: React.FC = () => {
       </KeyboardAvoidingView>
 
       <Loading loading={loading} />
+
+      {/* ✅ NEW: Result Modal notification */}
+      <ResultModal
+        visible={resultModalVisible}
+        onClose={handleResultModalClose}
+        type={resultModalType}
+        title={resultModalTitle}
+        message={resultModalMessage}
+      />
     </ThemedView>
   );
 };

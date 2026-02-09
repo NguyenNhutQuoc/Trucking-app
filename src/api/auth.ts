@@ -317,11 +317,129 @@ export const authApi = {
       // Clear local storage
       await AsyncStorage.removeItem("session_token");
       await AsyncStorage.removeItem("tenant_info");
+      await AsyncStorage.removeItem("station_user_info");
 
       console.log("🧹 Local session cleared");
     } catch (error) {
       console.error("❌ Logout error:", error);
       throw error;
+    }
+  },
+
+  /**
+   * Logout chỉ khỏi station user (giữ lại tenant session)
+   */
+  logoutStationUser: async (): Promise<void> => {
+    try {
+      console.log("🚪 Logging out station user...");
+      await AsyncStorage.removeItem("station_user_info");
+      await AsyncStorage.removeItem("tenant_info");
+      // Keep session_token so user stays at station selection
+      console.log("🧹 Station user session cleared");
+    } catch (error) {
+      console.error("❌ Station user logout error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * ✅ NEW: Đăng nhập user trạm cân (Bước 3)
+   */
+  stationUserLogin: async (
+    sessionToken: string,
+    nvId: string,
+    password: string,
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      sessionToken: string;
+      stationUser: {
+        nvId: string;
+        tenNV: string | null;
+        trangthai: number | null;
+        type: number | null;
+        nhomId: number | null;
+      };
+      tenTramCan: string;
+    };
+  }> => {
+    try {
+      console.log("🔐 Station user login:", nvId);
+
+      const response = await api.post("/auth/station-user-login", {
+        sessionToken,
+        nvId,
+        password,
+      });
+
+      if (response.data.success) {
+        console.log("✅ Station user login successful");
+        // Save station user info
+        await AsyncStorage.setItem(
+          "station_user_info",
+          JSON.stringify(response.data.data.stationUser),
+        );
+      }
+
+      return response.data;
+    } catch (error: any) {
+      console.error("❌ Station user login error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * ✅ NEW: Validate bất kỳ session nào (temp hoặc full)
+   */
+  validateAnySession: async (
+    sessionToken: string,
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      sessionType: string;
+      sessionToken: string;
+      khachHangId: number;
+      maKhachHang: string;
+      tenKhachHang: string;
+      tramCanId: number | null;
+      tenTramCan: string | null;
+      dbConfig: string | null;
+    };
+  }> => {
+    try {
+      console.log("🔍 Validating any session...");
+
+      const response = await api.post("/auth/validate-any-session", {
+        sessionToken,
+      });
+
+      console.log(
+        "✅ Any session validation:",
+        response.data.data?.sessionType,
+      );
+      return response.data;
+    } catch (error) {
+      console.error("❌ Validate any session error:", error);
+      return {
+        success: false,
+        message: "Session validation failed",
+        data: null as any,
+      };
+    }
+  },
+
+  /**
+   * ✅ NEW: Lấy thông tin station user từ storage
+   */
+  getStationUserInfo: async (): Promise<any | null> => {
+    try {
+      const info = await AsyncStorage.getItem("station_user_info");
+      return info ? JSON.parse(info) : null;
+    } catch (error) {
+      console.error("❌ Get station user info error:", error);
+      return null;
     }
   },
 

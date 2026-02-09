@@ -39,7 +39,7 @@ interface MenuItem {
 }
 
 const SlideMenu: React.FC<SlideMenuProps> = ({ visible, onClose }) => {
-  const { userInfo, logout } = useAuth();
+  const { userInfo, logout, logoutStationUser } = useAuth();
   const { colors, isDarkMode, toggleTheme } = useAppTheme();
   const {
     safeNavigate,
@@ -84,14 +84,23 @@ const SlideMenu: React.FC<SlideMenuProps> = ({ visible, onClose }) => {
   }, [visible]);
 
   const handleLogout = () => {
-    Alert.alert("Đăng xuất", "Bạn có chắc chắn muốn đăng xuất?", [
+    Alert.alert("Đăng xuất", "Bạn muốn đăng xuất ở mức nào?", [
       { text: "Hủy", style: "cancel" },
       {
         text: "Đăng xuất",
+        onPress: () => {
+          onClose();
+          logoutStationUser().catch((error) =>
+            console.error("Logout error:", error),
+          );
+        },
+      },
+      {
+        text: "Đăng xuất hoàn toàn",
         style: "destructive",
         onPress: () => {
           onClose();
-          logout();
+          logout().catch((error) => console.error("Logout error:", error));
         },
       },
     ]);
@@ -288,9 +297,7 @@ const SlideMenu: React.FC<SlideMenuProps> = ({ visible, onClose }) => {
           animationType="none"
           onRequestClose={onClose}
         >
-          <Animated.View
-            style={[styles.overlay, { opacity: overlayOpacity }]}
-          >
+          <Animated.View style={[styles.overlay, { opacity: overlayOpacity }]}>
             <TouchableOpacity
               style={styles.overlayTouchable}
               activeOpacity={1}
@@ -301,16 +308,30 @@ const SlideMenu: React.FC<SlideMenuProps> = ({ visible, onClose }) => {
           <Animated.View
             style={[
               styles.menu,
-              { backgroundColor: colors.surface, transform: [{ translateX: slideAnim }] },
+              {
+                backgroundColor: colors.surface,
+                transform: [{ translateX: slideAnim }],
+              },
             ]}
           >
             <SafeAreaView style={styles.menuContainer}>
               {/* ✅ FIXED: Improved header spacing and alignment */}
               <View
-                style={[styles.menuHeader, { backgroundColor: colors.primary, borderBottomColor: colors.gray200 }]}
+                style={[
+                  styles.menuHeader,
+                  {
+                    backgroundColor: colors.primary,
+                    borderBottomColor: colors.gray200,
+                  },
+                ]}
               >
                 <View style={styles.userInfo}>
-                  <View style={[styles.avatar, { backgroundColor: colors.primaryLight }]}>
+                  <View
+                    style={[
+                      styles.avatar,
+                      { backgroundColor: colors.primaryLight },
+                    ]}
+                  >
                     <Ionicons name="person" size={24} color="white" />
                   </View>
                   <View style={styles.userDetails}>
@@ -318,7 +339,9 @@ const SlideMenu: React.FC<SlideMenuProps> = ({ visible, onClose }) => {
                       {userInfo?.hoTen || "Người dùng"}
                     </Text>
                     <Text style={styles.userRole}>
-                      {userInfo?.vaiTro === "QUAN_TRI" ? "Quản trị viên" : "Nhân viên"}
+                      {userInfo?.vaiTro === "QUAN_TRI"
+                        ? "Quản trị viên"
+                        : "Nhân viên"}
                     </Text>
                   </View>
                 </View>

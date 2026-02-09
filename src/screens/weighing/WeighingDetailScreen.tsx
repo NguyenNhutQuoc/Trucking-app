@@ -19,6 +19,7 @@ import Button from "@/components/common/Button";
 import Loading from "@/components/common/Loading";
 import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
+import ResultModal, { ResultModalType } from "@/components/common/ResultModal";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { formatDate, formatTime, formatWeight } from "@/utils/formatters";
 import { RootStackParamList } from "@/types/navigation.types";
@@ -33,8 +34,37 @@ const WeighingDetailScreen: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
 
+  // ✅ NEW: Result Modal state
+  const [resultModalVisible, setResultModalVisible] = useState(false);
+  const [resultModalMessage, setResultModalMessage] = useState("");
+  const [resultModalType, setResultModalType] =
+    useState<ResultModalType>("success");
+  const [resultModalTitle, setResultModalTitle] = useState("");
+  const [resultModalCallback, setResultModalCallback] = useState<
+    (() => void) | null
+  >(null);
+
+  const showResultModal = (
+    title: string,
+    message: string,
+    type: ResultModalType,
+    callback?: () => void,
+  ) => {
+    setResultModalTitle(title);
+    setResultModalMessage(message);
+    setResultModalType(type);
+    setResultModalCallback(() => callback || null);
+    setResultModalVisible(true);
+  };
+
+  const handleResultModalClose = () => {
+    setResultModalVisible(false);
+    if (resultModalCallback) {
+      resultModalCallback();
+    }
+  };
+
   const isCompleted = !!weighing.ngaycan2;
-  const isCancelled = weighing.uploadStatus === 1;
 
   // Calculate net weight if completed
   const netWeight = isCompleted
@@ -42,13 +72,11 @@ const WeighingDetailScreen: React.FC = () => {
     : null;
 
   const getStatusColor = () => {
-    if (isCancelled) return colors.error;
     if (isCompleted) return colors.success;
     return colors.warning;
   };
 
   const getStatusText = () => {
-    if (isCancelled) return "Đã hủy";
     if (isCompleted) return "Hoàn thành";
     return "Đang chờ";
   };
@@ -81,13 +109,15 @@ const WeighingDetailScreen: React.FC = () => {
             setLoading(true);
             const reason = "Hủy bởi người dùng";
             await weighingApi.cancelWeighing(weighing.stt, { reason });
-            Alert.alert("Thành công", "Đã hủy phiếu cân");
-            navigation.goBack();
+            showResultModal("Thành công", "Đã hủy phiếu cân", "success", () =>
+              navigation.goBack(),
+            );
           } catch (error) {
             console.error("Cancel weighing error:", error);
-            Alert.alert(
+            showResultModal(
               "Lỗi",
               "Không thể hủy phiếu cân. Vui lòng thử lại sau.",
+              "error",
             );
           } finally {
             setLoading(false);
@@ -98,7 +128,11 @@ const WeighingDetailScreen: React.FC = () => {
   };
 
   const handlePrintReceipt = () => {
-    Alert.alert("In phiếu", "Chức năng đang được phát triển");
+    showResultModal(
+      "Thông báo",
+      "Chức năng in phiếu đang được phát triển",
+      "info",
+    );
   };
 
   const handleShareWeighing = async () => {
@@ -275,7 +309,7 @@ const WeighingDetailScreen: React.FC = () => {
         )}
 
         <View style={styles.actionsContainer}>
-          {!isCompleted && !isCancelled && (
+          {!isCompleted && (
             <Button
               title="Hoàn tất cân"
               variant="success"
@@ -292,18 +326,16 @@ const WeighingDetailScreen: React.FC = () => {
             />
           )}
 
-          {!isCancelled && (
-            <Button
-              title="Sửa phiếu"
-              variant="primary"
-              onPress={handleEditWeighing}
-              icon={<Ionicons name="create-outline" size={20} color="white" />}
-              contentStyle={styles.actionButton}
-              fullWidth
-            />
-          )}
+          <Button
+            title="Sửa phiếu"
+            variant="primary"
+            onPress={handleEditWeighing}
+            icon={<Ionicons name="create-outline" size={20} color="white" />}
+            contentStyle={styles.actionButton}
+            fullWidth
+          />
 
-          {isCompleted && !isCancelled && (
+          {isCompleted && (
             <Button
               title="In phiếu"
               variant="secondary"
@@ -316,20 +348,27 @@ const WeighingDetailScreen: React.FC = () => {
             />
           )}
 
-          {!isCancelled && (
-            <Button
-              title="Hủy phiếu"
-              variant="error"
-              onPress={handleCancelWeighing}
-              icon={<Ionicons name="trash-outline" size={20} color="white" />}
-              contentStyle={styles.actionButton}
-              fullWidth
-            />
-          )}
+          <Button
+            title="Hủy phiếu"
+            variant="error"
+            onPress={handleCancelWeighing}
+            icon={<Ionicons name="trash-outline" size={20} color="white" />}
+            contentStyle={styles.actionButton}
+            fullWidth
+          />
         </View>
       </ScrollView>
 
       <Loading loading={loading} overlay message="Đang xử lý..." />
+
+      {/* ✅ NEW: Result Modal */}
+      <ResultModal
+        visible={resultModalVisible}
+        onClose={handleResultModalClose}
+        type={resultModalType}
+        title={resultModalTitle}
+        message={resultModalMessage}
+      />
     </ThemedView>
   );
 };

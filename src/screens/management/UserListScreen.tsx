@@ -19,6 +19,8 @@ import Loading from "@/components/common/Loading";
 import Button from "@/components/common/Button";
 import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
+import UnderDevelopmentModal from "@/components/common/UnderDevelopmentModal";
+import ResultModal, { ResultModalType } from "@/components/common/ResultModal";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"; // ✅ NEW
 import LoadMoreButton from "@/components/common/LoadMoreButton"; // ✅ NEW
@@ -50,6 +52,26 @@ const UserListScreen: React.FC = () => {
 
   const [filteredUsers, setFilteredUsers] = useState<Nhanvien[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // ✅ NEW: Modal and Result Modal state
+  const [showDevModal, setShowDevModal] = useState(false);
+  const [resultModalVisible, setResultModalVisible] = useState(false);
+  const [resultModalMessage, setResultModalMessage] = useState("");
+  const [resultModalType, setResultModalType] =
+    useState<ResultModalType>("success");
+  const [resultModalTitle, setResultModalTitle] = useState("");
+
+  // ✅ NEW: Show result modal helper
+  const showResultModal = (
+    title: string,
+    message: string,
+    type: ResultModalType,
+  ) => {
+    setResultModalTitle(title);
+    setResultModalMessage(message);
+    setResultModalType(type);
+    setResultModalVisible(true);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -89,14 +111,19 @@ const UserListScreen: React.FC = () => {
     navigation.navigate("AddUser", { user });
   };
 
-  const handleViewPermissions = (user: NhanvienWithPermissions) => {
-    navigation.navigate("UserPermissions", { user });
+  // ✅ UPDATED: Show under development modal instead of navigating
+  const handleViewPermissions = (_user: NhanvienWithPermissions) => {
+    setShowDevModal(true);
   };
 
   const handleDeleteUser = (user: Nhanvien) => {
     // Không cho phép xóa tài khoản admin
     if (user.type === 1) {
-      Alert.alert("Thông báo", "Không thể xóa tài khoản quản trị viên");
+      showResultModal(
+        "Thông báo",
+        "Không thể xóa tài khoản quản trị viên",
+        "info",
+      );
       return;
     }
 
@@ -110,19 +137,20 @@ const UserListScreen: React.FC = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              const response = await userApi.deleteUser(user.nvId);
-              if (response.success) {
-                Alert.alert("Thành công", "Xóa người dùng thành công");
-                refresh();
-              } else {
-                Alert.alert(
-                  "Lỗi",
-                  response.message || "Không thể xóa người dùng",
-                );
-              }
+              await userApi.deleteUser(user.nvId);
+              showResultModal(
+                "Đã xóa",
+                `Người dùng "${user.tenNV}" đã được xóa thành công`,
+                "error",
+              );
+              refresh();
             } catch (error) {
               console.error("Delete user error:", error);
-              Alert.alert("Lỗi", "Có lỗi xảy ra khi xóa người dùng");
+              showResultModal(
+                "Lỗi",
+                "Có lỗi xảy ra khi xóa người dùng",
+                "error",
+              );
             }
           },
         },
@@ -356,6 +384,22 @@ const UserListScreen: React.FC = () => {
       </View>
 
       <Loading loading={loading && !isRefreshing} />
+
+      {/* ✅ NEW: Under Development Modal */}
+      <UnderDevelopmentModal
+        visible={showDevModal}
+        onClose={() => setShowDevModal(false)}
+        featureName="Quản lý quyền người dùng"
+      />
+
+      {/* ✅ NEW: Result Modal for delete success */}
+      <ResultModal
+        visible={resultModalVisible}
+        onClose={() => setResultModalVisible(false)}
+        type={resultModalType}
+        title={resultModalTitle}
+        message={resultModalMessage}
+      />
     </ThemedView>
   );
 };

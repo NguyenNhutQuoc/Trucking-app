@@ -20,6 +20,7 @@ import Button from "@/components/common/Button";
 import Loading from "@/components/common/Loading";
 import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
+import ResultModal, { ResultModalType } from "@/components/common/ResultModal";
 import { formatDate, formatTime } from "@/utils/formatters";
 import { WeighingStackParamList } from "@/types/navigation.types";
 import { Phieucan, PhieucanComplete } from "@/types/api.types";
@@ -43,6 +44,36 @@ const CompleteWeighingScreen: React.FC = () => {
   const [weight, setWeight] = useState<string>("");
   const [error, setError] = useState<string>("");
 
+  // ✅ NEW: Result Modal state
+  const [resultModalVisible, setResultModalVisible] = useState(false);
+  const [resultModalMessage, setResultModalMessage] = useState("");
+  const [resultModalType, setResultModalType] =
+    useState<ResultModalType>("success");
+  const [resultModalTitle, setResultModalTitle] = useState("");
+  const [resultModalCallback, setResultModalCallback] = useState<
+    (() => void) | null
+  >(null);
+
+  const showResultModal = (
+    title: string,
+    message: string,
+    type: ResultModalType,
+    callback?: () => void,
+  ) => {
+    setResultModalTitle(title);
+    setResultModalMessage(message);
+    setResultModalType(type);
+    setResultModalCallback(() => callback || null);
+    setResultModalVisible(true);
+  };
+
+  const handleResultModalClose = () => {
+    setResultModalVisible(false);
+    if (resultModalCallback) {
+      resultModalCallback();
+    }
+  };
+
   useEffect(() => {
     loadWeighingData();
   }, []);
@@ -54,13 +85,18 @@ const CompleteWeighingScreen: React.FC = () => {
       if (response.success) {
         setWeighing(response.data);
       } else {
-        Alert.alert("Lỗi", "Không thể tải thông tin phiếu cân");
-        navigation.goBack();
+        showResultModal(
+          "Lỗi",
+          "Không thể tải thông tin phiếu cân",
+          "error",
+          () => navigation.goBack(),
+        );
       }
     } catch (error) {
       console.error("Load weighing error:", error);
-      Alert.alert("Lỗi", "Không thể tải thông tin phiếu cân");
-      navigation.goBack();
+      showResultModal("Lỗi", "Không thể tải thông tin phiếu cân", "error", () =>
+        navigation.goBack(),
+      );
     } finally {
       setLoading(false);
     }
@@ -119,11 +155,11 @@ const CompleteWeighingScreen: React.FC = () => {
           },
         ]);
       } else {
-        Alert.alert("Lỗi", "Có lỗi xảy ra khi hoàn thành cân");
+        showResultModal("Lỗi", "Có lỗi xảy ra khi hoàn thành cân", "error");
       }
     } catch (error) {
       console.error("Complete weighing error:", error);
-      Alert.alert("Lỗi", "Có lỗi xảy ra khi hoàn thành cân");
+      showResultModal("Lỗi", "Có lỗi xảy ra khi hoàn thành cân", "error");
     } finally {
       setSubmitting(false);
     }
@@ -261,6 +297,15 @@ const CompleteWeighingScreen: React.FC = () => {
       </ScrollView>
 
       <Loading loading={submitting} overlay message="Đang xử lý..." />
+
+      {/* ✅ NEW: Result Modal */}
+      <ResultModal
+        visible={resultModalVisible}
+        onClose={handleResultModalClose}
+        type={resultModalType}
+        title={resultModalTitle}
+        message={resultModalMessage}
+      />
     </ThemedView>
   );
 };

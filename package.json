@@ -21,7 +21,7 @@
     "axios": "^1.9.0",
     "babel-plugin-module-resolver": "^5.0.2",
     "date-fns": "^4.1.0",
-    "expo": "~53.0.25",
+    "expo": "~53.0.27",
     "expo-asset": "~11.1.7",
     "expo-camera": "~16.1.11",
     "expo-constants": "~17.1.8",
@@ -33,6 +33,7 @@
     "react-native": "0.79.6",
     "react-native-chart-kit": "^6.12.0",
     "react-native-gesture-handler": "~2.24.0",
+    "react-native-pager-view": "6.7.1",
     "react-native-safe-area-context": "^5.4.0",
     "react-native-screens": "~4.11.1",
     "react-native-svg": "15.11.2",
@@ -51,5 +52,14 @@
     "prettier": "^3.5.3",
     "typescript": "~5.8.3"
   },
-  "private": true
+  "private": true,
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "react-native-chart-kit"
+        ]
+      }
+    }
+  }
 }

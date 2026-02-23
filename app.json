@@ -21,7 +21,6 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#5C7CFA"
       },
-      "usesCleartextTraffic": true,
       "edgeToEdgeEnabled": true,
       "package": "com.yourcompany.truckweighingapp",
       "versionCode": 1,

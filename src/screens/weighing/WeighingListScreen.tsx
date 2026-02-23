@@ -825,13 +825,6 @@ const WeighingListScreen: React.FC = () => {
                     ? "Không tìm thấy kết quả phù hợp"
                     : "Không có phiếu cân nào"}
                 </ThemedText>
-                <Button
-                  title="Tạo phiếu cân mới"
-                  onPress={handleNewWeighing}
-                  variant="primary"
-                  size="small"
-                  contentStyle={styles.emptyButton}
-                />
               </View>
             }
             ListFooterComponent={

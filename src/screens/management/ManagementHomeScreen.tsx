@@ -65,36 +65,36 @@ const ManagementHomeScreen: React.FC = () => {
       description:
         "Quản lý tài khoản người dùng hệ thống đang được phát triển. Bao gồm tạo, sửa, xóa và phân quyền người dùng.",
     },
-    {
-      id: "permissions",
-      title: "Phân quyền",
-      icon: "lock-closed-outline",
-      color: colors.chartRed,
-      screen: "PermissionList",
-      development: true,
-      description:
-        "Hệ thống phân quyền chi tiết đang được xây dựng. Cho phép thiết lập quyền truy cập theo từng chức năng và module.",
-    },
-    {
-      id: "backups",
-      title: "Sao lưu & Phục hồi",
-      icon: "cloud-upload-outline",
-      color: colors.chartCyan,
-      screen: "BackupRestore",
-      development: true,
-      description:
-        "Tính năng sao lưu tự động và phục hồi dữ liệu đang được phát triển. Hỗ trợ backup theo lịch và cloud storage.",
-    },
-    {
-      id: "system",
-      title: "Cấu hình hệ thống",
-      icon: "settings-outline",
-      color: colors.chartTeal,
-      screen: "SystemConfig",
-      development: true,
-      description:
-        "Module cấu hình hệ thống tổng thể đang được hoàn thiện. Bao gồm cài đặt máy in, thiết bị cân và tham số hệ thống.",
-    },
+    // {
+    //   id: "permissions",
+    //   title: "Phân quyền",
+    //   icon: "lock-closed-outline",
+    //   color: colors.chartRed,
+    //   screen: "PermissionList",
+    //   development: true,
+    //   description:
+    //     "Hệ thống phân quyền chi tiết đang được xây dựng. Cho phép thiết lập quyền truy cập theo từng chức năng và module.",
+    // },
+    // {
+    //   id: "backups",
+    //   title: "Sao lưu & Phục hồi",
+    //   icon: "cloud-upload-outline",
+    //   color: colors.chartCyan,
+    //   screen: "BackupRestore",
+    //   development: true,
+    //   description:
+    //     "Tính năng sao lưu tự động và phục hồi dữ liệu đang được phát triển. Hỗ trợ backup theo lịch và cloud storage.",
+    // },
+    // {
+    //   id: "system",
+    //   title: "Cấu hình hệ thống",
+    //   icon: "settings-outline",
+    //   color: colors.chartTeal,
+    //   screen: "SystemConfig",
+    //   development: true,
+    //   description:
+    //     "Module cấu hình hệ thống tổng thể đang được hoàn thiện. Bao gồm cài đặt máy in, thiết bị cân và tham số hệ thống.",
+    // },
     {
       id: "reports",
       title: "Báo cáo quản trị",
@@ -104,19 +104,19 @@ const ManagementHomeScreen: React.FC = () => {
       description:
         "Báo cáo dành cho quản trị viên đang được phát triển. Thống kê hoạt động người dùng, hiệu suất hệ thống và audit logs.",
     },
-    {
-      id: "maintenance",
-      title: "Bảo trì hệ thống",
-      icon: "construct-outline",
-      color: colors.warning,
-      screen: "SystemMaintenance",
-      development: true,
-      description:
-        "Công cụ bảo trì và kiểm tra sức khỏe hệ thống đang được xây dựng. Bao gồm cleanup data, optimize performance.",
-    },
+    // {
+    //   id: "maintenance",
+    //   title: "Bảo trì hệ thống",
+    //   icon: "construct-outline",
+    //   color: colors.warning,
+    //   screen: "SystemMaintenance",
+    //   development: true,
+    //   description:
+    //     "Công cụ bảo trì và kiểm tra sức khỏe hệ thống đang được xây dựng. Bao gồm cleanup data, optimize performance.",
+    // },
   ];
 
-  const handleMenuPress = (item: (typeof menuItems)[0]) => {
+  const handleMenuPress = (item: any) => {
     if (item.development) {
       showModalVersion(item.title, item.description);
     } else {
@@ -124,7 +124,7 @@ const ManagementHomeScreen: React.FC = () => {
     }
   };
 
-  const renderMenuItem = (item: (typeof menuItems)[0], index: number) => {
+  const renderMenuItem = (item: any, index: number) => {
     const isDevelopment = item.development;
 
     return (
@@ -251,12 +251,12 @@ const ManagementHomeScreen: React.FC = () => {
       </ScrollView>
 
       {/* Under Development Modal */}
-      <UnderDevelopmentModal
+      {/* <UnderDevelopmentModal
         visible={showModal}
         onClose={closeModal}
         featureName={currentFeature}
         message={currentMessage}
-      />
+      /> */}
     </ThemedView>
   );
 };

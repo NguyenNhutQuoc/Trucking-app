@@ -301,7 +301,7 @@ const SettingsHomeScreen: React.FC = () => {
             </View>
           </View>
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={[
               styles.accountButton,
               {
@@ -331,16 +331,16 @@ const SettingsHomeScreen: React.FC = () => {
                 Quản lý tài khoản
               </Text>
             </View>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </Card>
 
         {/* App Settings */}
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+        {/* <Text style={[styles.sectionTitle, { color: colors.text }]}>
           Cài đặt ứng dụng
         </Text>
         <Card style={styles.settingsCard}>
           {settingItems.map(renderSettingItem)}
-        </Card>
+        </Card> */}
 
         {/* Quick Settings */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -373,7 +373,7 @@ const SettingsHomeScreen: React.FC = () => {
         </Card>
 
         {/* Other Settings */}
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Khác</Text>
+        {/* <Text style={[styles.sectionTitle, { color: colors.text }]}>Khác</Text>
         <Card style={styles.settingsCard}>
           <TouchableOpacity
             style={[
@@ -515,7 +515,7 @@ const SettingsHomeScreen: React.FC = () => {
             </View>
             <Ionicons name="chevron-forward" size={16} color={colors.gray500} />
           </TouchableOpacity>
-        </Card>
+        </Card> */}
 
         {/* Logout Button */}
         <View style={styles.logoutButtonContainer}>
@@ -532,12 +532,12 @@ const SettingsHomeScreen: React.FC = () => {
         </View>
       </ScrollView>
 
-      <UnderDevelopmentModal
+      {/* <UnderDevelopmentModal
         visible={showModal}
         onClose={closeModal}
         featureName={currentFeature}
         message={currentMessage}
-      />
+      /> */}
     </ThemedView>
   );
 };

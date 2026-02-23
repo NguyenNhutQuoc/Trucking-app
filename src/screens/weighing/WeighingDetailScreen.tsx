@@ -326,15 +326,6 @@ const WeighingDetailScreen: React.FC = () => {
             />
           )}
 
-          <Button
-            title="Sửa phiếu"
-            variant="primary"
-            onPress={handleEditWeighing}
-            icon={<Ionicons name="create-outline" size={20} color="white" />}
-            contentStyle={styles.actionButton}
-            fullWidth
-          />
-
           {isCompleted && (
             <Button
               title="In phiếu"
@@ -347,15 +338,6 @@ const WeighingDetailScreen: React.FC = () => {
               fullWidth
             />
           )}
-
-          <Button
-            title="Hủy phiếu"
-            variant="error"
-            onPress={handleCancelWeighing}
-            icon={<Ionicons name="trash-outline" size={20} color="white" />}
-            contentStyle={styles.actionButton}
-            fullWidth
-          />
         </View>
       </ScrollView>
 

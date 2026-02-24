@@ -1,7 +1,19 @@
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 // src/screens/auth/StationUserLoginScreen.tsx
 import React, { useState, useEffect, useRef } from "react";
-import { View, StyleSheet, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert, Animated, Dimensions, TextInput } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Alert,
+  Animated,
+  Dimensions,
+  TextInput,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 
@@ -87,7 +99,7 @@ const StationUserLoginScreen: React.FC = () => {
           "Tên đăng nhập hoặc mật khẩu không đúng.\nVui lòng thử lại.",
         );
       }
-      // If success, AuthContext will handle navigation
+      // Navigation handled by InitialLayout in app/_layout.tsx
     } catch (error: any) {
       console.error("Station user login error:", error);
       const message =
@@ -120,7 +132,10 @@ const StationUserLoginScreen: React.FC = () => {
 
   return (
     <View
-      style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}
+      style={[
+        styles.safeArea,
+        { backgroundColor: colors.background, paddingTop: insets.top },
+      ]}
     >
       <StatusBar style={isDarkMode ? "light" : "dark"} />
 

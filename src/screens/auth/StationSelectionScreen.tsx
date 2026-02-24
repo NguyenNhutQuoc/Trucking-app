@@ -1,9 +1,18 @@
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 // src/screens/auth/StationSelectionScreen.tsx
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, Text, TouchableOpacity, FlatList, Alert, RefreshControl, Platform } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  Alert,
+  RefreshControl,
+  Platform,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -11,38 +20,25 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { stationApi, TramCan } from "@/api/station";
 import Button from "@/components/common/Button";
 import Loading from "@/components/common/Loading";
+import { useNavigationStore } from "@/store/navigationStore";
 
-interface StationSelectionScreenProps {
-  route?: {
-    params?: {
-      sessionToken: string;
-      khachHang: {
-        maKhachHang: string;
-        tenKhachHang: string;
-      };
-      tramCans: TramCan[];
-    };
-  };
-}
-
-const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
-  route,
-}) => {
-  const navigation = useNavigation();
+const StationSelectionScreen: React.FC = () => {
+  const router = useRouter();
   const { selectStation, tenantSessionData, authLevel, logout } = useAuth();
   const { colors, isDarkMode } = useAppTheme();
   const insets = useSafeAreaInsets();
+  const { stationSelectionData } = useNavigationStore();
 
-  // Get data from route params OR from auth context (for app reopen)
+  // Get data from navigation store OR from auth context (for app reopen)
   const sessionToken =
-    route?.params?.sessionToken || tenantSessionData?.sessionToken || "";
-  const khachHang = route?.params?.khachHang ||
+    stationSelectionData?.sessionToken || tenantSessionData?.sessionToken || "";
+  const khachHang = stationSelectionData?.khachHang ||
     tenantSessionData?.khachHang || {
       maKhachHang: "",
       tenKhachHang: "N/A",
     };
   const initialStations =
-    route?.params?.tramCans || tenantSessionData?.tramCans || [];
+    stationSelectionData?.tramCans || tenantSessionData?.tramCans || [];
 
   const [selectedStationId, setSelectedStationId] = useState<number | null>(
     null,
@@ -86,7 +82,7 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
             text: "OK",
             onPress: () => {
               if (authLevel === "none") {
-                navigation.navigate("Login" as never);
+                router.replace("/(auth)/login");
               } else {
                 logout();
               }
@@ -95,7 +91,7 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
         ],
       );
     }
-  }, [sessionToken, navigation]);
+  }, [sessionToken]);
 
   // Auto-select if only 1 station
   useEffect(() => {
@@ -132,10 +128,11 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
       setLoading(true);
       const success = await selectStation(sessionToken, selectedStationId);
 
-      if (!success) {
+      if (success) {
+        router.replace("/(auth)/station-user-login");
+      } else {
         Alert.alert("Lỗi", "Không thể chọn trạm cân. Vui lòng thử lại.");
       }
-      // Navigation will be handled by AuthContext → authLevel changes to "station"
     } catch (error) {
       console.error("Station selection error:", error);
       Alert.alert("Lỗi", "Có lỗi xảy ra khi chọn trạm cân. Vui lòng thử lại.");
@@ -158,7 +155,7 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
         },
       ]);
     } else {
-      navigation.goBack();
+      router.back();
     }
   };
 
@@ -215,13 +212,16 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
   );
 
   return (
-    <View
-      style={[styles.safeArea, { backgroundColor: colors.background }]}
-    >
+    <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar style={isDarkMode ? "light" : "dark"} />
 
       {/* ✅ FIXED: Header with proper spacing from status bar */}
-      <View style={[styles.header, { backgroundColor: colors.surface, paddingTop: insets.top + 16 }]}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: colors.surface, paddingTop: insets.top + 16 },
+        ]}
+      >
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -301,7 +301,13 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
 
       {/* ✅ FIXED: Button container moved outside content, fixed at bottom */}
       <View
-        style={[styles.buttonContainer, { backgroundColor: colors.background, paddingBottom: Math.max(insets.bottom + 16, 24) }]}
+        style={[
+          styles.buttonContainer,
+          {
+            backgroundColor: colors.background,
+            paddingBottom: Math.max(insets.bottom + 16, 24),
+          },
+        ]}
       >
         <Button
           title="Tiếp tục"

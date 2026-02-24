@@ -10,7 +10,7 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router";
 import { LineChart } from "react-native-chart-kit";
 
 import { vehicleApi } from "@/api/vehicle";
@@ -26,16 +26,13 @@ import ThemedText from "@/components/common/ThemedText";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { formatWeight } from "@/utils/formatters";
 import { Soxe } from "@/types/api.types";
-import { ReportsStackScreenProps } from "@/types/navigation.types";
 import { spacing } from "@/styles/spacing";
 
-type NavigationProp = ReportsStackScreenProps<"VehicleReports">["navigation"];
 type ViewMode = "list" | "grid" | "table";
 
 const screenWidth = Dimensions.get("window").width;
 
 const VehicleReportsScreen: React.FC = () => {
-  const navigation = useNavigation<NavigationProp>();
   const { colors, isDarkMode } = useAppTheme();
 
   const [loading, setLoading] = useState(true);

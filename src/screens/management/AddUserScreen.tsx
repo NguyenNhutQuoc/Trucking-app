@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 
 import { userApi } from "@/api/user";
 import { permissionApi } from "@/api/permission";
@@ -22,16 +22,13 @@ import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
 import ResultModal, { ResultModalType } from "@/components/common/ResultModal";
 import { useAppTheme } from "@/hooks/useAppTheme";
-import { ManagementStackParamList } from "@/types/navigation.types";
 import { NhanvienCreate, NhanvienUpdate, NhomQuyen } from "@/types/api.types";
-
-type AddUserScreenRouteProp = RouteProp<ManagementStackParamList, "AddUser">;
+import { useNavigationStore } from "@/store/navigationStore";
 
 const AddUserScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const route = useRoute<AddUserScreenRouteProp>();
+  const router = useRouter();
   const { colors } = useAppTheme();
-  const { user } = route.params || {};
+  const { selectedUser: user } = useNavigationStore();
   const editMode = !!user;
 
   const [loading, setLoading] = useState(false);
@@ -68,7 +65,7 @@ const AddUserScreen: React.FC = () => {
 
   const handleResultModalClose = () => {
     setResultModalVisible(false);
-    navigation.goBack();
+    router.back();
   };
 
   useEffect(() => {
@@ -542,7 +539,7 @@ const AddUserScreen: React.FC = () => {
             <Button
               title="Hủy"
               variant="outline"
-              onPress={() => navigation.goBack()}
+              onPress={() => router.back()}
               contentStyle={styles.cancelButton}
             />
 

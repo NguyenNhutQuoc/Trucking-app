@@ -12,7 +12,7 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import spacing from "@/styles/spacing";
@@ -47,7 +47,7 @@ const Header: React.FC<HeaderProps> = ({
   backgroundColor,
   transparent = false,
 }) => {
-  const navigation = useNavigation();
+  const router = useRouter();
   const { colors, isDarkMode } = useAppTheme();
   const insets = useSafeAreaInsets();
 
@@ -55,7 +55,7 @@ const Header: React.FC<HeaderProps> = ({
     if (onBackPress) {
       onBackPress();
     } else {
-      navigation.goBack();
+      router.back();
     }
   };
 

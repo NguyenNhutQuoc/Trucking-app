@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, FlatList, Alert, Switch, TouchableOpacity } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 
 import { permissionApi } from "@/api/permission";
 import Header from "@/components/common/Header";
@@ -12,17 +12,11 @@ import Loading from "@/components/common/Loading";
 import Button from "@/components/common/Button";
 import colors from "@/constants/colors";
 import { Form, NhomQuyen } from "@/types/api.types";
-import { ManagementStackParamList } from "@/types/navigation.types";
-
-type GroupPermissionsRouteProp = RouteProp<
-  ManagementStackParamList,
-  "GroupPermissions"
->;
+import { useNavigationStore } from "@/store/navigationStore";
 
 const GroupPermissionsScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const route = useRoute<GroupPermissionsRouteProp>();
-  const { group } = route.params;
+  const router = useRouter();
+  const { selectedPermissionGroup: group } = useNavigationStore();
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -39,6 +33,7 @@ const GroupPermissionsScreen: React.FC = () => {
   }, []);
 
   const loadData = async () => {
+    if (!group) return;
     try {
       setLoading(true);
 
@@ -106,6 +101,7 @@ const GroupPermissionsScreen: React.FC = () => {
   };
 
   const handleSavePermissions = async () => {
+    if (!group) return;
     try {
       setSubmitting(true);
 
@@ -118,7 +114,7 @@ const GroupPermissionsScreen: React.FC = () => {
       Alert.alert("Thành công", "Cập nhật quyền nhóm thành công", [
         {
           text: "OK",
-          onPress: () => navigation.goBack(),
+          onPress: () => router.back(),
         },
       ]);
     } catch (error) {
@@ -143,7 +139,7 @@ const GroupPermissionsScreen: React.FC = () => {
           onValueChange={() => handleTogglePermission(item.formId)}
           trackColor={{ false: colors.gray300, true: colors.primary + "70" }}
           thumbColor={hasPermission ? colors.primary : colors.gray100}
-          disabled={group.ma === "admin"} // Admin always has all permissions
+          disabled={isAdmin} // Admin always has all permissions
         />
       </View>
     );
@@ -173,6 +169,10 @@ const GroupPermissionsScreen: React.FC = () => {
       </View>
     );
   };
+
+  if (!group) {
+    return null;
+  }
 
   // Nếu nhóm là admin, thông báo không thể sửa quyền
   const isAdmin = group.ma === "admin";
@@ -240,7 +240,7 @@ const GroupPermissionsScreen: React.FC = () => {
             <Button
               title="Hủy"
               variant="outline"
-              onPress={() => navigation.goBack()}
+              onPress={() => router.back()}
               contentStyle={styles.cancelButton}
             />
             <Button

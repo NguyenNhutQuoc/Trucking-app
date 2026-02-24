@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, Switch } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 
 import { userApi } from "@/api/user";
 import { permissionApi } from "@/api/permission";
@@ -13,17 +13,11 @@ import Loading from "@/components/common/Loading";
 import Button from "@/components/common/Button";
 import colors from "@/constants/colors";
 import { Form, Nhanvien, Quyen } from "@/types/api.types";
-import { ManagementStackParamList } from "@/types/navigation.types";
-
-type UserPermissionsRouteProp = RouteProp<
-  ManagementStackParamList,
-  "UserPermissions"
->;
+import { useNavigationStore } from "@/store/navigationStore";
 
 const UserPermissionsScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const route = useRoute<UserPermissionsRouteProp>();
-  const { user } = route.params;
+  const router = useRouter();
+  const { selectedUser: user } = useNavigationStore();
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -39,6 +33,7 @@ const UserPermissionsScreen: React.FC = () => {
   }, []);
 
   const loadData = async () => {
+    if (!user) return;
     try {
       setLoading(true);
 
@@ -118,7 +113,7 @@ const UserPermissionsScreen: React.FC = () => {
       Alert.alert("Thành công", "Cập nhật quyền người dùng thành công", [
         {
           text: "OK",
-          onPress: () => navigation.goBack(),
+          onPress: () => router.back(),
         },
       ]);
     } catch (error) {
@@ -172,6 +167,10 @@ const UserPermissionsScreen: React.FC = () => {
       </View>
     );
   };
+
+  if (!user) {
+    return null;
+  }
 
   // Nếu user là admin, thông báo không thể sửa quyền
   const isAdmin = user.type === 1;
@@ -248,7 +247,7 @@ const UserPermissionsScreen: React.FC = () => {
             <Button
               title="Hủy"
               variant="outline"
-              onPress={() => navigation.goBack()}
+              onPress={() => router.back()}
               contentStyle={styles.cancelButton}
             />
             <Button

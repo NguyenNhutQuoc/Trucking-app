@@ -9,7 +9,7 @@ import {
   TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useRouter, useFocusEffect } from "expo-router";
 
 import { productApi } from "@/api/product";
 import Header from "@/components/common/Header";
@@ -23,13 +23,13 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"; // ✅ NEW: Use infinite scroll hook
 import LoadMoreButton from "@/components/common/LoadMoreButton"; // ✅ NEW: Load more button
 import { Hanghoa } from "@/types/api.types";
-import { ManagementStackScreenProps } from "@/types/navigation.types";
+import { useNavigationStore } from "@/store/navigationStore";
 
-type NavigationProp = ManagementStackScreenProps<"ProductList">["navigation"];
 type ViewMode = "list" | "table";
 
 const ProductListScreen: React.FC = () => {
-  const navigation = useNavigation<NavigationProp>();
+  const router = useRouter();
+  const { setSelectedProduct } = useNavigationStore();
   const { colors } = useAppTheme();
 
   // ✅ UPDATED: Use infinite scroll pagination hook
@@ -100,14 +100,13 @@ const ProductListScreen: React.FC = () => {
   };
 
   const handleAddProduct = () => {
-    navigation.navigate({
-      name: "AddProduct",
-      params: { product: undefined },
-    });
+    setSelectedProduct(null);
+    router.push("/(main)/(management)/products/new");
   };
 
   const handleEditProduct = (product: Hanghoa) => {
-    navigation.navigate("AddProduct", { product });
+    setSelectedProduct(product);
+    router.push("/(main)/(management)/products/new");
   };
 
   const handleDeleteProduct = (product: Hanghoa) => {

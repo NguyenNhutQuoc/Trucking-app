@@ -10,7 +10,7 @@ import {
   Text,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 
 import { weighingApi } from "@/api/weighing";
 import Header from "@/components/common/Header";
@@ -22,15 +22,12 @@ import ThemedText from "@/components/common/ThemedText";
 import ResultModal, { ResultModalType } from "@/components/common/ResultModal";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { formatDate, formatTime, formatWeight } from "@/utils/formatters";
-import { RootStackParamList } from "@/types/navigation.types";
-
-type WeighingDetailRouteProp = RouteProp<RootStackParamList, "WeighingDetail">;
+import { useNavigationStore } from "@/store/navigationStore";
 
 const WeighingDetailScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const route = useRoute<WeighingDetailRouteProp>();
+  const router = useRouter();
   const { colors } = useAppTheme();
-  const { weighing } = route.params;
+  const { selectedWeighing: weighing } = useNavigationStore();
 
   const [loading, setLoading] = useState(false);
 
@@ -64,6 +61,10 @@ const WeighingDetailScreen: React.FC = () => {
     }
   };
 
+  if (!weighing) {
+    return null;
+  }
+
   const isCompleted = !!weighing.ngaycan2;
 
   // Calculate net weight if completed
@@ -86,16 +87,13 @@ const WeighingDetailScreen: React.FC = () => {
       return;
     }
 
-    // @ts-ignore
-    navigation.navigate("Weighing", {
-      screen: "CompleteWeighing",
-      params: { weighingId: weighing.stt },
-    });
+    // Navigate to complete weighing screen
+    router.push("/(main)/(weighing)/complete");
   };
 
   const handleEditWeighing = () => {
-    // @ts-ignore
-    navigation.navigate("AddEditWeighing", { weighing });
+    // AddEditWeighing not yet available
+    console.log("AddEditWeighing not yet available");
   };
 
   const handleCancelWeighing = () => {
@@ -110,7 +108,7 @@ const WeighingDetailScreen: React.FC = () => {
             const reason = "Hủy bởi người dùng";
             await weighingApi.cancelWeighing(weighing.stt, { reason });
             showResultModal("Thành công", "Đã hủy phiếu cân", "success", () =>
-              navigation.goBack(),
+              router.back(),
             );
           } catch (error) {
             console.error("Cancel weighing error:", error);

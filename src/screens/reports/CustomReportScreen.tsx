@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useRouter, useFocusEffect } from "expo-router";
 
 import { weighingApi } from "@/api/weighing";
 import { customerApi } from "@/api/customer";
@@ -32,11 +32,10 @@ import {
   formatDate,
   formatTime,
 } from "@/utils/formatters";
-import { ReportsStackScreenProps } from "@/types/navigation.types";
 import { Khachhang, Hanghoa, Soxe, Phieucan } from "@/types/api.types";
 import { spacing } from "@/styles/spacing";
+import { useNavigationStore } from "@/store/navigationStore";
 
-type NavigationProp = ReportsStackScreenProps<"CustomReport">["navigation"];
 type ViewMode = "list" | "grid" | "table";
 
 interface FilterOption {
@@ -47,7 +46,8 @@ interface FilterOption {
 }
 
 const CustomReportScreen: React.FC = () => {
-  const navigation = useNavigation<NavigationProp>();
+  const router = useRouter();
+  const { setSelectedWeighing } = useNavigationStore();
   const { colors } = useAppTheme();
 
   const [loading, setLoading] = useState(false);
@@ -446,10 +446,8 @@ const CustomReportScreen: React.FC = () => {
   };
 
   const handlePhieucanPress = (phieucan: Phieucan) => {
-    navigation.navigate("PhieucanDetail", {
-      weighing: phieucan,
-      phieucanSTT: phieucan.stt,
-    });
+    setSelectedWeighing(phieucan);
+    router.push("/(main)/(reports)/detail");
   };
 
   const calculateNetWeight = (

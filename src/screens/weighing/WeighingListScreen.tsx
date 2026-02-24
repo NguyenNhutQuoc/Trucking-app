@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { View, StyleSheet, TouchableOpacity, FlatList, RefreshControl, TextInput, ScrollView, Modal } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useRouter, useFocusEffect } from "expo-router";
 
 import { weighingApi } from "@/api/weighing";
 import Header from "@/components/common/Header";
@@ -23,6 +23,7 @@ import LoadMoreButton from "@/components/common/LoadMoreButton";
 import { Phieucan } from "@/types/api.types";
 import { formatWeight } from "@/utils/formatters";
 import { spacing } from "@/styles/spacing";
+import { useNavigationStore } from "@/store/navigationStore";
 
 // Types
 type FilterState =
@@ -44,8 +45,9 @@ interface FilterOptions {
 }
 
 const WeighingListScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const router = useRouter();
   const { colors } = useAppTheme();
+  const { setSelectedWeighing } = useNavigationStore();
 
   const [activeFilter, setActiveFilter] = useState<FilterState>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -228,13 +230,13 @@ const WeighingListScreen: React.FC = () => {
   };
 
   const handleWeighingPress = (weighing: Phieucan) => {
-    // @ts-ignore
-    navigation.navigate("WeighingDetail", { weighing });
+    setSelectedWeighing(weighing);
+    router.push(`/(main)/(weighing)/${weighing.stt}`);
   };
 
   const handleNewWeighing = () => {
-    // @ts-ignore
-    navigation.navigate("AddEditWeighing");
+    // AddEditWeighing is not yet available
+    console.log("AddEditWeighing is not yet available");
   };
 
   // Table Header Component

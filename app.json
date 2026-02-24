@@ -3,6 +3,7 @@
     "name": "DTS",
     "slug": "truck-weighing-app",
     "version": "1.0.0",
+    "scheme": "dts",
     "orientation": "portrait",
     "icon": "./assets/adaptive-icon.png",
     "userInterfaceStyle": "light",
@@ -39,6 +40,7 @@
       }
     },
     "plugins": [
+      "expo-router",
       "expo-asset",
       "expo-font",
       [

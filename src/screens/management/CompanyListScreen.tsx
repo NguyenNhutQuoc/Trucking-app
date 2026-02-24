@@ -9,7 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useRouter, useFocusEffect } from "expo-router";
 
 import { customerApi } from "@/api/customer";
 import Header from "@/components/common/Header";
@@ -23,14 +23,14 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"; // ✅ NEW
 import LoadMoreButton from "@/components/common/LoadMoreButton"; // ✅ NEW
 import { Khachhang } from "@/types/api.types";
-import { ManagementStackScreenProps } from "@/types/navigation.types";
 import { formatPhoneNumber } from "@/utils/formatters";
+import { useNavigationStore } from "@/store/navigationStore";
 
-type NavigationProp = ManagementStackScreenProps<"CompanyList">["navigation"];
 type ViewMode = "list" | "table";
 
 const CompanyListScreen: React.FC = () => {
-  const navigation = useNavigation<NavigationProp>();
+  const router = useRouter();
+  const { setSelectedCompany } = useNavigationStore();
   const { colors } = useAppTheme();
 
   // ✅ UPDATED: Use infinite scroll pagination hook
@@ -103,14 +103,13 @@ const CompanyListScreen: React.FC = () => {
   };
 
   const handleAddCompany = () => {
-    navigation.navigate({
-      name: "AddCompany",
-      params: { company: undefined },
-    });
+    setSelectedCompany(null);
+    router.push("/(main)/(management)/companies/new");
   };
 
   const handleEditCompany = (company: Khachhang) => {
-    navigation.navigate("AddCompany", { company });
+    setSelectedCompany(company);
+    router.push("/(main)/(management)/companies/new");
   };
 
   const handleDeleteCompany = (company: Khachhang) => {

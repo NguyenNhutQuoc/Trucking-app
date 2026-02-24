@@ -15,5 +15,13 @@ export default function Index() {
     return <Redirect href="/(main)" />;
   }
 
+  if (authLevel === "station") {
+    return <Redirect href="/(auth)/station-user-login" />;
+  }
+
+  if (authLevel === "tenant") {
+    return <Redirect href="/(auth)/station-selection" />;
+  }
+
   return <Redirect href="/(auth)/login" />;
 }

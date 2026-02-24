@@ -87,7 +87,7 @@ const StationUserLoginScreen: React.FC = () => {
           "Tên đăng nhập hoặc mật khẩu không đúng.\nVui lòng thử lại.",
         );
       }
-      // If success, AuthContext will handle navigation
+      // Navigation handled by InitialLayout in app/_layout.tsx
     } catch (error: any) {
       console.error("Station user login error:", error);
       const message =

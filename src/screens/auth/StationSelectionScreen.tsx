@@ -119,10 +119,11 @@ const StationSelectionScreen: React.FC = () => {
       setLoading(true);
       const success = await selectStation(sessionToken, selectedStationId);
 
-      if (!success) {
+      if (success) {
+        router.replace("/(auth)/station-user-login");
+      } else {
         Alert.alert("Lỗi", "Không thể chọn trạm cân. Vui lòng thử lại.");
       }
-      // Navigation will be handled by AuthContext → authLevel changes to "station"
     } catch (error) {
       console.error("Station selection error:", error);
       Alert.alert("Lỗi", "Có lỗi xảy ra khi chọn trạm cân. Vui lòng thử lại.");

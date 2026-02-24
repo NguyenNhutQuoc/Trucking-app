@@ -1,6 +1,7 @@
 // src/components/charts/BarChart.tsx
-import React from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import React, { useRef, useEffect } from "react";
+import { View, StyleSheet, ScrollView, Animated } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import ThemedText from "@/components/common/ThemedText";
 
@@ -17,8 +18,65 @@ interface BarChartProps {
   barColor?: string;
 }
 
+/** Lighten a hex color by mixing it toward white by `amount` (0–1). */
+function lightenHex(hex: string, amount: number): string {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  const lr = Math.round(r + (255 - r) * amount);
+  const lg = Math.round(g + (255 - g) * amount);
+  const lb = Math.round(b + (255 - b) * amount);
+  return `#${lr.toString(16).padStart(2, "0")}${lg.toString(16).padStart(2, "0")}${lb.toString(16).padStart(2, "0")}`;
+}
+
+/** Animated bar that grows from 0 to its target height. */
+const AnimatedBar: React.FC<{
+  targetHeight: number;
+  barWidth: number;
+  color: string;
+}> = ({ targetHeight, barWidth, color }) => {
+  const anim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.spring(anim, {
+      toValue: targetHeight,
+      duration: 500,
+      useNativeDriver: false,
+    }).start();
+  }, [targetHeight]);
+
+  const topColor = lightenHex(color, 0.45);
+
+  return (
+    <Animated.View
+      style={{
+        height: anim,
+        width: barWidth * 0.65,
+        borderTopLeftRadius: 4,
+        borderTopRightRadius: 4,
+        borderBottomLeftRadius: 0,
+        borderBottomRightRadius: 0,
+        overflow: "hidden",
+      }}
+    >
+      <LinearGradient
+        colors={[topColor, color]}
+        style={{ flex: 1 }}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+      />
+    </Animated.View>
+  );
+};
+
+const GRIDLINE_COUNT = 4;
+const PADDING_TOP = 24;
+const PADDING_BOTTOM = 28;
+
 /**
- * A simple bar chart component that supports dark mode and horizontal scrolling
+ * A bar chart component with gridlines, axis line, gradient bars, and
+ * spring-animated growth. Supports dark mode and horizontal scrolling.
  */
 const BarChart: React.FC<BarChartProps> = ({
   data,
@@ -28,15 +86,11 @@ const BarChart: React.FC<BarChartProps> = ({
   showLabels = true,
   barColor,
 }) => {
-  const { colors } = useAppTheme();
+  const { colors, isDark } = useAppTheme();
 
-  // Default color from theme
   const defaultBarColor = barColor || colors.primary;
 
-  // Filter out zero values
   const filteredData = data.filter((item) => item.value > 0);
-
-  // Find max value for scaling
   const maxValue = Math.max(...filteredData.map((item) => item.value), 1);
 
   if (filteredData.length === 0) {
@@ -47,52 +101,94 @@ const BarChart: React.FC<BarChartProps> = ({
     );
   }
 
-  // Calculate dynamic width based on data length
-  // Ensure minimum width of 100% to fill container if few items
-  const minWidth = "100%";
-  
+  const chartAreaHeight = height - PADDING_TOP - PADDING_BOTTOM;
+  const gridlineColor = isDark ? colors.gray300 : colors.gray200;
+  const axisColor = colors.gray300;
+
   return (
     <View style={[styles.container, { height }]}>
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ 
-          minWidth: minWidth,
-          paddingHorizontal: 10 
-        }}
+      {/* Gridlines — rendered behind the bars */}
+      <View
+        style={[
+          styles.gridlineOverlay,
+          { top: PADDING_TOP, bottom: PADDING_BOTTOM },
+        ]}
+        pointerEvents="none"
       >
-        <View style={styles.chartContainer}>
+        {Array.from({ length: GRIDLINE_COUNT }).map((_, i) => {
+          // i=0 is top, i=GRIDLINE_COUNT-1 is near the bottom
+          const fraction = (i + 1) / (GRIDLINE_COUNT + 1);
+          return (
+            <View
+              key={i}
+              style={[
+                styles.gridline,
+                {
+                  top: `${fraction * 100}%` as any,
+                  backgroundColor: gridlineColor,
+                },
+              ]}
+            />
+          );
+        })}
+        {/* Bottom axis line */}
+        <View
+          style={[styles.axisLine, { backgroundColor: axisColor }]}
+        />
+      </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={[styles.chartContainer, { height }]}>
           {filteredData.map((item, index) => {
-            const barHeight = (item.value / maxValue) * (height * 0.7);
+            const barHeight = (item.value / maxValue) * chartAreaHeight;
             const itemColor = item.color || defaultBarColor;
 
             return (
               <View
                 key={index}
-                style={[styles.barContainer, { width: barWidth, marginRight: 8 }]}
+                style={[
+                  styles.barContainer,
+                  {
+                    width: barWidth,
+                    height: chartAreaHeight,
+                    marginRight: 8,
+                    marginTop: PADDING_TOP,
+                    marginBottom: PADDING_BOTTOM,
+                  },
+                ]}
               >
-                {/* Bar Value (above bar) */}
+                {/* Value label above bar */}
                 {showValues && (
-                  <ThemedText type="caption" style={styles.barValue}>
+                  <ThemedText
+                    style={[
+                      styles.barValue,
+                      { color: colors.primary },
+                    ]}
+                  >
                     {item.value}
                   </ThemedText>
                 )}
-                
-                {/* The Bar itself */}
-                <View
-                  style={[
-                    styles.bar,
-                    {
-                      height: barHeight,
-                      backgroundColor: itemColor,
-                      width: barWidth * 0.6, // Bar is thinner than container
-                    },
-                  ]}
+
+                {/* Gradient bar */}
+                <AnimatedBar
+                  targetHeight={barHeight}
+                  barWidth={barWidth}
+                  color={itemColor}
                 />
-                
-                {/* Bar Label (below bar) */}
+
+                {/* Label below bar */}
                 {showLabels && (
-                  <ThemedText type="caption" style={styles.barLabel} numberOfLines={1}>
+                  <ThemedText
+                    style={[
+                      styles.barLabel,
+                      { color: colors.textSecondary },
+                    ]}
+                    numberOfLines={1}
+                  >
                     {item.label}
                   </ThemedText>
                 )}
@@ -109,33 +205,47 @@ const styles = StyleSheet.create({
   container: {
     width: "100%",
   },
+  scrollContent: {
+    minWidth: "100%",
+    paddingHorizontal: 10,
+  },
   chartContainer: {
     flexDirection: "row",
     alignItems: "flex-end",
-    height: "100%",
-    paddingBottom: 24, // Space for labels
-    paddingTop: 20, // Space for values
+  },
+  gridlineOverlay: {
+    position: "absolute",
+    left: 10,
+    right: 10,
+  },
+  gridline: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: 1,
+    opacity: 0.6,
+  },
+  axisLine: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 1,
   },
   barContainer: {
-    height: "100%",
     alignItems: "center",
     justifyContent: "flex-end",
-  },
-  bar: {
-    borderRadius: 4,
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
   },
   barValue: {
     marginBottom: 4,
     fontSize: 10,
-    fontWeight: "600",
+    fontWeight: "700",
     textAlign: "center",
   },
   barLabel: {
     position: "absolute",
     bottom: -20,
-    fontSize: 10,
+    fontSize: 11,
     textAlign: "center",
     width: "100%",
   },

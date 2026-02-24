@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Share,
 } from "react-native";
-import { RouteProp, useRoute, useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import Header from "@/components/common/Header";
@@ -19,8 +19,8 @@ import Loading from "@/components/common/Loading";
 import Button from "@/components/common/Button";
 import { weighingApi } from "@/api/weighing";
 import { Phieucan } from "@/types/api.types";
-import { RootStackParamList } from "@/types/navigation.types";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { useNavigationStore } from "@/store/navigationStore";
 import {
   formatDate,
   formatTime,
@@ -28,26 +28,19 @@ import {
   formatCurrency,
 } from "@/utils/formatters";
 
-type PhieucanDetailRouteProp = RouteProp<RootStackParamList, "PhieucanDetail">;
-
 const PhieucanDetailScreen: React.FC = () => {
-  const route = useRoute<PhieucanDetailRouteProp>();
-  const navigation = useNavigation();
+  const router = useRouter();
   const { colors } = useAppTheme();
-
-  // Get weighing from route params (from CustomReportScreen navigation)
-  const weighingFromParams = route.params?.weighing;
+  const { selectedWeighing: weighingFromStore } = useNavigationStore();
 
   const [weighing, setWeighing] = useState<Phieucan | null>(
-    weighingFromParams || null,
+    weighingFromStore || null,
   );
-  const [loading, setLoading] = useState(!weighingFromParams);
+  const [loading, setLoading] = useState(!weighingFromStore);
 
   useEffect(() => {
-    // If we don't have weighing data from params, try to fetch it
-    if (!weighingFromParams && route.params?.weighing) {
-      fetchWeighingDetails(route.params.phieucanSTT || 0);
-    }
+    // If we don't have weighing data from store, nothing to fetch without an ID
+    // The weighing should be set via NavigationStore before navigating here
   }, []);
 
   const fetchWeighingDetails = async (weighingId: number) => {
@@ -59,12 +52,12 @@ const PhieucanDetailScreen: React.FC = () => {
         setWeighing(response.data);
       } else {
         Alert.alert("Lỗi", "Không thể tải thông tin phiếu cân");
-        navigation.goBack();
+        router.back();
       }
     } catch (error) {
       console.error("Fetch weighing error:", error);
       Alert.alert("Lỗi", "Đã xảy ra lỗi khi tải chi tiết");
-      navigation.goBack();
+      router.back();
     } finally {
       setLoading(false);
     }
@@ -132,7 +125,7 @@ Trọng lượng hàng: ${formatWeight(netWeight)}
           <Button
             title="Quay lại"
             variant="primary"
-            onPress={() => navigation.goBack()}
+            onPress={() => router.back()}
             contentStyle={styles.backButton}
           />
         </View>

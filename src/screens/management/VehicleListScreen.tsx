@@ -9,7 +9,7 @@ import {
   TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useRouter, useFocusEffect } from "expo-router";
 
 import { vehicleApi } from "@/api/vehicle";
 import Header from "@/components/common/Header";
@@ -23,13 +23,13 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"; // ✅ NEW
 import LoadMoreButton from "@/components/common/LoadMoreButton"; // ✅ NEW
 import { Soxe } from "@/types/api.types";
-import { ManagementStackScreenProps } from "@/types/navigation.types";
+import { useNavigationStore } from "@/store/navigationStore";
 
-type NavigationProp = ManagementStackScreenProps<"VehicleList">["navigation"];
 type ViewMode = "list" | "table";
 
 const VehicleListScreen: React.FC = () => {
-  const navigation = useNavigation<NavigationProp>();
+  const router = useRouter();
+  const { setSelectedVehicle } = useNavigationStore();
   const { colors } = useAppTheme();
 
   // ✅ UPDATED: Use infinite scroll pagination hook
@@ -96,11 +96,13 @@ const VehicleListScreen: React.FC = () => {
   };
 
   const handleAddVehicle = () => {
-    navigation.navigate("AddVehicle", { vehicle: undefined });
+    setSelectedVehicle(null);
+    router.push("/(main)/(management)/vehicles/new");
   };
 
   const handleEditVehicle = (vehicle: Soxe) => {
-    navigation.navigate("AddVehicle", { vehicle });
+    setSelectedVehicle(vehicle);
+    router.push("/(main)/(management)/vehicles/new");
   };
 
   const handleDeleteVehicle = (vehicle: Soxe) => {

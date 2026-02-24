@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useState } from "react";
 import { View, StyleSheet, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Image, Alert } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -12,12 +12,14 @@ import Input from "@/components/common/Input";
 import Button from "@/components/common/Button";
 import Loading from "@/components/common/Loading";
 import { APP_NAME, APP_VERSION } from "@/constants/config";
+import { useNavigationStore } from "@/store/navigationStore";
 
 const LoginScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const router = useRouter();
   const { tenantLogin } = useAuth(); // ✅ Sử dụng tenantLogin
   const { colors, isDarkMode } = useAppTheme();
   const insets = useSafeAreaInsets();
+  const { setStationSelectionData } = useNavigationStore();
 
   // ✅ Thay đổi từ username → maKhachHang
   const [maKhachHang, setMaKhachHang] = useState("");
@@ -70,9 +72,8 @@ const LoginScreen: React.FC = () => {
       const result = await tenantLogin({ maKhachHang, password });
       console.log("Login result:", result);
       if (result.success && result.data) {
-        // ✅ Navigate đến StationSelection với data
-        // ✅ FIXED: Map the flat response to the expected nested structure
-        navigation.navigate("StationSelection", {
+        // ✅ Store complex params and navigate to station selection
+        setStationSelectionData({
           sessionToken: result.data.sessionToken,
           khachHang: {
             maKhachHang: result.data.maKhachHang,
@@ -80,6 +81,7 @@ const LoginScreen: React.FC = () => {
           },
           tramCans: result.data.tramCans,
         });
+        router.push("/(auth)/station-selection");
       } else {
         Alert.alert(
           "Đăng nhập thất bại",

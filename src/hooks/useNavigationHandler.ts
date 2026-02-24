@@ -1,8 +1,7 @@
-// src/hooks/useNavigationHandler.ts - Super Simple Version
+// src/hooks/useNavigationHandler.ts - Expo Router version
 import { useCallback, useState } from "react";
-import { useNavigation } from "@react-navigation/native";
-import { Alert } from "react-native";
-import { AVAILABLE_ROUTES } from "@/constants/routes";
+import { useRouter } from "expo-router";
+import { ROUTE_PATH_MAP } from "@/constants/routes";
 
 interface NavigationOptions {
   showUnavailableModal?: boolean;
@@ -10,7 +9,7 @@ interface NavigationOptions {
 }
 
 export const useNavigationHandler = (options: NavigationOptions = {}) => {
-  const navigation = useNavigation();
+  const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   const [currentFeature, setCurrentFeature] = useState("");
   const [currentMessage, setCurrentMessage] = useState("");
@@ -20,16 +19,21 @@ export const useNavigationHandler = (options: NavigationOptions = {}) => {
     customMessage = "Chức năng này chưa sẵn sàng trong phiên bản hiện tại.",
   } = options;
 
+  const showModalVersion = useCallback(
+    (featureName?: string, message?: string) => {
+      setCurrentFeature(featureName || "");
+      setCurrentMessage(message || customMessage);
+      setShowModal(true);
+    },
+    [customMessage],
+  );
+
   const showUnavailableFeature = useCallback(
     (featureName?: string, message?: string) => {
       if (!showUnavailableModal) return;
-
-      const finalMessage = message || customMessage;
-      const finalFeatureName = featureName || "Chức năng";
-
-      showModalVersion(finalFeatureName, finalMessage);
+      showModalVersion(featureName || "Chức năng", message || customMessage);
     },
-    [showUnavailableModal, customMessage],
+    [showUnavailableModal, customMessage, showModalVersion],
   );
 
   const safeNavigate = useCallback(
@@ -44,11 +48,9 @@ export const useNavigationHandler = (options: NavigationOptions = {}) => {
         params ? params : "(no params)",
       );
 
-      // Check if route exists in our defined routes
-      if (
-        !Object.prototype.hasOwnProperty.call(AVAILABLE_ROUTES, routeName) ||
-        !AVAILABLE_ROUTES[routeName as keyof typeof AVAILABLE_ROUTES]
-      ) {
+      const path = ROUTE_PATH_MAP[routeName];
+
+      if (path === false || path === undefined) {
         console.log(`Route ${routeName} is not available`);
         if (showError) {
           showUnavailableFeature(featureName || routeName);
@@ -57,8 +59,7 @@ export const useNavigationHandler = (options: NavigationOptions = {}) => {
       }
 
       try {
-        // @ts-ignore - Deliberately ignoring type check for dynamic navigation
-        navigation.navigate(routeName, params);
+        router.push(path as any);
       } catch (error: any) {
         console.log(`Navigation error for route: ${routeName}`, error);
         if (showError) {
@@ -66,7 +67,7 @@ export const useNavigationHandler = (options: NavigationOptions = {}) => {
         }
       }
     },
-    [navigation, showUnavailableFeature],
+    [router, showUnavailableFeature],
   );
 
   const navigateWithFallback = useCallback(
@@ -76,38 +77,35 @@ export const useNavigationHandler = (options: NavigationOptions = {}) => {
       fallbackRoute?: string,
       featureName?: string,
     ) => {
-      try {
-        // @ts-ignore
-        navigation.navigate(routeName, params);
-      } catch (error) {
-        console.log(`Navigation error for route: ${routeName}`, error);
+      const path = ROUTE_PATH_MAP[routeName];
 
-        if (fallbackRoute) {
+      if (path !== false && path !== undefined) {
+        try {
+          router.push(path as any);
+          return;
+        } catch (error) {
+          console.log(`Navigation error for route: ${routeName}`, error);
+        }
+      }
+
+      if (fallbackRoute) {
+        const fallbackPath = ROUTE_PATH_MAP[fallbackRoute];
+        if (fallbackPath) {
           try {
-            // @ts-ignore
-            navigation.navigate(fallbackRoute);
+            router.push(fallbackPath as any);
+            return;
           } catch (fallbackError) {
             console.log(
               `Fallback navigation also failed: ${fallbackRoute}`,
               fallbackError,
             );
-            showUnavailableFeature(featureName || routeName);
           }
-        } else {
-          showUnavailableFeature(featureName || routeName);
         }
       }
-    },
-    [navigation, showUnavailableFeature],
-  );
 
-  const showModalVersion = useCallback(
-    (featureName?: string, message?: string) => {
-      setCurrentFeature(featureName || "");
-      setCurrentMessage(message || customMessage);
-      setShowModal(true);
+      showUnavailableFeature(featureName || routeName);
     },
-    [customMessage],
+    [router, showUnavailableFeature],
   );
 
   const closeModal = useCallback(() => {
@@ -120,10 +118,11 @@ export const useNavigationHandler = (options: NavigationOptions = {}) => {
     showUnavailableFeature,
     showModalVersion,
     closeModal,
-    navigation,
+    router,
     // Modal state for manual control
     showModal,
     currentFeature,
     currentMessage,
   };
 };
+

@@ -1,31 +1,24 @@
 // src/screens/management/AddProductScreen.tsx
 import React from "react";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 
 import Header from "@/components/common/Header";
 import ProductForm from "@/components/forms/ProductForm";
 import ThemedView from "@/components/common/ThemedView";
-import { ManagementStackParamList } from "@/types/navigation.types";
 import { Hanghoa } from "@/types/api.types";
-
-type AddProductScreenRouteProp = RouteProp<
-  ManagementStackParamList,
-  "AddProduct"
->;
+import { useNavigationStore } from "@/store/navigationStore";
 
 const AddProductScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const route = useRoute<AddProductScreenRouteProp>();
-
-  const product = route.params?.product;
+  const router = useRouter();
+  const { selectedProduct: product } = useNavigationStore();
   const editMode = !!product;
 
   const handleSubmitSuccess = (updatedProduct: Hanghoa) => {
-    navigation.goBack();
+    router.back();
   };
 
   const handleCancel = () => {
-    navigation.goBack();
+    router.back();
   };
 
   return (
@@ -36,7 +29,7 @@ const AddProductScreen: React.FC = () => {
       />
 
       <ProductForm
-        product={product}
+        product={product ?? undefined}
         onSubmitSuccess={handleSubmitSuccess}
         onCancel={handleCancel}
       />

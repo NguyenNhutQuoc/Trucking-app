@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 
 import { weighingApi } from "@/api/weighing";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,21 +22,17 @@ import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
 import ResultModal, { ResultModalType } from "@/components/common/ResultModal";
 import { formatDate, formatTime } from "@/utils/formatters";
-import { WeighingStackParamList } from "@/types/navigation.types";
 import { Phieucan, PhieucanComplete } from "@/types/api.types";
-
-type CompleteWeighingRouteProp = RouteProp<
-  WeighingStackParamList,
-  "CompleteWeighing"
->;
+import { useNavigationStore } from "@/store/navigationStore";
 
 const CompleteWeighingScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const route = useRoute<CompleteWeighingRouteProp>();
+  const router = useRouter();
   const { userInfo } = useAuth();
   const { colors } = useAppTheme();
+  const { selectedWeighing, setSelectedWeighing } = useNavigationStore();
 
-  const { weighingId } = route.params;
+  // WeighingId comes from the selected weighing in the store
+  const weighingId = selectedWeighing?.stt ?? 0;
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -75,6 +71,10 @@ const CompleteWeighingScreen: React.FC = () => {
   };
 
   useEffect(() => {
+    if (!selectedWeighing) {
+      router.back();
+      return;
+    }
     loadWeighingData();
   }, []);
 
@@ -89,13 +89,13 @@ const CompleteWeighingScreen: React.FC = () => {
           "Lỗi",
           "Không thể tải thông tin phiếu cân",
           "error",
-          () => navigation.goBack(),
+          () => router.back(),
         );
       }
     } catch (error) {
       console.error("Load weighing error:", error);
       showResultModal("Lỗi", "Không thể tải thông tin phiếu cân", "error", () =>
-        navigation.goBack(),
+        router.back(),
       );
     } finally {
       setLoading(false);
@@ -141,16 +141,14 @@ const CompleteWeighingScreen: React.FC = () => {
           {
             text: "Xem chi tiết",
             onPress: () => {
-              // @ts-ignore
-              navigation.navigate("WeighingDetail", {
-                weighing: response.data,
-              });
+              setSelectedWeighing(response.data);
+              router.replace(`/(main)/(weighing)/${response.data.stt}`);
             },
           },
           {
             text: "Về danh sách",
             onPress: () => {
-              navigation.goBack();
+              router.back();
             },
           },
         ]);
@@ -166,7 +164,7 @@ const CompleteWeighingScreen: React.FC = () => {
   };
 
   const handleCancel = () => {
-    navigation.goBack();
+    router.back();
   };
 
   if (loading || !weighing) {

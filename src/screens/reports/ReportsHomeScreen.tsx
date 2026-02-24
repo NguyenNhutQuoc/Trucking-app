@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 
 import { weighingApi } from "@/api/weighing";
 import Header from "@/components/common/Header";
@@ -21,13 +21,11 @@ import {
   getThisMonthRange,
   formatDateForApi,
 } from "@/utils/date";
-import { ReportsStackScreenProps } from "@/types/navigation.types";
+import { ROUTE_PATH_MAP } from "@/constants/routes";
 import { PhieucanStatistics } from "@/types/api.types";
 
-type NavigationProp = ReportsStackScreenProps<"ReportsHome">["navigation"];
-
 const ReportsHomeScreen: React.FC = () => {
-  const navigation = useNavigation<NavigationProp>();
+  const router = useRouter();
   const { colors } = useAppTheme();
 
   const [loading, setLoading] = useState(true);
@@ -130,7 +128,10 @@ const ReportsHomeScreen: React.FC = () => {
         styles.reportItem,
         { backgroundColor: colors.surface, borderColor: colors.outlineVariant },
       ]}
-      onPress={() => navigation.navigate(screen as any)}
+      onPress={() => {
+        const path = ROUTE_PATH_MAP[screen];
+        if (path) router.push(path as any);
+      }}
     >
       <View
         style={[

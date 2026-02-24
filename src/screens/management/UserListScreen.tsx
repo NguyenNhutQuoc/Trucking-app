@@ -10,7 +10,7 @@ import {
   TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useRouter, useFocusEffect } from "expo-router";
 
 import { userApi } from "@/api/user";
 import Header from "@/components/common/Header";
@@ -25,12 +25,11 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"; // ✅ NEW
 import LoadMoreButton from "@/components/common/LoadMoreButton"; // ✅ NEW
 import { Nhanvien, NhanvienWithPermissions } from "@/types/api.types";
-import { ManagementStackScreenProps } from "@/types/navigation.types";
-
-type NavigationProp = ManagementStackScreenProps<"UserList">["navigation"];
+import { useNavigationStore } from "@/store/navigationStore";
 
 const UserListScreen: React.FC = () => {
-  const navigation = useNavigation<NavigationProp>();
+  const router = useRouter();
+  const { setSelectedUser } = useNavigationStore();
   const { colors, isDarkMode } = useAppTheme();
 
   // ✅ UPDATED: Use infinite scroll pagination hook
@@ -101,14 +100,13 @@ const UserListScreen: React.FC = () => {
   };
 
   const handleAddUser = () => {
-    navigation.navigate({
-      name: "AddUser",
-      params: { user: undefined },
-    });
+    setSelectedUser(null);
+    router.push("/(main)/(management)/users/new");
   };
 
   const handleEditUser = (user: Nhanvien) => {
-    navigation.navigate("AddUser", { user });
+    setSelectedUser(user);
+    router.push("/(main)/(management)/users/new");
   };
 
   // ✅ UPDATED: Show under development modal instead of navigating

@@ -10,7 +10,7 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router";
 import { LineChart } from "react-native-chart-kit";
 
 import { weighingApi } from "@/api/weighing";
@@ -23,9 +23,7 @@ import ThemedView from "@/components/common/ThemedView";
 import ThemedText from "@/components/common/ThemedText";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { formatWeight, formatDate } from "@/utils/formatters";
-import { ReportsStackScreenProps } from "@/types/navigation.types";
 
-type NavigationProp = ReportsStackScreenProps<"DateRangeReports">["navigation"];
 type ViewMode = "list" | "grid";
 
 const screenWidth = Dimensions.get("window").width;
@@ -38,7 +36,6 @@ interface DailyData {
 }
 
 const DateRangeReportsScreen: React.FC = () => {
-  const navigation = useNavigation<NavigationProp>();
   const { colors, isDarkMode } = useAppTheme();
 
   const [loading, setLoading] = useState(true);

@@ -1,31 +1,24 @@
 // src/screens/management/AddVehicleScreen.tsx
 import React from "react";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 
 import Header from "@/components/common/Header";
 import VehicleForm from "@/components/forms/VehicleForm";
 import ThemedView from "@/components/common/ThemedView";
-import { ManagementStackParamList } from "@/types/navigation.types";
 import { Soxe } from "@/types/api.types";
-
-type AddVehicleScreenRouteProp = RouteProp<
-  ManagementStackParamList,
-  "AddVehicle"
->;
+import { useNavigationStore } from "@/store/navigationStore";
 
 const AddVehicleScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const route = useRoute<AddVehicleScreenRouteProp>();
-
-  const vehicle = route.params?.vehicle;
+  const router = useRouter();
+  const { selectedVehicle: vehicle } = useNavigationStore();
   const editMode = !!vehicle;
 
   const handleSubmitSuccess = (updatedVehicle: Soxe) => {
-    navigation.goBack();
+    router.back();
   };
 
   const handleCancel = () => {
-    navigation.goBack();
+    router.back();
   };
 
   return (
@@ -33,7 +26,7 @@ const AddVehicleScreen: React.FC = () => {
       <Header title={editMode ? "Sửa Xe" : "Thêm Xe Mới"} showBack />
 
       <VehicleForm
-        vehicle={vehicle}
+        vehicle={vehicle ?? undefined}
         onSubmitSuccess={handleSubmitSuccess}
         onCancel={handleCancel}
       />

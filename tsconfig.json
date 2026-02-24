@@ -17,5 +17,11 @@
       "@types/*": ["src/types/*"],
       "@assets/*": ["assets/*"]
     }
-  }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.d.ts",
+    "expo-env.d.ts"
+  ]
 }

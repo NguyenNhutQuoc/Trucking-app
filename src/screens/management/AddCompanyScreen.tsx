@@ -1,31 +1,24 @@
 // src/screens/management/AddCompanyScreen.tsx
 import React from "react";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 
 import Header from "@/components/common/Header";
 import CompanyForm from "@/components/forms/CompanyForm";
 import ThemedView from "@/components/common/ThemedView";
-import { ManagementStackParamList } from "@/types/navigation.types";
 import { Khachhang } from "@/types/api.types";
-
-type AddCompanyScreenRouteProp = RouteProp<
-  ManagementStackParamList,
-  "AddCompany"
->;
+import { useNavigationStore } from "@/store/navigationStore";
 
 const AddCompanyScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const route = useRoute<AddCompanyScreenRouteProp>();
-
-  const company = route.params?.company;
+  const router = useRouter();
+  const { selectedCompany: company } = useNavigationStore();
   const editMode = !!company;
 
   const handleSubmitSuccess = (updatedCompany: Khachhang) => {
-    navigation.goBack();
+    router.back();
   };
 
   const handleCancel = () => {
-    navigation.goBack();
+    router.back();
   };
 
   return (
@@ -36,7 +29,7 @@ const AddCompanyScreen: React.FC = () => {
       />
 
       <CompanyForm
-        company={company}
+        company={company ?? undefined}
         onSubmitSuccess={handleSubmitSuccess}
         onCancel={handleCancel}
       />

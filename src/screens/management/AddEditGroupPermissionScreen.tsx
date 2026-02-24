@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert, Text } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 
 import { permissionApi } from "@/api/permission";
 import Header from "@/components/common/Header";
@@ -12,17 +12,11 @@ import Button from "@/components/common/Button";
 import Loading from "@/components/common/Loading";
 import colors from "@/constants/colors";
 import { NhomQuyenCreate, NhomQuyenUpdate } from "@/types/api.types";
-import { ManagementStackParamList } from "@/types/navigation.types";
-
-type AddPermissionGroupScreenRouteProp = RouteProp<
-  ManagementStackParamList,
-  "AddPermissionGroup"
->;
+import { useNavigationStore } from "@/store/navigationStore";
 
 const AddPermissionGroupScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const route = useRoute<AddPermissionGroupScreenRouteProp>();
-  const { group } = route.params || {};
+  const router = useRouter();
+  const { selectedPermissionGroup: group } = useNavigationStore();
   const editMode = !!group;
 
   const [loading, setLoading] = useState(false);
@@ -104,7 +98,7 @@ const AddPermissionGroupScreen: React.FC = () => {
           [
             {
               text: "OK",
-              onPress: () => navigation.goBack(),
+              onPress: () => router.back(),
             },
           ],
         );
@@ -176,7 +170,7 @@ const AddPermissionGroupScreen: React.FC = () => {
             <Button
               title="Hủy"
               variant="outline"
-              onPress={() => navigation.goBack()}
+              onPress={() => router.back()}
               contentStyle={styles.cancelButton}
             />
 

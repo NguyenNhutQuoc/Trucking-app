@@ -9,7 +9,7 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router";
 import { BarChart } from "react-native-chart-kit";
 
 import { productApi } from "@/api/product";
@@ -25,15 +25,12 @@ import ThemedText from "@/components/common/ThemedText";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { formatWeight, formatCurrency } from "@/utils/formatters";
 import { Hanghoa } from "@/types/api.types";
-import { ReportsStackScreenProps } from "@/types/navigation.types";
 
-type NavigationProp = ReportsStackScreenProps<"ProductReports">["navigation"];
 type ViewMode = "list" | "grid";
 
 const screenWidth = Dimensions.get("window").width;
 
 const ProductReportScreen: React.FC = () => {
-  const navigation = useNavigation<NavigationProp>();
   const { colors, isDarkMode } = useAppTheme();
 
   const [loading, setLoading] = useState(true);

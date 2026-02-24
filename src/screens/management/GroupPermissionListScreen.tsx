@@ -1,15 +1,7 @@
+// src/screens/management/GroupPermissionListScreen.tsx
 // src/screens/management/GroupPermissionsScreen.tsx (updated with real API)
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  FlatList,
-  Alert,
-  Switch,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, StyleSheet, FlatList, Alert, Switch, TouchableOpacity } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 
@@ -186,7 +178,7 @@ const GroupPermissionsScreen: React.FC = () => {
   const isAdmin = group.ma === "admin";
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <Header title={`Phân quyền nhóm: ${group.ten}`} showBack />
 
       <View style={styles.container}>
@@ -262,7 +254,7 @@ const GroupPermissionsScreen: React.FC = () => {
       </View>
 
       <Loading loading={submitting} overlay message="Đang lưu..." />
-    </SafeAreaView>
+    </View>
   );
 };
 

@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import spacing from "@/styles/spacing";
 
@@ -48,6 +49,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const navigation = useNavigation();
   const { colors, isDarkMode } = useAppTheme();
+  const insets = useSafeAreaInsets();
 
   const handleBackPress = () => {
     if (onBackPress) {
@@ -87,14 +89,14 @@ const Header: React.FC<HeaderProps> = ({
         };
       case "centerAligned":
         return {
-          container: { height: 64 },
+          container: { minHeight: 56 },
           title: { fontSize: 22, fontWeight: "500" as const, textAlign: "center" as const },
         };
       case "small":
       default:
         return {
-          container: { height: 64 },
-          title: { fontSize: 22, fontWeight: "500" as const },
+          container: { minHeight: 56 },
+          title: { fontSize: 20, fontWeight: "600" as const },
         };
     }
   };
@@ -104,14 +106,26 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <>
       <StatusBar 
-        backgroundColor={headerBgColor} 
+        backgroundColor="transparent" 
         barStyle={transparent || isDarkMode ? "dark-content" : "light-content"} 
+        translucent={true}
       />
       <View
         style={[
           styles.container,
           variantStyles.container,
-          { backgroundColor: headerBgColor },
+          {
+            backgroundColor: headerBgColor,
+            paddingTop: insets.top + 12,
+            paddingBottom: 14,
+            borderBottomWidth: 1,
+            borderBottomColor: transparent ? 'transparent' : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'),
+            elevation: transparent ? 0 : 4,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: transparent ? 0 : 0.15,
+            shadowRadius: 3,
+          },
           containerStyle,
         ]}
       >

@@ -54,9 +54,10 @@ const Button: React.FC<ButtonProps> = ({
   iconPosition = "left",
   contentStyle,
   textStyle,
+  style,
   ...props
 }) => {
-  const { colors } = useAppTheme();
+  const { colors, isDarkMode } = useAppTheme();
 
   // M3 variant styles
   const getVariantStyles = (): {
@@ -261,6 +262,8 @@ const Button: React.FC<ButtonProps> = ({
 
   return (
     <TouchableOpacity
+      disabled={disabled || loading}
+      activeOpacity={0.7}
       style={[
         styles.container,
         shouldHaveShadow && styles.containerWithShadow,
@@ -268,11 +271,10 @@ const Button: React.FC<ButtonProps> = ({
         sizeStyles.container,
         fullWidth && styles.fullWidth,
         disabled && styles.disabled,
-        disabled && { backgroundColor: "#BDBDBD" }, // Gray color that's visible on white background
+        disabled && { backgroundColor: isDarkMode ? "#374151" : "#D1D5DB" }, // Visible gray color for disabled
         contentStyle,
+        style,
       ]}
-      disabled={disabled || loading}
-      activeOpacity={0.7}
       {...props}
     >
       {loading ? (
@@ -294,7 +296,7 @@ const Button: React.FC<ButtonProps> = ({
               styles.text,
               variantStyles.text,
               sizeStyles.text,
-              disabled && { color: "#616161" }, // Dark gray for better contrast on disabled background
+              disabled && { color: isDarkMode ? "#9CA3AF" : "#6B7280" }, // Medium gray for disabled text
               textStyle,
             ]}
           >

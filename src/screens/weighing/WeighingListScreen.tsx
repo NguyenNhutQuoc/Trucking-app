@@ -6,17 +6,7 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  FlatList,
-  RefreshControl,
-  TextInput,
-  ScrollView,
-  Modal,
-  SafeAreaView,
-} from "react-native";
+import { View, StyleSheet, TouchableOpacity, FlatList, RefreshControl, TextInput, ScrollView, Modal } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 

@@ -1,17 +1,7 @@
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // src/screens/auth/LoginScreen.tsx
 import React, { useState } from "react";
-import {
-  View,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Image,
-  SafeAreaView,
-  Alert,
-} from "react-native";
+import { View, StyleSheet, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Image, Alert } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
@@ -27,6 +17,7 @@ const LoginScreen: React.FC = () => {
   const navigation = useNavigation();
   const { tenantLogin } = useAuth(); // ✅ Sử dụng tenantLogin
   const { colors, isDarkMode } = useAppTheme();
+  const insets = useSafeAreaInsets();
 
   // ✅ Thay đổi từ username → maKhachHang
   const [maKhachHang, setMaKhachHang] = useState("");
@@ -113,8 +104,8 @@ const LoginScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: colors.background }]}
+    <View
+      style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}
     >
       <StatusBar style={isDarkMode ? "light" : "dark"} />
 
@@ -251,7 +242,7 @@ const LoginScreen: React.FC = () => {
 
       {/* Loading Overlay */}
       {loading && <Loading loading={true} overlay message="Đang xác thực..." />}
-    </SafeAreaView>
+    </View>
   );
 };
 

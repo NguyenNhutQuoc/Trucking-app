@@ -1,16 +1,7 @@
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // src/screens/auth/StationSelectionScreen.tsx
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  SafeAreaView,
-  FlatList,
-  Alert,
-  RefreshControl,
-  Platform,
-} from "react-native";
+import { View, StyleSheet, Text, TouchableOpacity, FlatList, Alert, RefreshControl, Platform } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
@@ -40,6 +31,7 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
   const navigation = useNavigation();
   const { selectStation, tenantSessionData, authLevel, logout } = useAuth();
   const { colors, isDarkMode } = useAppTheme();
+  const insets = useSafeAreaInsets();
 
   // Get data from route params OR from auth context (for app reopen)
   const sessionToken =
@@ -131,7 +123,7 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
   };
 
   const handleContinue = async () => {
-    if (!selectedStationId) {
+    if (selectedStationId === null) {
       Alert.alert("Thông báo", "Vui lòng chọn trạm cân để tiếp tục");
       return;
     }
@@ -223,13 +215,13 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
   );
 
   return (
-    <SafeAreaView
+    <View
       style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
       <StatusBar style={isDarkMode ? "light" : "dark"} />
 
       {/* ✅ FIXED: Header with proper spacing from status bar */}
-      <View style={[styles.header, { backgroundColor: colors.surface }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface, paddingTop: insets.top + 16 }]}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -309,13 +301,13 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
 
       {/* ✅ FIXED: Button container moved outside content, fixed at bottom */}
       <View
-        style={[styles.buttonContainer, { backgroundColor: colors.background }]}
+        style={[styles.buttonContainer, { backgroundColor: colors.background, paddingBottom: Math.max(insets.bottom + 16, 24) }]}
       >
         <Button
           title="Tiếp tục"
           onPress={handleContinue}
           loading={loading}
-          disabled={loading || !selectedStationId}
+          disabled={loading || selectedStationId === null}
           style={styles.continueButton}
           fullWidth
         />
@@ -323,7 +315,7 @@ const StationSelectionScreen: React.FC<StationSelectionScreenProps> = ({
 
       {/* Loading overlay */}
       {loading && <Loading loading />}
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -337,7 +329,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 16, // ✅ Tăng padding cho đẹp hơn
-    paddingTop: Platform.OS === "ios" ? 16 : 35, // ✅ Thêm padding top riêng cho status bar
     borderBottomWidth: 1,
     borderBottomColor: "#E5E5E5",
     elevation: 2, // ✅ Thêm shadow cho Android

@@ -1,19 +1,7 @@
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // src/screens/auth/StationUserLoginScreen.tsx
 import React, { useState, useEffect, useRef } from "react";
-import {
-  View,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  SafeAreaView,
-  Alert,
-  Animated,
-  Dimensions,
-  TextInput,
-} from "react-native";
+import { View, StyleSheet, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert, Animated, Dimensions, TextInput } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 
@@ -28,6 +16,7 @@ const { width } = Dimensions.get("window");
 const StationUserLoginScreen: React.FC = () => {
   const { stationUserLogin, tenantInfo, logout } = useAuth();
   const { colors, isDarkMode } = useAppTheme();
+  const insets = useSafeAreaInsets();
 
   const [nvId, setNvId] = useState("");
   const [password, setPassword] = useState("");
@@ -130,8 +119,8 @@ const StationUserLoginScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: colors.background }]}
+    <View
+      style={[styles.safeArea, { backgroundColor: colors.background, paddingTop: insets.top }]}
     >
       <StatusBar style={isDarkMode ? "light" : "dark"} />
 
@@ -327,7 +316,7 @@ const StationUserLoginScreen: React.FC = () => {
       </KeyboardAvoidingView>
 
       {loading && <Loading loading={true} overlay message="Đang xác thực..." />}
-    </SafeAreaView>
+    </View>
   );
 };
 

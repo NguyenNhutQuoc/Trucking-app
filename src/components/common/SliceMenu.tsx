@@ -1,17 +1,7 @@
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // src/components/common/SliceMenu.tsx - Fixed Layout Issues
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  Animated,
-  Dimensions,
-  SafeAreaView,
-  ScrollView,
-  Alert,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, ScrollView, Alert } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -314,7 +304,7 @@ const SlideMenu: React.FC<SlideMenuProps> = ({ visible, onClose }) => {
               },
             ]}
           >
-            <SafeAreaView style={styles.menuContainer}>
+            <View style={styles.menuContainer}>
               {/* ✅ FIXED: Improved header spacing and alignment */}
               <View
                 style={[
@@ -370,7 +360,7 @@ const SlideMenu: React.FC<SlideMenuProps> = ({ visible, onClose }) => {
                   Phiên bản {APP_VERSION}
                 </Text>
               </View>
-            </SafeAreaView>
+            </View>
           </Animated.View>
         </Modal>
       )}

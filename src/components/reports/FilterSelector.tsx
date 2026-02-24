@@ -1,14 +1,7 @@
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // src/components/reports/FilterSelector.tsx
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  FlatList,
-  Modal,
-  SafeAreaView,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
 
 import colors from "@/constants/colors";
@@ -109,7 +102,7 @@ const FilterSelector: React.FC<FilterSelectorProps> = ({
         visible={modalVisible}
         onRequestClose={toggleModal}
       >
-        <SafeAreaView style={styles.modalContainer}>
+        <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Chọn</Text>
@@ -126,7 +119,7 @@ const FilterSelector: React.FC<FilterSelectorProps> = ({
               showsVerticalScrollIndicator={false}
             />
           </View>
-        </SafeAreaView>
+        </View>
       </Modal>
     </View>
   );

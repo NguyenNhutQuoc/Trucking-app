@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useAppTheme } from "@/hooks/useAppTheme";
@@ -33,6 +33,7 @@ const StationSwitcher: React.FC<StationSwitcherProps> = ({
   const { tenantInfo, sessionToken, getStationDisplayName, switchStation } =
     useAuth();
   const { colors, isDarkMode } = useAppTheme();
+  const insets = useSafeAreaInsets();
 
   const [showModal, setShowModal] = useState(false);
   const [stations, setStations] = useState<TramCan[]>([]);
@@ -272,10 +273,10 @@ const StationSwitcher: React.FC<StationSwitcherProps> = ({
           presentationStyle="formSheet"
           onRequestClose={() => setShowModal(false)}
         >
-          <SafeAreaView
+          <View
             style={[
               styles.modalContainer,
-              { backgroundColor: colors.background },
+              { backgroundColor: colors.background, paddingTop: insets.top },
             ]}
           >
             {renderHeader()}
@@ -315,7 +316,7 @@ const StationSwitcher: React.FC<StationSwitcherProps> = ({
                 </Text>
               </View>
             )}
-          </SafeAreaView>
+          </View>
         </Modal>
       </>
     );
@@ -346,17 +347,16 @@ const StationSwitcher: React.FC<StationSwitcherProps> = ({
         </View>
       </TouchableOpacity>
 
-      {/* Modal */}
       <Modal
         visible={showModal}
         animationType="slide"
         presentationStyle="formSheet"
         onRequestClose={() => setShowModal(false)}
       >
-        <SafeAreaView
+        <View
           style={[
             styles.modalContainer,
-            { backgroundColor: colors.background },
+            { backgroundColor: colors.background, paddingTop: insets.top },
           ]}
         >
           {renderHeader()}
@@ -396,7 +396,7 @@ const StationSwitcher: React.FC<StationSwitcherProps> = ({
               </Text>
             </View>
           )}
-        </SafeAreaView>
+        </View>
       </Modal>
     </>
   );

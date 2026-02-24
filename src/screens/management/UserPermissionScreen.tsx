@@ -1,15 +1,7 @@
+// src/screens/management/UserPermissionScreen.tsx
 // src/screens/management/UserPermissionsScreen.tsx (updated with real API)
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  FlatList,
-  Alert,
-  Switch,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, Switch } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 
@@ -185,7 +177,7 @@ const UserPermissionsScreen: React.FC = () => {
   const isAdmin = user.type === 1;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <Header title={`Phân quyền: ${user.tenNV}`} showBack />
 
       <View style={styles.container}>
@@ -270,7 +262,7 @@ const UserPermissionsScreen: React.FC = () => {
       </View>
 
       <Loading loading={submitting} overlay message="Đang lưu..." />
-    </SafeAreaView>
+    </View>
   );
 };
 

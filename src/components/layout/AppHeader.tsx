@@ -13,6 +13,7 @@ import {
   StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/hooks/useAuth";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import StationSwitcher from "@/components/station/StationSwitcher";
@@ -35,6 +36,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   const { tenantInfo, logout, logoutStationUser, getTenantDisplayName } =
     useAuth();
   const { colors, isDarkMode } = useAppTheme();
+  const insets = useSafeAreaInsets();
 
   const handleLogout = () => {
     Alert.alert(
@@ -74,22 +76,26 @@ const AppHeader: React.FC<AppHeaderProps> = ({
 
   return (
     <>
-      {/* ✅ FIXED: Proper status bar handling */}
+      {/* ✅ FIXED: translucent must be true with edgeToEdgeEnabled */}
       <StatusBar
-        backgroundColor={headerBackgroundColor}
+        backgroundColor="transparent"
         barStyle={isDarkMode ? "light-content" : "dark-content"}
-        translucent={false}
+        translucent={true}
       />
 
       <View
         style={[
           styles.container,
           {
+            paddingTop: insets.top > 0 ? insets.top + 12 : (Platform.OS === "ios" ? 56 : 36),
             backgroundColor: headerBackgroundColor,
             borderBottomWidth: 1,
-            borderBottomColor: borderColor,
-            shadowColor: isDarkMode ? "#000" : "#000",
-            shadowOpacity: isDarkMode ? 0.3 : 0.1,
+            borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+            elevation: 4,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.15,
+            shadowRadius: 3,
           },
         ]}
       >
@@ -184,14 +190,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    // ✅ FIXED: Better status bar handling
-    paddingTop:
-      Platform.OS === "ios" ? 44 : (StatusBar.currentHeight || 24) + 8,
-    paddingBottom: 8,
-    elevation: 3,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 3,
-    zIndex: 1000, // ✅ FIXED: Ensure header is above other content
+    paddingBottom: 14,
+    zIndex: 1000,
   },
   topRow: {
     flexDirection: "row",

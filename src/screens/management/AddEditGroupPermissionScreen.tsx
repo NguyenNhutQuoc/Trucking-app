@@ -1,15 +1,7 @@
+// src/screens/management/AddEditGroupPermissionScreen.tsx
 // src/screens/management/AddPermissionGroupScreen.tsx (updated with real API)
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  SafeAreaView,
-  Alert,
-  Text,
-} from "react-native";
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert, Text } from 'react-native';
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 
@@ -128,7 +120,7 @@ const AddPermissionGroupScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <Header
         title={editMode ? "Sửa Nhóm Quyền" : "Thêm Nhóm Quyền Mới"}
         showBack
@@ -197,7 +189,7 @@ const AddPermissionGroupScreen: React.FC = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 };
 

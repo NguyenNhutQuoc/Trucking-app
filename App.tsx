@@ -10,6 +10,8 @@ import {
   Roboto_700Bold,
 } from "@expo-google-fonts/roboto";
 
+import { Ionicons } from "@expo/vector-icons";
+
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import AppNavigator from "@/navigation/AppNavigator";
@@ -27,6 +29,7 @@ const App: React.FC = () => {
     Roboto_400Regular,
     Roboto_500Medium,
     Roboto_700Bold,
+    ...Ionicons.font,
   });
 
   // Show loading screen while fonts are loading

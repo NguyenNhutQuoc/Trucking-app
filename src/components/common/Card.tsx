@@ -14,6 +14,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import spacing from "@/styles/spacing";
 
 // M3-inspired border radius for cards
+/** M3-inspired card border radius in density-independent pixels (dp). */
 const CARD_BORDER_RADIUS = 16;
 
 // M3 Card variants

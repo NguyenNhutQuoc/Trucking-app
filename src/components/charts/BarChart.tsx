@@ -5,6 +5,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import ThemedText from "@/components/common/ThemedText";
 
+const BAR_ANIMATION_DURATION = 500; // ms
+const GRADIENT_LIGHTEN_AMOUNT = 0.45; // 0–1: how much to lighten the top colour
+
 interface BarChartProps {
   data: {
     label: string;
@@ -41,12 +44,12 @@ const AnimatedBar: React.FC<{
   useEffect(() => {
     Animated.timing(anim, {
       toValue: targetHeight,
-      duration: 500,
+      duration: BAR_ANIMATION_DURATION,
       useNativeDriver: false,
     }).start();
   }, [targetHeight]);
 
-  const topColor = lightenHex(color, 0.45);
+  const topColor = lightenHex(color, GRADIENT_LIGHTEN_AMOUNT);
 
   return (
     <Animated.View

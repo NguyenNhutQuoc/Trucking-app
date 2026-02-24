@@ -81,7 +81,7 @@ const WeighingListItem: React.FC<WeighingListItemProps> = ({
                 { backgroundColor: colors.primary + "18" },
               ]}
             >
-              <Ionicons name="truck" size={18} color={colors.primary} />
+              <Ionicons name="car" size={18} color={colors.primary} />
             </View>
             <View>
               <Text style={[styles.vehicleNumber, { color: colors.text }]}>

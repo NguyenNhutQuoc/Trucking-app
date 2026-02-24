@@ -86,7 +86,7 @@ const BarChart: React.FC<BarChartProps> = ({
   showLabels = true,
   barColor,
 }) => {
-  const { colors, isDark } = useAppTheme();
+  const { colors, isDarkMode: isDark } = useAppTheme();
 
   const defaultBarColor = barColor || colors.primary;
 

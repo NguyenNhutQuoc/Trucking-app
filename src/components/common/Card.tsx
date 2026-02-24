@@ -13,6 +13,9 @@ import {
 import { useAppTheme } from "@/hooks/useAppTheme";
 import spacing from "@/styles/spacing";
 
+// M3-inspired border radius for cards
+const CARD_BORDER_RADIUS = 16;
+
 // M3 Card variants
 type CardVariant = "elevated" | "filled" | "outlined";
 
@@ -82,6 +85,7 @@ const Card: React.FC<CardProps> = ({
         return {
           backgroundColor: colors.surfaceContainerHighest || colors.gray100,
           borderWidth: 0,
+          borderRadius: CARD_BORDER_RADIUS,
         };
       case "outlined":
         return {
@@ -95,6 +99,7 @@ const Card: React.FC<CardProps> = ({
       default:
         return {
           backgroundColor: colors.surfaceContainerLow || colors.card,
+          borderRadius: CARD_BORDER_RADIUS,
           ...styles.elevated,
         };
     }
@@ -175,7 +180,7 @@ const Card: React.FC<CardProps> = ({
 
   if (onPress) {
     return (
-      <TouchableOpacity activeOpacity={0.7} onPress={onPress}>
+      <TouchableOpacity activeOpacity={0.85} onPress={onPress}>
         {renderContent()}
       </TouchableOpacity>
     );
@@ -186,7 +191,7 @@ const Card: React.FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: spacing.radiusMd, // M3: 12px
+    borderRadius: spacing.radiusMd, // fallback, overridden per variant
     overflow: "hidden",
     marginBottom: spacing.md,
   },
@@ -194,23 +199,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   elevated: {
-    elevation: 2,
+    elevation: 3,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
   },
   statusBar: {
     position: "absolute",
     top: 0,
     left: 0,
-    width: 4,
+    width: 5,
     height: "100%",
+    borderTopRightRadius: 2.5,
+    borderBottomRightRadius: 2.5,
   },
   headerContainer: {
     paddingVertical: 12,
     paddingHorizontal: spacing.md,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   titleContainer: {
     flexDirection: "row",

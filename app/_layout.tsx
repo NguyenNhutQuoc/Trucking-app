@@ -37,7 +37,10 @@ function InitialLayout() {
 
     if (authLevel === "full" && !inMainGroup) {
       router.replace("/(main)");
-    } else if (authLevel === "station" && segments[1] !== "station-user-login") {
+    } else if (
+      authLevel === "station" &&
+      segments[1] !== "station-user-login"
+    ) {
       router.replace("/(auth)/station-user-login");
     } else if (authLevel === "tenant" && segments[1] !== "station-selection") {
       router.replace("/(auth)/station-selection");

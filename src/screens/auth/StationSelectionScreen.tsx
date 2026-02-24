@@ -1,7 +1,16 @@
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 // src/screens/auth/StationSelectionScreen.tsx
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, Text, TouchableOpacity, FlatList, Alert, RefreshControl, Platform } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  Alert,
+  RefreshControl,
+  Platform,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -203,13 +212,16 @@ const StationSelectionScreen: React.FC = () => {
   );
 
   return (
-    <View
-      style={[styles.safeArea, { backgroundColor: colors.background }]}
-    >
+    <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar style={isDarkMode ? "light" : "dark"} />
 
       {/* ✅ FIXED: Header with proper spacing from status bar */}
-      <View style={[styles.header, { backgroundColor: colors.surface, paddingTop: insets.top + 16 }]}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: colors.surface, paddingTop: insets.top + 16 },
+        ]}
+      >
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -289,7 +301,13 @@ const StationSelectionScreen: React.FC = () => {
 
       {/* ✅ FIXED: Button container moved outside content, fixed at bottom */}
       <View
-        style={[styles.buttonContainer, { backgroundColor: colors.background, paddingBottom: Math.max(insets.bottom + 16, 24) }]}
+        style={[
+          styles.buttonContainer,
+          {
+            backgroundColor: colors.background,
+            paddingBottom: Math.max(insets.bottom + 16, 24),
+          },
+        ]}
       >
         <Button
           title="Tiếp tục"

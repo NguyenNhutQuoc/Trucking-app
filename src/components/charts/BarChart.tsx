@@ -39,7 +39,7 @@ const AnimatedBar: React.FC<{
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.spring(anim, {
+    Animated.timing(anim, {
       toValue: targetHeight,
       duration: 500,
       useNativeDriver: false,
@@ -111,12 +111,11 @@ const BarChart: React.FC<BarChartProps> = ({
       <View
         style={[
           styles.gridlineOverlay,
-          { top: PADDING_TOP, bottom: PADDING_BOTTOM },
+          { top: PADDING_TOP, bottom: PADDING_BOTTOM, height: chartAreaHeight },
         ]}
         pointerEvents="none"
       >
         {Array.from({ length: GRIDLINE_COUNT }).map((_, i) => {
-          // i=0 is top, i=GRIDLINE_COUNT-1 is near the bottom
           const fraction = (i + 1) / (GRIDLINE_COUNT + 1);
           return (
             <View
@@ -124,7 +123,7 @@ const BarChart: React.FC<BarChartProps> = ({
               style={[
                 styles.gridline,
                 {
-                  top: `${fraction * 100}%` as any,
+                  top: chartAreaHeight * fraction,
                   backgroundColor: gridlineColor,
                 },
               ]}

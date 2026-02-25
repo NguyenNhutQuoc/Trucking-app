@@ -56,6 +56,9 @@
     "prettier": "^3.5.3",
     "typescript": "~5.9.2"
   },
+  "overrides": {
+    "react-dom": "19.1.0"
+  },
   "private": true,
   "expo": {
     "doctor": {

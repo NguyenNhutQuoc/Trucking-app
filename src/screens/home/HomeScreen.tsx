@@ -9,6 +9,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 // Removed unused SafeAreaView
 
 import { useAuth } from "@/hooks/useAuth";
@@ -218,62 +219,69 @@ const HomeScreen: React.FC = () => {
   };
 
   const renderPendingWeighingItem = ({ item }: { item: Phieucan }) => (
-    <Card style={styles.pendingWeighingCard}>
+    <Card variant="outlined" style={styles.pendingWeighingCard}>
       <View style={styles.pendingWeighingContent}>
-        <View style={styles.vehicleInfoRow}>
-          <Ionicons
-            name="car"
-            size={20}
-            color={colors.primary}
-            style={styles.icon}
-          />
-          <ThemedText style={styles.vehicleNumber}>{item.soxe}</ThemedText>
-          <ThemedText
-            style={[styles.weighTicketNumber, { color: colors.textSecondary }]}
-          >
-            #{item.sophieu}
-          </ThemedText>
-        </View>
+        {/* Left status strip */}
+        <View
+          style={[styles.pendingStatusStrip, { backgroundColor: colors.warning }]}
+        />
 
-        <View style={styles.infoRow}>
-          <View style={styles.infoItem}>
-            <ThemedText
-              style={[styles.infoLabel, { color: colors.textSecondary }]}
-            >
-              Cân 1:
-            </ThemedText>
-            <ThemedText style={[styles.infoValue, { color: colors.text }]}>
-              {item.tlcan1.toLocaleString()} kg
-            </ThemedText>
-          </View>
-          <View style={styles.infoItem}>
-            <ThemedText
-              style={[styles.infoLabel, { color: colors.textSecondary }]}
-            >
-              KH:
-            </ThemedText>
-            <ThemedText style={[styles.infoValue, { color: colors.text }]}>
-              {item.khachhang || "N/A"}
-            </ThemedText>
-          </View>
-        </View>
-
-        <View style={styles.bottomRow}>
-          <ThemedText
-            style={[styles.productName, { color: colors.textSecondary }]}
-          >
-            {item.loaihang || "Chưa xác định"}
-          </ThemedText>
-          <TouchableOpacity
-            style={styles.completeButton}
-            onPress={() => handleCompleteWeighing(item)}
-          >
+        <View style={styles.pendingWeighingInner}>
+          <View style={styles.vehicleInfoRow}>
             <Ionicons
-              name="checkmark-circle"
-              size={24}
-              color={colors.success}
+              name="car"
+              size={20}
+              color={colors.primary}
+              style={styles.icon}
             />
-          </TouchableOpacity>
+            <ThemedText style={styles.vehicleNumber}>{item.soxe}</ThemedText>
+            <ThemedText
+              style={[styles.weighTicketNumber, { color: colors.textSecondary }]}
+            >
+              #{item.sophieu}
+            </ThemedText>
+          </View>
+
+          <View style={styles.infoRow}>
+            <View style={styles.infoItem}>
+              <ThemedText
+                style={[styles.infoLabel, { color: colors.textSecondary }]}
+              >
+                Cân 1:
+              </ThemedText>
+              <ThemedText style={[styles.infoValue, { color: colors.text }]}>
+                {item.tlcan1.toLocaleString()} kg
+              </ThemedText>
+            </View>
+            <View style={styles.infoItem}>
+              <ThemedText
+                style={[styles.infoLabel, { color: colors.textSecondary }]}
+              >
+                KH:
+              </ThemedText>
+              <ThemedText style={[styles.infoValue, { color: colors.text }]}>
+                {item.khachhang || "N/A"}
+              </ThemedText>
+            </View>
+          </View>
+
+          <View style={styles.bottomRow}>
+            <ThemedText
+              style={[styles.productName, { color: colors.textSecondary }]}
+            >
+              {item.loaihang || "Chưa xác định"}
+            </ThemedText>
+            <TouchableOpacity
+              style={styles.completeButton}
+              onPress={() => handleCompleteWeighing(item)}
+            >
+              <Ionicons
+                name="checkmark-circle"
+                size={24}
+                color={colors.success}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Card>
@@ -300,48 +308,104 @@ const HomeScreen: React.FC = () => {
     
     const maxValue = Math.max(...data.map(d => d.count), 1); // At least 1 to avoid division by zero
     const totalWeekCount = data.reduce((sum, d) => sum + d.count, 0);
+    const lastIndex = data.length - 1; // today
 
     return (
       <View style={styles.chartPlaceholder}>
         {/* Total count summary */}
         <View style={{ marginBottom: 12, alignItems: "center" }}>
           <ThemedText style={{ fontSize: 14, color: colors.textSecondary }}>
-            Tổng: <ThemedText style={{ fontWeight: "bold", color: colors.primary }}>{totalWeekCount}</ThemedText> lượt cân
+            Tổng:{" "}
+            <ThemedText style={{ fontWeight: "bold", color: colors.primary }}>
+              {totalWeekCount}
+            </ThemedText>{" "}
+            lượt cân
           </ThemedText>
         </View>
-        <View style={styles.barChart}>
-          {data.map((item, index) => (
-            <View key={`${item.day}-${index}`} style={styles.barContainer}>
-              <View style={{ alignItems: "center", marginBottom: 4 }}>
-                <ThemedText style={{ fontSize: 10, color: colors.textSecondary }}>
-                  {item.count > 0 ? item.count : ""}
-                </ThemedText>
-              </View>
-              <View
-                style={[
-                  styles.bar,
-                  {
-                    height: item.count > 0 ? `${(item.count / maxValue) * 60}%` : 4,
-                    backgroundColor: item.count > 0 ? colors.primary : colors.gray300,
-                    opacity: isDarkMode ? 0.8 : 0.7,
-                  },
-                ]}
-              />
-              <ThemedText
-                style={[
-                  styles.dayLabel,
-                  {
-                    color: colors.textSecondary,
-                    marginTop: 8,
-                    fontSize: 12,
-                    textAlign: "center",
-                  },
-                ]}
-              >
-                {item.day}
-              </ThemedText>
-            </View>
-          ))}
+
+        {/* Chart area with subtle background */}
+        <View
+          style={[
+            styles.chartArea,
+            {
+              backgroundColor: isDarkMode
+                ? colors.surfaceContainerHigh ?? "#2C2C30"
+                : colors.gray50,
+              borderRadius: 8,
+            },
+          ]}
+        >
+          <View style={styles.barChart}>
+            {data.map((item, index) => {
+              const isToday = index === lastIndex;
+              const barColor = isToday
+                ? colors.primary
+                : item.count > 0
+                ? colors.primaryLight
+                : colors.gray300;
+
+              return (
+                <View key={`${item.day}-${index}`} style={styles.barContainer}>
+                  {/* Count label above bar */}
+                  <View style={{ alignItems: "center", marginBottom: 4, minHeight: 18 }}>
+                    {item.count > 0 && (
+                      <ThemedText
+                        style={{
+                          fontSize: 11,
+                          fontWeight: "bold",
+                          color: colors.primary,
+                        }}
+                      >
+                        {item.count}
+                      </ThemedText>
+                    )}
+                  </View>
+
+                  {/* Bar - today is slightly larger/more prominent */}
+                  <View
+                    style={[
+                      styles.bar,
+                      {
+                        height:
+                          item.count > 0
+                            ? `${(item.count / maxValue) * 60}%`
+                            : 4,
+                        backgroundColor: barColor,
+                        opacity: isDarkMode ? 0.9 : 1,
+                        borderRadius: isToday ? 5 : 4,
+                        // Today bar is slightly wider for prominence
+                        width: isToday ? "90%" : "80%",
+                      },
+                    ]}
+                  />
+
+                  {/* Day label row - with baseline separator above it */}
+                  <View
+                    style={[
+                      styles.dayLabelContainer,
+                      {
+                        borderTopColor: isDarkMode
+                          ? "#4A4458"
+                          : colors.gray200,
+                      },
+                    ]}
+                  >
+                    <ThemedText
+                      style={[
+                        styles.dayLabel,
+                        {
+                          color: isToday ? colors.primary : colors.textSecondary,
+                          fontWeight: isToday ? "700" : "400",
+                        },
+                      ]}
+                    >
+                      {item.day}
+                    </ThemedText>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
         </View>
       </View>
     );
@@ -375,21 +439,30 @@ const HomeScreen: React.FC = () => {
           />
         }
       >
-        {/* Station Info Card - Enhanced Dark Mode Support */}
+        {/* Station Info Card - Subtle gradient background */}
         {tenantInfo?.selectedStation && (
           <Card
             style={{
               ...styles.stationInfoCard,
-              backgroundColor: colors.card,
-              borderColor: isDarkMode ? colors.border : "transparent",
-              borderWidth: isDarkMode ? 1 : 0,
+              overflow: "hidden",
+              backgroundColor: "transparent",
             }}
+            contentStyle={{ padding: 0 }}
           >
-            <View style={styles.stationInfoContent}>
+            <LinearGradient
+              colors={
+                isDarkMode
+                  ? [colors.primaryContainer, colors.primaryContainer + "DD"]
+                  : ["#F0F7FF", "#EEF4FF"]
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.stationInfoContent}
+            >
               <View
                 style={[
                   styles.stationIconContainer,
-                  { backgroundColor: colors.primary + "15" },
+                  { backgroundColor: colors.primary + "20" },
                 ]}
               >
                 <Ionicons name="business" size={24} color={colors.primary} />
@@ -406,49 +479,75 @@ const HomeScreen: React.FC = () => {
                   {getStationDisplayName()}
                 </ThemedText>
               </View>
-            </View>
+            </LinearGradient>
           </Card>
         )}
 
-        {/* Quick Stats Grid - Fixed Layout */}
+        {/* Quick Stats Grid - Gradient Cards */}
         <View style={styles.quickStatsGrid}>
           <View style={styles.quickStatsRow}>
             <TouchableOpacity
               style={styles.statCardContainer}
               onPress={handleStatsPress}
+              activeOpacity={0.85}
             >
-              <Card style={styles.statCard}>
+              <LinearGradient
+                colors={[colors.primary, colors.primaryDark || "#1565C0"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.gradientCard}
+              >
+                <View style={styles.gradientCardIconCircle}>
+                  <Ionicons name="car" size={24} color="#fff" />
+                </View>
                 <ThemedText
-                  style={[styles.statNumber, { color: colors.success }]}
+                  style={styles.gradientCardNumber}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  maxFontSizeMultiplier={1}
                 >
                   {todayStats.totalVehicles}
                 </ThemedText>
                 <ThemedText
-                  style={[styles.statLabel, { color: colors.textSecondary }]}
+                  style={styles.gradientCardLabel}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1}
                 >
                   Xe hôm nay
                 </ThemedText>
-              </Card>
+              </LinearGradient>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.statCardContainer}
               onPress={handleStatsPress}
+              activeOpacity={0.85}
             >
-              <Card style={styles.statCard}>
+              <LinearGradient
+                colors={[colors.secondary || "#00796B", "#004D40"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.gradientCard}
+              >
+                <View style={styles.gradientCardIconCircle}>
+                  <Ionicons name="scale" size={24} color="#fff" />
+                </View>
                 <ThemedText
-                  style={[styles.statNumber, { color: colors.warning }]}
+                  style={styles.gradientCardNumber}
                   numberOfLines={1}
                   adjustsFontSizeToFit
+                  maxFontSizeMultiplier={1}
                 >
                   {formatWeightAbbr(todayStats.totalWeight)}
                 </ThemedText>
                 <ThemedText
-                  style={[styles.statLabel, { color: colors.textSecondary }]}
+                  style={styles.gradientCardLabel}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1}
                 >
                   Tổng trọng lượng
                 </ThemedText>
-              </Card>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </View>
@@ -456,9 +555,17 @@ const HomeScreen: React.FC = () => {
         {/* Pending Weighings - Enhanced Dark Mode Support */}
         <View style={styles.pendingWeighingsContainer}>
           <View style={styles.sectionHeader}>
-            <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>
-              Chờ hoàn thành ({pendingWeighings.length})
-            </ThemedText>
+            <View style={styles.sectionTitleRow}>
+              <View
+                style={[
+                  styles.sectionAccent,
+                  { backgroundColor: colors.primary },
+                ]}
+              />
+              <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>
+                Chờ hoàn thành ({pendingWeighings.length})
+              </ThemedText>
+            </View>
             <TouchableOpacity onPress={handleViewAllPending}>
               <ThemedText
                 style={[styles.viewAllText, { color: colors.primary }]}
@@ -483,9 +590,17 @@ const HomeScreen: React.FC = () => {
         {/* Activity Chart - Enhanced Dark Mode Support */}
         <View style={styles.activityContainer}>
           <View style={styles.sectionHeader}>
-            <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>
-              Hoạt động 7 ngày
-            </ThemedText>
+            <View style={styles.sectionTitleRow}>
+              <View
+                style={[
+                  styles.sectionAccent,
+                  { backgroundColor: colors.primary },
+                ]}
+              />
+              <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>
+                Hoạt động 7 ngày
+              </ThemedText>
+            </View>
             <TouchableOpacity onPress={handleViewAllWeighings}>
               <ThemedText
                 style={[styles.viewAllText, { color: colors.primary }]}
@@ -567,12 +682,48 @@ const styles = StyleSheet.create({
   quickStatsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "stretch", // Ensure all cards have same height
+    alignItems: "stretch",
   },
   statCardContainer: {
     flex: 1,
-    marginHorizontal: 4, // Small gap between cards
+    marginHorizontal: 4,
   },
+  // Gradient stat cards
+  gradientCard: {
+    borderRadius: 16,
+    padding: 16,
+    minHeight: 110,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 4,
+    shadowColor: "#1565C0",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+  },
+  gradientCardIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.20)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  gradientCardNumber: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  gradientCardLabel: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.85)",
+    textAlign: "center",
+    fontWeight: "500",
+  },
+  // Legacy stat styles kept for safety
   statCard: {
     flex: 1,
     alignItems: "center",
@@ -606,8 +757,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
   },
+  sectionTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  sectionAccent: {
+    width: 2,
+    height: 16,
+    borderRadius: 1,
+    marginRight: 8,
+  },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "600",
   },
   viewAllText: {
@@ -619,6 +780,16 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   pendingWeighingContent: {
+    flexDirection: "row",
+    overflow: "hidden",
+  },
+  pendingStatusStrip: {
+    width: 4,
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
+  },
+  pendingWeighingInner: {
+    flex: 1,
     padding: 16,
   },
   vehicleInfoRow: {
@@ -694,6 +865,11 @@ const styles = StyleSheet.create({
     height: 200,
     justifyContent: "flex-end",
   },
+  chartArea: {
+    flex: 1,
+    paddingHorizontal: 4,
+    paddingTop: 4,
+  },
   barChart: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -701,19 +877,25 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   barContainer: {
-    width: "12%",
+    width: "15%",
     justifyContent: "flex-end",
     alignItems: "center",
   },
   bar: {
-    width: "100%",
+    width: "80%",
     borderRadius: 4,
     minHeight: 4,
+  },
+  dayLabelContainer: {
+    borderTopWidth: 1,
+    marginTop: 6,
+    paddingTop: 4,
+    width: "100%",
+    alignItems: "center",
   },
   dayLabel: {
     fontSize: 12,
     textAlign: "center",
-    marginTop: 4,
   },
 });
 

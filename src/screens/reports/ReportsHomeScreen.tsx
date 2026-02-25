@@ -1,7 +1,14 @@
 // src/screens/reports/ReportsHomeScreen.tsx
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Platform,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 
 import { weighingApi } from "@/api/weighing";
@@ -23,6 +30,15 @@ import {
 } from "@/utils/date";
 import { ROUTE_PATH_MAP } from "@/constants/routes";
 import { PhieucanStatistics } from "@/types/api.types";
+
+// Per-category accent colors for report list items
+const REPORT_ITEM_COLORS = {
+  CompanyReports:   { bg: "#3F51B5", icon: "#3F51B5" }, // indigo
+  ProductReports:   { bg: "#00897B", icon: "#00897B" }, // teal
+  VehicleReports:   { bg: "#FB8C00", icon: "#FB8C00" }, // amber
+  DateRangeReports: { bg: "#8E24AA", icon: "#8E24AA" }, // purple
+  CustomReport:     { bg: "#E91E63", icon: "#E91E63" }, // pink
+};
 
 const ReportsHomeScreen: React.FC = () => {
   const router = useRouter();
@@ -67,7 +83,7 @@ const ReportsHomeScreen: React.FC = () => {
         startDate,
         endDate,
       );
-      
+
       if (response) {
         setStatistics(response.data);
       } else {
@@ -85,8 +101,23 @@ const ReportsHomeScreen: React.FC = () => {
     setTimeframe(newTimeframe);
   };
 
-  const renderSegmentedControl = () => (
-    <View style={[styles.segmentedContainer, { backgroundColor: colors.surfaceContainer }]}>
+  // Compute average per day (only meaningful for week/month)
+  const avgPerDay = (() => {
+    if (!statistics) return 0;
+    if (timeframe === "week") return Math.round(statistics.totalVehicles / 7);
+    if (timeframe === "month") return Math.round(statistics.totalVehicles / 30);
+    return statistics.totalVehicles; // today: same value
+  })();
+
+  const statusGood = statistics ? statistics.totalVehicles > 0 : false;
+
+  // ── Pill chips time filter ────────────────────────────────────────────────
+  const renderTimeFilter = () => (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.chipRow}
+    >
       {(["today", "week", "month"] as const).map((t) => {
         const isSelected = timeframe === t;
         const label =
@@ -94,19 +125,19 @@ const ReportsHomeScreen: React.FC = () => {
         return (
           <TouchableOpacity
             key={t}
+            activeOpacity={0.8}
             style={[
-              styles.segmentButton,
-              isSelected && { backgroundColor: colors.secondaryContainer },
+              styles.chip,
+              isSelected
+                ? { backgroundColor: colors.primary, borderColor: colors.primary }
+                : { backgroundColor: "transparent", borderColor: colors.primary },
             ]}
             onPress={() => handleTimeframeChange(t)}
           >
-            {isSelected && (
-              <Ionicons name="checkmark" size={16} color={colors.onSecondaryContainer} style={styles.checkIcon} />
-            )}
             <ThemedText
               style={[
-                styles.segmentLabel,
-                isSelected && { color: colors.onSecondaryContainer, fontWeight: "600" },
+                styles.chipLabel,
+                { color: isSelected ? "#FFFFFF" : colors.primary },
               ]}
             >
               {label}
@@ -114,42 +145,152 @@ const ReportsHomeScreen: React.FC = () => {
           </TouchableOpacity>
         );
       })}
+    </ScrollView>
+  );
+
+  // ── KPI card ──────────────────────────────────────────────────────────────
+  const renderKpiCard = (
+    gradientColors: [string, string],
+    icon: string,
+    value: string,
+    label: string,
+    trendUp: boolean,
+  ) => (
+    <LinearGradient
+      colors={gradientColors}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.kpiCard}
+    >
+      {/* Icon circle */}
+      <View style={styles.kpiIconCircle}>
+        <Ionicons name={icon as any} size={20} color="#FFFFFF" />
+      </View>
+
+      {/* Value + trend */}
+      <View style={styles.kpiValueRow}>
+        <ThemedText style={styles.kpiValue}>{value}</ThemedText>
+        <Ionicons
+          name={trendUp ? "chevron-up" : "chevron-down"}
+          size={16}
+          color="rgba(255,255,255,0.75)"
+          style={styles.kpiTrend}
+        />
+      </View>
+
+      <ThemedText style={styles.kpiLabel}>{label}</ThemedText>
+    </LinearGradient>
+  );
+
+  // ── KPI grid ──────────────────────────────────────────────────────────────
+  const renderKpiGrid = () => {
+    if (!statistics) return null;
+    return (
+      <View style={styles.kpiGrid}>
+        <View style={styles.kpiRow}>
+          {renderKpiCard(
+            ["#1976D2", "#1565C0"],
+            "car-sport",
+            String(statistics.totalVehicles),
+            "Tổng số xe",
+            statistics.totalVehicles > 0,
+          )}
+          {renderKpiCard(
+            ["#00897B", "#00695C"],
+            "scale",
+            formatWeight(statistics.totalWeight, true),
+            "Tổng trọng lượng",
+            statistics.totalWeight > 0,
+          )}
+        </View>
+        <View style={styles.kpiRow}>
+          {renderKpiCard(
+            ["#0288D1", "#0277BD"],
+            "stats-chart",
+            timeframe === "today" ? String(statistics.totalVehicles) : String(avgPerDay),
+            timeframe === "today" ? "Xe hôm nay" : "Trung bình / ngày",
+            avgPerDay > 0,
+          )}
+          {renderKpiCard(
+            statusGood ? ["#2E7D32", "#1B5E20"] : ["#E65100", "#BF360C"],
+            statusGood ? "checkmark-circle" : "alert-circle",
+            statusGood ? "Tốt" : "Cần chú ý",
+            "Trạng thái",
+            statusGood,
+          )}
+        </View>
+      </View>
+    );
+  };
+
+  // ── Section header with accent bar ────────────────────────────────────────
+  const renderSectionHeader = (icon: string, title: string) => (
+    <View style={styles.sectionHeader}>
+      <View style={[styles.sectionAccentBar, { backgroundColor: colors.primary }]} />
+      <Ionicons name={icon as any} size={18} color={colors.primary} style={styles.sectionHeaderIcon} />
+      <ThemedText style={[styles.sectionTitle, { color: colors.onSurface }]}>
+        {title}
+      </ThemedText>
     </View>
   );
 
+  // ── Report list item ───────────────────────────────────────────────────────
   const renderReportItem = (
     title: string,
     icon: string,
-    screen: string,
-    description: string
-  ) => (
-    <TouchableOpacity
-      style={[
-        styles.reportItem,
-        { backgroundColor: colors.surface, borderColor: colors.outlineVariant },
-      ]}
-      onPress={() => {
-        const path = ROUTE_PATH_MAP[screen];
-        if (path) router.push(path as any);
-      }}
-    >
-      <View
+    screen: keyof typeof REPORT_ITEM_COLORS,
+    description: string,
+  ) => {
+    const accent = REPORT_ITEM_COLORS[screen];
+    return (
+      <TouchableOpacity
+        key={screen}
+        activeOpacity={0.85}
         style={[
-          styles.reportIconContainer,
-          { backgroundColor: colors.primaryContainer },
+          styles.reportItem,
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.outlineVariant,
+            ...Platform.select({
+              android: { elevation: 1 },
+              ios: {
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.08,
+                shadowRadius: 3,
+              },
+            }),
+          },
         ]}
+        onPress={() => {
+          const path = ROUTE_PATH_MAP[screen];
+          if (path) router.push(path as any);
+        }}
       >
-        <Ionicons name={icon as any} size={24} color={colors.onPrimaryContainer} />
-      </View>
-      <View style={styles.reportContent}>
-        <ThemedText style={styles.reportItemTitle}>{title}</ThemedText>
-        <ThemedText type="caption" style={{ color: colors.onSurfaceVariant }}>
-          {description}
-        </ThemedText>
-      </View>
-      <Ionicons name="chevron-forward" size={20} color={colors.onSurfaceVariant} />
-    </TouchableOpacity>
-  );
+        {/* Color-coded icon container */}
+        <View
+          style={[
+            styles.reportIconContainer,
+            { backgroundColor: accent.bg + "26" }, // ~15% opacity (0x26 = 38/255)
+          ]}
+        >
+          <Ionicons name={icon as any} size={24} color={accent.icon} />
+        </View>
+
+        <View style={styles.reportContent}>
+          <ThemedText style={styles.reportItemTitle}>{title}</ThemedText>
+          <ThemedText type="caption" style={{ color: colors.onSurfaceVariant }}>
+            {description}
+          </ThemedText>
+        </View>
+
+        {/* Arrow indicator */}
+        <View style={[styles.reportArrow, { backgroundColor: accent.bg + "1A" }]}>{/* ~10% opacity (0x1A = 26/255) */}
+          <Ionicons name="chevron-forward" size={16} color={accent.icon} />
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <ThemedView useSafeArea>
@@ -160,7 +301,8 @@ const ReportsHomeScreen: React.FC = () => {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {renderSegmentedControl()}
+        {/* ── Time filter ── */}
+        {renderTimeFilter()}
 
         {loading ? (
           <Loading loading />
@@ -189,41 +331,13 @@ const ReportsHomeScreen: React.FC = () => {
 
             {statistics && (
               <>
-                <View style={styles.summaryContainer}>
-                  <Card style={[styles.summaryCard, { backgroundColor: colors.primaryContainer }]}>
-                    <View style={styles.summaryIconContainer}>
-                      <Ionicons name="car-sport" size={24} color={colors.onPrimaryContainer} />
-                    </View>
-                    <ThemedText style={[styles.summaryLabel, { color: colors.onPrimaryContainer }]}>
-                      Tổng số xe
-                    </ThemedText>
-                    <ThemedText style={[styles.summaryValue, { color: colors.onPrimaryContainer }]}>
-                      {statistics.totalVehicles}
-                    </ThemedText>
-                  </Card>
+                {/* ── KPI cards ── */}
+                {renderKpiGrid()}
 
-                  <Card style={[styles.summaryCard, { backgroundColor: colors.secondaryContainer }]}>
-                    <View style={styles.summaryIconContainer}>
-                      <Ionicons name="scale" size={24} color={colors.onSecondaryContainer} />
-                    </View>
-                    <ThemedText style={[styles.summaryLabel, { color: colors.onSecondaryContainer }]}>
-                      Tổng trọng lượng
-                    </ThemedText>
-                    <ThemedText style={[styles.summaryValue, { color: colors.onSecondaryContainer }]}>
-                      {formatWeight(statistics.totalWeight, true)}
-                    </ThemedText>
-                  </Card>
-                </View>
-
+                {/* ── Pie chart ── */}
                 {statistics.byProduct.length > 0 && (
-                  <Card style={styles.chartCard}>
-                    <View style={styles.cardHeader}>
-                      <Ionicons name="pie-chart" size={20} color={colors.primary} />
-                      <ThemedText style={styles.chartTitle}>
-                        Phân bố theo loại hàng
-                      </ThemedText>
-                    </View>
-
+                  <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}>
+                    {renderSectionHeader("pie-chart", "Phân bố theo loại hàng")}
                     <PieChart
                       data={statistics.byProduct.map((item) => ({
                         name: item.productName,
@@ -231,18 +345,13 @@ const ReportsHomeScreen: React.FC = () => {
                       }))}
                       height={200}
                     />
-                  </Card>
+                  </View>
                 )}
 
+                {/* ── Bar chart ── */}
                 {statistics.byDay.length > 0 && (
-                  <Card style={styles.chartCard}>
-                    <View style={styles.cardHeader}>
-                      <Ionicons name="bar-chart" size={20} color={colors.primary} />
-                      <ThemedText style={styles.chartTitle}>
-                        Hoạt động theo ngày
-                      </ThemedText>
-                    </View>
-
+                  <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}>
+                    {renderSectionHeader("bar-chart", "Hoạt động theo ngày")}
                     <BarChart
                       data={statistics.byDay.map((day) => ({
                         label: day.date.split("-")[2],
@@ -251,56 +360,67 @@ const ReportsHomeScreen: React.FC = () => {
                       height={200}
                       barColor={colors.primary}
                     />
-                  </Card>
+                  </View>
                 )}
               </>
             )}
 
-            <ThemedText type="title" style={styles.sectionTitle}>
-              Báo cáo chi tiết
-            </ThemedText>
+            {/* ── Detailed reports ── */}
+            <View style={styles.detailSectionHeader}>
+              {renderSectionHeader("document-text", "Báo cáo chi tiết")}
+            </View>
 
             <View style={styles.reportList}>
               {renderReportItem(
                 "Theo khách hàng",
                 "business-outline",
                 "CompanyReports",
-                "Thống kê theo đối tác, khách hàng"
+                "Thống kê theo đối tác, khách hàng",
               )}
               {renderReportItem(
                 "Theo hàng hóa",
                 "cube-outline",
                 "ProductReports",
-                "Chi tiết theo loại hàng, sản phẩm"
+                "Chi tiết theo loại hàng, sản phẩm",
               )}
               {renderReportItem(
                 "Theo xe",
                 "car-outline",
                 "VehicleReports",
-                "Hoạt động của từng phương tiện"
+                "Hoạt động của từng phương tiện",
               )}
               {renderReportItem(
                 "Theo khoảng thời gian",
                 "calendar-outline",
                 "DateRangeReports",
-                "Tùy chỉnh khoảng thời gian báo cáo"
+                "Tùy chỉnh khoảng thời gian báo cáo",
               )}
               {renderReportItem(
                 "Báo cáo tùy chỉnh",
                 "options-outline",
                 "CustomReport",
-                "Bộ lọc nâng cao và xuất Excel"
+                "Bộ lọc nâng cao và xuất Excel",
               )}
             </View>
 
-            <View style={styles.exportContainer}>
-              <Button
-                title="Xuất báo cáo tổng hợp"
-                variant="primary"
-                icon={<Ionicons name="download-outline" size={20} color="white" />}
-                fullWidth
-              />
-            </View>
+            {/* ── Export button ── */}
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={styles.exportButton}
+              onPress={() => {/* existing export action */}}
+            >
+              <LinearGradient
+                colors={[colors.primary, colors.primaryDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.exportGradient}
+              >
+                <Ionicons name="download-outline" size={20} color="#FFFFFF" />
+                <ThemedText style={styles.exportLabel}>
+                  Xuất báo cáo tổng hợp
+                </ThemedText>
+              </LinearGradient>
+            </TouchableOpacity>
           </>
         )}
       </ScrollView>
@@ -314,90 +434,124 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 40,
   },
-  segmentedContainer: {
+
+  // ── Time filter chips ──────────────────────────────────────────────────────
+  chipRow: {
     flexDirection: "row",
-    borderRadius: 24, // Pill shape
-    padding: 4,
+    gap: 10,
     marginBottom: 24,
-    height: 48,
-    borderWidth: 1,
-    borderColor: "transparent", 
+    paddingHorizontal: 2,
   },
-  segmentButton: {
-    flex: 1,
-    flexDirection: "row",
+  chip: {
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 20,
   },
-  checkIcon: {
-    marginRight: 6,
-  },
-  segmentLabel: {
+  chipLabel: {
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "600",
   },
-  summaryContainer: {
-    flexDirection: "row",
+
+  // ── KPI grid ──────────────────────────────────────────────────────────────
+  kpiGrid: {
     gap: 12,
     marginBottom: 24,
   },
-  summaryCard: {
+  kpiRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  kpiCard: {
     flex: 1,
-    padding: 16,
-    alignItems: "flex-start",
     borderRadius: 16,
-    elevation: 2,
+    padding: 16,
   },
-  summaryIconContainer: {
+  kpiIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.25)",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 12,
-    opacity: 0.8,
   },
-  summaryLabel: {
-    fontSize: 12,
-    fontWeight: "500",
+  kpiValueRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
     marginBottom: 4,
-    opacity: 0.9,
   },
-  summaryValue: {
+  kpiValue: {
     fontSize: 20,
     fontWeight: "700",
+    color: "#FFFFFF",
   },
-  chartCard: {
-    marginBottom: 24,
-    padding: 16,
-    borderRadius: 16,
-    elevation: 1,
+  kpiTrend: {
+    marginTop: 2,
   },
-  cardHeader: {
+  kpiLabel: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "rgba(255,255,255,0.82)",
+  },
+
+  // ── Section header ─────────────────────────────────────────────────────────
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 16,
-    gap: 8,
   },
-  chartTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+  sectionAccentBar: {
+    width: 4,
+    height: 18,
+    borderRadius: 2,
+    marginRight: 8,
+  },
+  sectionHeaderIcon: {
+    marginRight: 6,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginTop: 8,
-    marginBottom: 16,
+    fontSize: 16,
+    fontWeight: "700",
   },
+  detailSectionHeader: {
+    marginTop: 8,
+    marginBottom: 4,
+  },
+
+  // ── Chart cards ────────────────────────────────────────────────────────────
+  chartCard: {
+    marginBottom: 20,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    ...Platform.select({
+      android: { elevation: 1 },
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.07,
+        shadowRadius: 4,
+      },
+    }),
+  },
+
+  // ── Report list items ──────────────────────────────────────────────────────
   reportList: {
-    gap: 12,
-    marginBottom: 24,
+    gap: 10,
+    marginBottom: 28,
   },
   reportItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
-    borderRadius: 16,
+    padding: 14,
+    borderRadius: 12,
     borderWidth: 1,
-    elevation: 0,
   },
   reportIconContainer: {
     width: 48,
@@ -405,19 +559,54 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 16,
+    marginRight: 14,
   },
   reportContent: {
     flex: 1,
   },
   reportItemTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
     marginBottom: 2,
   },
-  exportContainer: {
-    marginBottom: 16,
+  reportArrow: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 8,
   },
+
+  // ── Export button ──────────────────────────────────────────────────────────
+  exportButton: {
+    borderRadius: 14,
+    overflow: "hidden",
+    ...Platform.select({
+      android: { elevation: 4 },
+      ios: {
+        shadowColor: "#1565C0",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+    }),
+  },
+  exportGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    gap: 10,
+  },
+  exportLabel: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+
+  // ── Error state ────────────────────────────────────────────────────────────
   errorCard: {
     marginBottom: 16,
     borderLeftWidth: 4,

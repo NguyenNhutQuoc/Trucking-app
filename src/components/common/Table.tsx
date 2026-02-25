@@ -52,9 +52,9 @@ const Table: React.FC<TableProps> = ({
         style={[
           styles.headerCell,
           {
-            backgroundColor: colors.gray50,
+            backgroundColor: colors.surfaceContainerHigh || colors.gray100,
             borderRightColor: colors.gray200,
-            borderBottomColor: colors.gray200,
+            borderBottomColor: colors.gray300,
             width: column.width,
             flex: column.flex,
           },
@@ -75,12 +75,17 @@ const Table: React.FC<TableProps> = ({
         </ThemedText>
         {canSort && (
           <View style={styles.sortIcon}>
-            {isActive && (
+            {isActive ? (
               <Ionicons
                 name={sortOrder === "asc" ? "chevron-up" : "chevron-down"}
-                size={14}
+                size={12}
                 color={colors.primary}
               />
+            ) : (
+              <View style={styles.sortInactive}>
+                <Ionicons name="chevron-up" size={10} color={colors.gray400} />
+                <Ionicons name="chevron-down" size={10} color={colors.gray400} />
+              </View>
             )}
           </View>
         )}
@@ -97,9 +102,9 @@ const Table: React.FC<TableProps> = ({
           styles.headerCell,
           styles.indexCell,
           {
-            backgroundColor: colors.gray50,
+            backgroundColor: colors.surfaceContainerHigh || colors.gray100,
             borderRightColor: colors.gray200,
-            borderBottomColor: colors.gray200,
+            borderBottomColor: colors.gray300,
           },
         ]}
       >
@@ -158,7 +163,7 @@ const Table: React.FC<TableProps> = ({
           {
             borderRightColor: colors.gray100,
             borderBottomColor: colors.gray100,
-            backgroundColor: colors.gray50,
+            backgroundColor: colors.surfaceContainerLow || colors.gray50,
           },
         ]}
       >
@@ -171,14 +176,20 @@ const Table: React.FC<TableProps> = ({
 
   const renderRow = (item: any, index: number) => {
     const key = keyExtractor ? keyExtractor(item, index) : index.toString();
+    const isEven = index % 2 === 0;
 
     return (
       <TouchableOpacity
         key={key}
         style={[
           styles.row,
-          index % 2 === 1 && { backgroundColor: colors.gray50 },
+          {
+            backgroundColor: isEven
+              ? colors.surfaceContainerLowest || colors.surface || "transparent"
+              : colors.surfaceContainerLow || colors.gray50,
+          },
         ]}
+        activeOpacity={0.7}
         onPress={() => onRowPress?.(item, index)}
         disabled={!onRowPress}
       >
@@ -192,7 +203,9 @@ const Table: React.FC<TableProps> = ({
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="document-outline" size={48} color={colors.gray400} />
+      <View style={[styles.emptyIconCircle, { borderColor: colors.gray300 }]}>
+        <Ionicons name="document-outline" size={32} color={colors.gray400} />
+      </View>
       <ThemedText style={[styles.emptyText, { color: colors.gray600 }]}>
         {emptyText}
       </ThemedText>
@@ -234,6 +247,13 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
+    // subtle bottom shadow for header
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    zIndex: 1,
   },
   headerCell: {
     paddingVertical: 12,
@@ -251,10 +271,17 @@ const styles = StyleSheet.create({
   headerText: {
     fontSize: 13,
     fontWeight: "600",
+    letterSpacing: 0.5,
     flex: 1,
   },
   sortIcon: {
     marginLeft: 4,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sortInactive: {
+    alignItems: "center",
+    marginTop: -2,
   },
   row: {
     flexDirection: "row",
@@ -272,6 +299,8 @@ const styles = StyleSheet.create({
   },
   cellText: {
     fontSize: 13,
+    letterSpacing: 0.25,
+    lineHeight: 18,
   },
   indexCell: {
     width: 50,
@@ -283,10 +312,20 @@ const styles = StyleSheet.create({
     paddingVertical: 48,
     paddingHorizontal: 24,
   },
+  emptyIconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
   emptyText: {
     marginTop: 12,
     fontSize: 14,
     textAlign: "center",
+    letterSpacing: 0.25,
   },
 });
 

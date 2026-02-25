@@ -303,22 +303,6 @@ const StationUserLoginScreen: React.FC = () => {
                 )}
               </TouchableOpacity>
             </View>
-
-            {/* Back to Login Link */}
-            <TouchableOpacity
-              style={styles.backContainer}
-              onPress={handleBackToLogin}
-              disabled={loading}
-            >
-              <Ionicons
-                name="arrow-back-circle-outline"
-                size={20}
-                color={colors.error}
-              />
-              <Text style={[styles.backText, { color: colors.error }]}>
-                Đăng xuất tài khoản chính
-              </Text>
-            </TouchableOpacity>
           </Animated.View>
         </ScrollView>
 

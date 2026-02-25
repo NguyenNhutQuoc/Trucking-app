@@ -52,13 +52,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({
             );
           },
         },
-        {
-          text: "Đăng xuất hoàn toàn",
-          style: "destructive",
-          onPress: () => {
-            logout().catch((error) => console.error("Logout error:", error));
-          },
-        },
       ],
       {
         userInterfaceStyle: isDarkMode ? "dark" : "light",
@@ -87,12 +80,19 @@ const AppHeader: React.FC<AppHeaderProps> = ({
         style={[
           styles.container,
           {
-            paddingTop: insets.top > 0 ? insets.top + 12 : (Platform.OS === "ios" ? 56 : 36),
+            paddingTop:
+              insets.top > 0
+                ? insets.top + 12
+                : Platform.OS === "ios"
+                  ? 56
+                  : 36,
             backgroundColor: headerBackgroundColor,
             borderBottomWidth: 1,
-            borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+            borderBottomColor: isDarkMode
+              ? "rgba(255,255,255,0.1)"
+              : "rgba(0,0,0,0.08)",
             elevation: 4,
-            shadowColor: '#000',
+            shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.15,
             shadowRadius: 3,

@@ -1,7 +1,17 @@
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 // src/components/common/SliceMenu.tsx - Fixed Layout Issues
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, ScrollView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  Animated,
+  Dimensions,
+  ScrollView,
+  Alert,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -83,14 +93,6 @@ const SlideMenu: React.FC<SlideMenuProps> = ({ visible, onClose }) => {
           logoutStationUser().catch((error) =>
             console.error("Logout error:", error),
           );
-        },
-      },
-      {
-        text: "Đăng xuất hoàn toàn",
-        style: "destructive",
-        onPress: () => {
-          onClose();
-          logout().catch((error) => console.error("Logout error:", error));
         },
       },
     ]);

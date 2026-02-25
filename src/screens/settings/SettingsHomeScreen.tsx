@@ -1,10 +1,18 @@
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from "react-native-safe-area-context";
 // ===============================================================
 // src/screens/settings/SettingsHomeScreen.tsx - Fixed Layout
 // ===============================================================
 
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Switch } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  Switch,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -246,13 +254,6 @@ const SettingsHomeScreen: React.FC = () => {
           logoutStationUser().catch((error) =>
             console.error("Logout error:", error),
           );
-        },
-      },
-      {
-        text: "Đăng xuất hoàn toàn",
-        style: "destructive",
-        onPress: () => {
-          logout().catch((error) => console.error("Logout error:", error));
         },
       },
     ]);

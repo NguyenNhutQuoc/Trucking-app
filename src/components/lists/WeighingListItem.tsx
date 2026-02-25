@@ -41,16 +41,15 @@ const WeighingListItem: React.FC<WeighingListItemProps> = ({
       ? "checkmark-circle"
       : "time";
 
-  const netWeight =
-    isCompleted ? Math.abs((weighing.tlcan2 ?? 0) - weighing.tlcan1) : null;
+  const netWeight = isCompleted
+    ? Math.abs((weighing.tlcan2 ?? 0) - weighing.tlcan1)
+    : null;
 
   // Tinted chip background: 18% opacity tint of the status colour
   const statusBg = statusColor + "2E";
 
   // Detail chip background for subtle grouping
-  const chipBg = isDarkMode
-    ? colors.gray200 + "22"
-    : colors.gray200 + "88";
+  const chipBg = isDarkMode ? colors.gray200 + "22" : colors.gray200 + "88";
 
   return (
     <TouchableOpacity
@@ -66,9 +65,7 @@ const WeighingListItem: React.FC<WeighingListItemProps> = ({
       ]}
     >
       {/* Left accent bar */}
-      <View
-        style={[styles.accentBar, { backgroundColor: statusColor }]}
-      />
+      <View style={[styles.accentBar, { backgroundColor: statusColor }]} />
 
       <View style={styles.inner}>
         {/* ── Header ─────────────────────────────────── */}
@@ -87,8 +84,10 @@ const WeighingListItem: React.FC<WeighingListItemProps> = ({
               <Text style={[styles.vehicleNumber, { color: colors.text }]}>
                 {weighing.soxe}
               </Text>
-              <Text style={[styles.ticketNumber, { color: colors.textSecondary }]}>
-                Phiếu #{weighing.sophieu}
+              <Text
+                style={[styles.ticketNumber, { color: colors.textSecondary }]}
+              >
+                Phiếu {weighing.sophieu}
               </Text>
             </View>
           </View>
@@ -132,7 +131,9 @@ const WeighingListItem: React.FC<WeighingListItemProps> = ({
                 style={styles.chipIcon}
               />
               <View>
-                <Text style={[styles.chipLabel, { color: colors.textSecondary }]}>
+                <Text
+                  style={[styles.chipLabel, { color: colors.textSecondary }]}
+                >
                   Ra · {formatTime(weighing.ngaycan2 || "")}
                 </Text>
                 <Text style={[styles.chipValue, { color: colors.text }]}>
@@ -145,7 +146,10 @@ const WeighingListItem: React.FC<WeighingListItemProps> = ({
               style={[
                 styles.detailChip,
                 styles.pendingChip,
-                { backgroundColor: colors.warning + "12", borderColor: colors.warning + "40" },
+                {
+                  backgroundColor: colors.warning + "12",
+                  borderColor: colors.warning + "40",
+                },
               ]}
             >
               <Ionicons
@@ -166,11 +170,16 @@ const WeighingListItem: React.FC<WeighingListItemProps> = ({
           <View
             style={[
               styles.netWeightRow,
-              { backgroundColor: colors.success + "14", borderColor: colors.success + "30" },
+              {
+                backgroundColor: colors.success + "14",
+                borderColor: colors.success + "30",
+              },
             ]}
           >
             <Ionicons name="scale-outline" size={15} color={colors.success} />
-            <Text style={[styles.netWeightLabel, { color: colors.textSecondary }]}>
+            <Text
+              style={[styles.netWeightLabel, { color: colors.textSecondary }]}
+            >
               Trọng lượng hàng
             </Text>
             <Text style={[styles.netWeightValue, { color: colors.success }]}>
@@ -195,7 +204,9 @@ const WeighingListItem: React.FC<WeighingListItemProps> = ({
             </Text>
           </View>
 
-          <View style={[styles.footerDot, { backgroundColor: colors.border }]} />
+          <View
+            style={[styles.footerDot, { backgroundColor: colors.border }]}
+          />
 
           <View style={styles.footerItem}>
             <Ionicons
@@ -231,8 +242,19 @@ const WeighingListItem: React.FC<WeighingListItemProps> = ({
             activeOpacity={0.82}
             onPress={() => onCompletePress(weighing.stt)}
           >
-            <Ionicons name="checkmark-circle" size={18} color={colors.onPrimary ?? "#fff"} />
-            <Text style={[styles.completeButtonText, { color: colors.onPrimary ?? "#fff" }]}>Hoàn thành cân ra</Text>
+            <Ionicons
+              name="checkmark-circle"
+              size={18}
+              color={colors.onPrimary ?? "#fff"}
+            />
+            <Text
+              style={[
+                styles.completeButtonText,
+                { color: colors.onPrimary ?? "#fff" },
+              ]}
+            >
+              Hoàn thành cân ra
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -251,7 +273,7 @@ const styles = StyleSheet.create({
     elevation: 3,
     // shadow for iOS
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.10,
+    shadowOpacity: 0.1,
     shadowRadius: 6,
   },
   accentBar: {

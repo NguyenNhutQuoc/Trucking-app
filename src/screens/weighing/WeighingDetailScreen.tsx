@@ -189,7 +189,7 @@ const WeighingDetailScreen: React.FC = () => {
           <View style={styles.headerContent}>
             <View style={styles.ticketInfo}>
               <ThemedText style={styles.ticketNumber}>
-                Phiếu #{weighing.sophieu}
+                Phiếu {weighing.sophieu}
               </ThemedText>
             </View>
 

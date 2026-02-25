@@ -59,7 +59,9 @@ const HomeScreen: React.FC = () => {
     totalVehicles: 0,
     totalWeight: 0,
   });
-  const [weeklyActivity, setWeeklyActivity] = useState<{ day: string; count: number; date: string }[]>([]);
+  const [weeklyActivity, setWeeklyActivity] = useState<
+    { day: string; count: number; date: string }[]
+  >([]);
   const [menuVisible, setMenuVisible] = useState(false);
 
   useEffect(() => {
@@ -77,7 +79,11 @@ const HomeScreen: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      await Promise.all([loadPendingWeighings(), loadTodayStats(), loadWeeklyActivity()]);
+      await Promise.all([
+        loadPendingWeighings(),
+        loadTodayStats(),
+        loadWeeklyActivity(),
+      ]);
     } catch (error) {
       console.error("Load data error:", error);
     } finally {
@@ -88,7 +94,11 @@ const HomeScreen: React.FC = () => {
   const onRefresh = async () => {
     try {
       setRefreshing(true);
-      await Promise.all([loadPendingWeighings(), loadTodayStats(), loadWeeklyActivity()]);
+      await Promise.all([
+        loadPendingWeighings(),
+        loadTodayStats(),
+        loadWeeklyActivity(),
+      ]);
     } catch (error) {
       console.error("Refresh data error:", error);
     } finally {
@@ -133,7 +143,6 @@ const HomeScreen: React.FC = () => {
     }
   };
 
-
   const loadWeeklyActivity = async () => {
     try {
       // Get last 7 days
@@ -146,19 +155,20 @@ const HomeScreen: React.FC = () => {
       startDate.setDate(startDate.getDate() - 6); // 7 days including today
 
       const formattedStartDate = startDate.toISOString().split("T")[0];
-      const formattedEndDate = endDate.toISOString().split("T")[0] + "T23:59:59";
+      const formattedEndDate =
+        endDate.toISOString().split("T")[0] + "T23:59:59";
 
       // Use new lightweight daily counts API
       const response = await weighingApi.getDailyCountStatistics(
         formattedStartDate,
-        formattedEndDate
+        formattedEndDate,
       );
 
       // Create a map from API response
       const countsByDate: { [key: string]: number } = {};
-      
+
       if (response && response.data) {
-        response.data.forEach(item => {
+        response.data.forEach((item) => {
           countsByDate[item.date] = item.count;
         });
       }
@@ -170,11 +180,11 @@ const HomeScreen: React.FC = () => {
         date.setDate(date.getDate() - i);
         // Use local date format to match API response
         const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
         const dateKey = `${year}-${month}-${day}`;
         const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, ...
-        
+
         weekData.push({
           day: dayNames[dayOfWeek],
           count: countsByDate[dateKey] || 0,
@@ -223,7 +233,10 @@ const HomeScreen: React.FC = () => {
       <View style={styles.pendingWeighingContent}>
         {/* Left status strip */}
         <View
-          style={[styles.pendingStatusStrip, { backgroundColor: colors.warning }]}
+          style={[
+            styles.pendingStatusStrip,
+            { backgroundColor: colors.warning },
+          ]}
         />
 
         <View style={styles.pendingWeighingInner}>
@@ -236,9 +249,12 @@ const HomeScreen: React.FC = () => {
             />
             <ThemedText style={styles.vehicleNumber}>{item.soxe}</ThemedText>
             <ThemedText
-              style={[styles.weighTicketNumber, { color: colors.textSecondary }]}
+              style={[
+                styles.weighTicketNumber,
+                { color: colors.textSecondary },
+              ]}
             >
-              #{item.sophieu}
+              {item.sophieu}
             </ThemedText>
           </View>
 
@@ -302,11 +318,20 @@ const HomeScreen: React.FC = () => {
 
   const renderActivityChart = () => {
     // Use real data from weeklyActivity or fallback to zeros
-    const data = weeklyActivity.length > 0 
-      ? weeklyActivity 
-      : [{ day: "T2", count: 0 }, { day: "T3", count: 0 }, { day: "T4", count: 0 }, { day: "T5", count: 0 }, { day: "T6", count: 0 }, { day: "T7", count: 0 }, { day: "CN", count: 0 }];
-    
-    const maxValue = Math.max(...data.map(d => d.count), 1); // At least 1 to avoid division by zero
+    const data =
+      weeklyActivity.length > 0
+        ? weeklyActivity
+        : [
+            { day: "T2", count: 0 },
+            { day: "T3", count: 0 },
+            { day: "T4", count: 0 },
+            { day: "T5", count: 0 },
+            { day: "T6", count: 0 },
+            { day: "T7", count: 0 },
+            { day: "CN", count: 0 },
+          ];
+
+    const maxValue = Math.max(...data.map((d) => d.count), 1); // At least 1 to avoid division by zero
     const totalWeekCount = data.reduce((sum, d) => sum + d.count, 0);
     const lastIndex = data.length - 1; // today
 
@@ -329,7 +354,7 @@ const HomeScreen: React.FC = () => {
             styles.chartArea,
             {
               backgroundColor: isDarkMode
-                ? colors.surfaceContainerHigh ?? "#2C2C30"
+                ? (colors.surfaceContainerHigh ?? "#2C2C30")
                 : colors.gray50,
               borderRadius: 8,
             },
@@ -341,13 +366,19 @@ const HomeScreen: React.FC = () => {
               const barColor = isToday
                 ? colors.primary
                 : item.count > 0
-                ? colors.primaryLight
-                : colors.gray300;
+                  ? colors.primaryLight
+                  : colors.gray300;
 
               return (
                 <View key={`${item.day}-${index}`} style={styles.barContainer}>
                   {/* Count label above bar */}
-                  <View style={{ alignItems: "center", marginBottom: 4, minHeight: 18 }}>
+                  <View
+                    style={{
+                      alignItems: "center",
+                      marginBottom: 4,
+                      minHeight: 18,
+                    }}
+                  >
                     {item.count > 0 && (
                       <ThemedText
                         style={{
@@ -384,9 +415,7 @@ const HomeScreen: React.FC = () => {
                     style={[
                       styles.dayLabelContainer,
                       {
-                        borderTopColor: isDarkMode
-                          ? "#4A4458"
-                          : colors.gray200,
+                        borderTopColor: isDarkMode ? "#4A4458" : colors.gray200,
                       },
                     ]}
                   >
@@ -394,7 +423,9 @@ const HomeScreen: React.FC = () => {
                       style={[
                         styles.dayLabel,
                         {
-                          color: isToday ? colors.primary : colors.textSecondary,
+                          color: isToday
+                            ? colors.primary
+                            : colors.textSecondary,
                           fontWeight: isToday ? "700" : "400",
                         },
                       ]}

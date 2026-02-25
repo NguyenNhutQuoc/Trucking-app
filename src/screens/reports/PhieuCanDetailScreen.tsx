@@ -169,7 +169,7 @@ Trọng lượng hàng: ${formatWeight(netWeight)}
             <View style={styles.headerTop}>
               <View style={styles.ticketInfo}>
                 <ThemedText style={styles.ticketNumber}>
-                  Phiếu #{weighing.sophieu}
+                  Phiếu {weighing.sophieu}
                 </ThemedText>
                 <View
                   style={[

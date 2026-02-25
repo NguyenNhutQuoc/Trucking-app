@@ -195,7 +195,7 @@ const CompleteWeighingScreen: React.FC = () => {
               {weighing.soxe}
             </ThemedText>
             <ThemedText type="subtitle" style={styles.ticketNumber}>
-              #{weighing.sophieu}
+              {weighing.sophieu}
             </ThemedText>
           </View>
 

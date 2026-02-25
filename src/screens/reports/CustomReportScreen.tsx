@@ -480,7 +480,13 @@ const CustomReportScreen: React.FC = () => {
   );
 
   // Table Row Component
-  const renderTableRow = ({ item, index }: { item: Phieucan; index: number }) => {
+  const renderTableRow = ({
+    item,
+    index,
+  }: {
+    item: Phieucan;
+    index: number;
+  }) => {
     if (!item) return null;
 
     const netWeight = calculateNetWeight(item);
@@ -502,7 +508,7 @@ const CustomReportScreen: React.FC = () => {
         </ThemedText>
         <View style={[styles.tableCell, styles.ticketColumn]}>
           <ThemedText numberOfLines={1} style={styles.tableCellText}>
-            #{item.sophieu}
+            {item.sophieu}
           </ThemedText>
           <ThemedText numberOfLines={1} style={styles.tableSubText}>
             {formatDate(item.ngaycan1)}
@@ -574,7 +580,7 @@ const CustomReportScreen: React.FC = () => {
             </View>
 
             <ThemedText style={styles.gridTicketNumber} numberOfLines={1}>
-              Phiếu #{item.sophieu}
+              Phiếu {item.sophieu}
             </ThemedText>
 
             <View style={styles.gridStats}>
@@ -647,7 +653,7 @@ const CustomReportScreen: React.FC = () => {
               </View>
               <View>
                 <ThemedText style={styles.phieucanNumber}>
-                  Phiếu #{item.sophieu}
+                  Phiếu {item.sophieu}
                 </ThemedText>
                 <ThemedText type="subtitle" style={styles.phieucanDate}>
                   {formatDate(item.ngaycan1)} {formatTime(item.ngaycan1)}

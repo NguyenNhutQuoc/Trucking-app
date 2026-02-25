@@ -69,7 +69,9 @@ const WeighingListScreen: React.FC = () => {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [showDateRangeFilter, setShowDateRangeFilter] = useState(false);
-  const [dateFilterField, setDateFilterField] = useState<"ngaycan1" | "ngaycan2">("ngaycan1");
+  const [dateFilterField, setDateFilterField] = useState<
+    "ngaycan1" | "ngaycan2"
+  >("ngaycan1");
 
   const dateOnly = (date: Date) => date.toISOString().split("T")[0];
 
@@ -213,9 +215,8 @@ const WeighingListScreen: React.FC = () => {
       if (fromDate) fromDate.setHours(0, 0, 0, 0);
       if (toDate) toDate.setHours(23, 59, 59, 999);
       result = result.filter((item) => {
-        const dateValue = dateFilterField === "ngaycan1"
-          ? item.ngaycan1
-          : item.ngaycan2;
+        const dateValue =
+          dateFilterField === "ngaycan1" ? item.ngaycan1 : item.ngaycan2;
         if (!dateValue) return false;
         const d = new Date(dateValue);
         if (fromDate && d < fromDate) return false;
@@ -262,7 +263,15 @@ const WeighingListScreen: React.FC = () => {
     });
 
     return result;
-  }, [weighings, activeFilter, searchQuery, filterOptions, dateFrom, dateTo, dateFilterField]);
+  }, [
+    weighings,
+    activeFilter,
+    searchQuery,
+    filterOptions,
+    dateFrom,
+    dateTo,
+    dateFilterField,
+  ]);
 
   // Event Handlers
   const handleFilterChange = (filter: FilterState) => {
@@ -343,7 +352,7 @@ const WeighingListScreen: React.FC = () => {
           style={[styles.tableCell, styles.ticketColumn]}
           numberOfLines={1}
         >
-          #{item.sophieu}
+          {item.sophieu}
         </ThemedText>
         <ThemedText
           style={[styles.tableCell, styles.dateColumn]}
@@ -361,7 +370,9 @@ const WeighingListScreen: React.FC = () => {
           style={[styles.tableCell, styles.weightColumn]}
           numberOfLines={1}
         >
-          {item.tlcan2 ? `${Math.round(item.tlcan2).toLocaleString("vi-VN")}kg` : "-"}
+          {item.tlcan2
+            ? `${Math.round(item.tlcan2).toLocaleString("vi-VN")}kg`
+            : "-"}
         </ThemedText>
       </TouchableOpacity>
     );
@@ -402,7 +413,7 @@ const WeighingListScreen: React.FC = () => {
           <View style={styles.weighingHeaderLeft}>
             <ThemedText style={styles.vehicleNumber}>{item.soxe}</ThemedText>
             <ThemedText style={styles.weighTicketNumber}>
-              #{item.sophieu}
+              {item.sophieu}
             </ThemedText>
           </View>
         </View>
@@ -795,16 +806,29 @@ const WeighingListScreen: React.FC = () => {
         <View
           style={[
             styles.dateRangeHeader,
-            { backgroundColor: colors.surface, borderBottomColor: colors.outlineVariant || colors.gray200 },
+            {
+              backgroundColor: colors.surface,
+              borderBottomColor: colors.outlineVariant || colors.gray200,
+            },
           ]}
         >
           <TouchableOpacity
             style={styles.dateRangeToggle}
             onPress={() => setShowDateRangeFilter(!showDateRangeFilter)}
           >
-            <Ionicons name="calendar-outline" size={16} color={colors.primary} />
-            <ThemedText style={[styles.dateRangeToggleText, { color: colors.primary }]}>
-              Lọc theo {dateFilterField === "ngaycan1" ? "Ngày cân 1" : "Ngày cân 2"}{dateFrom || dateTo ? ` (${dateFrom || "..."} → ${dateTo || "..."})` : ""}
+            <Ionicons
+              name="calendar-outline"
+              size={16}
+              color={colors.primary}
+            />
+            <ThemedText
+              style={[styles.dateRangeToggleText, { color: colors.primary }]}
+            >
+              Lọc theo{" "}
+              {dateFilterField === "ngaycan1" ? "Ngày cân 1" : "Ngày cân 2"}
+              {dateFrom || dateTo
+                ? ` (${dateFrom || "..."} → ${dateTo || "..."})`
+                : ""}
             </ThemedText>
             <Ionicons
               name={showDateRangeFilter ? "chevron-up" : "chevron-down"}
@@ -813,7 +837,10 @@ const WeighingListScreen: React.FC = () => {
             />
             {(dateFrom || dateTo) && (
               <TouchableOpacity
-                onPress={() => { setDateFrom(""); setDateTo(""); }}
+                onPress={() => {
+                  setDateFrom("");
+                  setDateTo("");
+                }}
                 style={styles.dateRangeClear}
               >
                 <Ionicons name="close-circle" size={16} color={colors.error} />
@@ -825,7 +852,10 @@ const WeighingListScreen: React.FC = () => {
           <View
             style={[
               styles.dateRangeContainer,
-              { backgroundColor: colors.card, borderBottomColor: colors.outlineVariant || colors.gray200 },
+              {
+                backgroundColor: colors.card,
+                borderBottomColor: colors.outlineVariant || colors.gray200,
+              },
             ]}
           >
             {/* Date field selector */}
@@ -839,14 +869,22 @@ const WeighingListScreen: React.FC = () => {
                     styles.dateFieldRadio,
                     {
                       borderColor: colors.primary,
-                      backgroundColor: dateFilterField === "ngaycan1" ? colors.primary : "transparent",
+                      backgroundColor:
+                        dateFilterField === "ngaycan1"
+                          ? colors.primary
+                          : "transparent",
                     },
                   ]}
                 />
                 <ThemedText
                   style={[
                     styles.dateFieldOptionText,
-                    { color: dateFilterField === "ngaycan1" ? colors.primary : colors.text },
+                    {
+                      color:
+                        dateFilterField === "ngaycan1"
+                          ? colors.primary
+                          : colors.text,
+                    },
                   ]}
                 >
                   Ngày cân 1
@@ -861,14 +899,22 @@ const WeighingListScreen: React.FC = () => {
                     styles.dateFieldRadio,
                     {
                       borderColor: colors.primary,
-                      backgroundColor: dateFilterField === "ngaycan2" ? colors.primary : "transparent",
+                      backgroundColor:
+                        dateFilterField === "ngaycan2"
+                          ? colors.primary
+                          : "transparent",
                     },
                   ]}
                 />
                 <ThemedText
                   style={[
                     styles.dateFieldOptionText,
-                    { color: dateFilterField === "ngaycan2" ? colors.primary : colors.text },
+                    {
+                      color:
+                        dateFilterField === "ngaycan2"
+                          ? colors.primary
+                          : colors.text,
+                    },
                   ]}
                 >
                   Ngày cân 2
@@ -881,7 +927,15 @@ const WeighingListScreen: React.FC = () => {
               <View style={styles.dateRangeField}>
                 <ThemedText style={styles.dateRangeLabel}>Từ ngày:</ThemedText>
                 <TextInput
-                  style={[styles.dateRangeInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surfaceContainer || colors.gray100 }]}
+                  style={[
+                    styles.dateRangeInput,
+                    {
+                      color: colors.text,
+                      borderColor: colors.border,
+                      backgroundColor:
+                        colors.surfaceContainer || colors.gray100,
+                    },
+                  ]}
                   placeholder="DD-MM-YYYY"
                   placeholderTextColor={colors.textSecondary}
                   value={dateFrom}
@@ -891,7 +945,15 @@ const WeighingListScreen: React.FC = () => {
               <View style={styles.dateRangeField}>
                 <ThemedText style={styles.dateRangeLabel}>Đến ngày:</ThemedText>
                 <TextInput
-                  style={[styles.dateRangeInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surfaceContainer || colors.gray100 }]}
+                  style={[
+                    styles.dateRangeInput,
+                    {
+                      color: colors.text,
+                      borderColor: colors.border,
+                      backgroundColor:
+                        colors.surfaceContainer || colors.gray100,
+                    },
+                  ]}
                   placeholder="DD-MM-YYYY"
                   placeholderTextColor={colors.textSecondary}
                   value={dateTo}

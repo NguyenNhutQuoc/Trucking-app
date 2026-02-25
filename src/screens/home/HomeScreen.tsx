@@ -445,6 +445,7 @@ const HomeScreen: React.FC = () => {
             style={{
               ...styles.stationInfoCard,
               overflow: "hidden",
+              backgroundColor: "transparent",
             }}
             contentStyle={{ padding: 0 }}
           >
@@ -499,10 +500,19 @@ const HomeScreen: React.FC = () => {
                 <View style={styles.gradientCardIconCircle}>
                   <Ionicons name="car" size={24} color="#fff" />
                 </View>
-                <ThemedText style={styles.gradientCardNumber}>
+                <ThemedText
+                  style={styles.gradientCardNumber}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  maxFontSizeMultiplier={1}
+                >
                   {todayStats.totalVehicles}
                 </ThemedText>
-                <ThemedText style={styles.gradientCardLabel}>
+                <ThemedText
+                  style={styles.gradientCardLabel}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1}
+                >
                   Xe hôm nay
                 </ThemedText>
               </LinearGradient>
@@ -526,10 +536,15 @@ const HomeScreen: React.FC = () => {
                   style={styles.gradientCardNumber}
                   numberOfLines={1}
                   adjustsFontSizeToFit
+                  maxFontSizeMultiplier={1}
                 >
                   {formatWeightAbbr(todayStats.totalWeight)}
                 </ThemedText>
-                <ThemedText style={styles.gradientCardLabel}>
+                <ThemedText
+                  style={styles.gradientCardLabel}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1}
+                >
                   Tổng trọng lượng
                 </ThemedText>
               </LinearGradient>
@@ -696,14 +711,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   gradientCardNumber: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
     color: "#FFFFFF",
     marginBottom: 4,
     textAlign: "center",
   },
   gradientCardLabel: {
-    fontSize: 13,
+    fontSize: 12,
     color: "rgba(255,255,255,0.85)",
     textAlign: "center",
     fontWeight: "500",

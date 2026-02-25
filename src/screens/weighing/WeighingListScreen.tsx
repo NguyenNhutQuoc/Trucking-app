@@ -69,6 +69,7 @@ const WeighingListScreen: React.FC = () => {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [showDateRangeFilter, setShowDateRangeFilter] = useState(false);
+  const [dateFilterField, setDateFilterField] = useState<"ngaycan1" | "ngaycan2">("ngaycan1");
 
   const dateOnly = (date: Date) => date.toISOString().split("T")[0];
 
@@ -197,22 +198,24 @@ const WeighingListScreen: React.FC = () => {
     }
 
     // Apply date range filter client-side
-    if (dateFrom) {
-      const from = new Date(dateFrom);
-      from.setHours(0, 0, 0, 0);
+    if (dateFrom || dateTo) {
       result = result.filter((item) => {
-        const d1 = new Date(item.ngaycan1);
-        const d2 = item.ngaycan2 ? new Date(item.ngaycan2) : null;
-        return d1 >= from || (d2 !== null && d2 >= from);
-      });
-    }
-    if (dateTo) {
-      const to = new Date(dateTo);
-      to.setHours(23, 59, 59, 999);
-      result = result.filter((item) => {
-        const d1 = new Date(item.ngaycan1);
-        const d2 = item.ngaycan2 ? new Date(item.ngaycan2) : null;
-        return d1 <= to || (d2 !== null && d2 <= to);
+        const dateValue = dateFilterField === "ngaycan1"
+          ? item.ngaycan1
+          : item.ngaycan2;
+        if (!dateValue) return false;
+        const d = new Date(dateValue);
+        if (dateFrom) {
+          const from = new Date(dateFrom);
+          from.setHours(0, 0, 0, 0);
+          if (d < from) return false;
+        }
+        if (dateTo) {
+          const to = new Date(dateTo);
+          to.setHours(23, 59, 59, 999);
+          if (d > to) return false;
+        }
+        return true;
       });
     }
 
@@ -254,7 +257,7 @@ const WeighingListScreen: React.FC = () => {
     });
 
     return result;
-  }, [weighings, activeFilter, searchQuery, filterOptions, dateFrom, dateTo]);
+  }, [weighings, activeFilter, searchQuery, filterOptions, dateFrom, dateTo, dateFilterField]);
 
   // Event Handlers
   const handleFilterChange = (filter: FilterState) => {
@@ -800,7 +803,7 @@ const WeighingListScreen: React.FC = () => {
           >
             <Ionicons name="calendar-outline" size={16} color={colors.primary} />
             <ThemedText style={[styles.dateRangeToggleText, { color: colors.primary }]}>
-              Lọc theo ngày {dateFrom || dateTo ? `(${dateFrom || "..."} → ${dateTo || "..."})` : ""}
+              Lọc theo {dateFilterField === "ngaycan1" ? "Ngày cân 1" : "Ngày cân 2"}{dateFrom || dateTo ? ` (${dateFrom || "..."} → ${dateTo || "..."})` : ""}
             </ThemedText>
             <Ionicons
               name={showDateRangeFilter ? "chevron-up" : "chevron-down"}
@@ -824,6 +827,55 @@ const WeighingListScreen: React.FC = () => {
               { backgroundColor: colors.card, borderBottomColor: colors.outlineVariant || colors.gray200 },
             ]}
           >
+            {/* Date field selector */}
+            <View style={styles.dateFieldSelector}>
+              <TouchableOpacity
+                style={styles.dateFieldOption}
+                onPress={() => setDateFilterField("ngaycan1")}
+              >
+                <View
+                  style={[
+                    styles.dateFieldRadio,
+                    {
+                      borderColor: colors.primary,
+                      backgroundColor: dateFilterField === "ngaycan1" ? colors.primary : "transparent",
+                    },
+                  ]}
+                />
+                <ThemedText
+                  style={[
+                    styles.dateFieldOptionText,
+                    { color: dateFilterField === "ngaycan1" ? colors.primary : colors.text },
+                  ]}
+                >
+                  Ngày cân 1
+                </ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.dateFieldOption}
+                onPress={() => setDateFilterField("ngaycan2")}
+              >
+                <View
+                  style={[
+                    styles.dateFieldRadio,
+                    {
+                      borderColor: colors.primary,
+                      backgroundColor: dateFilterField === "ngaycan2" ? colors.primary : "transparent",
+                    },
+                  ]}
+                />
+                <ThemedText
+                  style={[
+                    styles.dateFieldOptionText,
+                    { color: dateFilterField === "ngaycan2" ? colors.primary : colors.text },
+                  ]}
+                >
+                  Ngày cân 2
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+
+            {/* Date inputs */}
             <View style={styles.dateRangeRow}>
               <View style={styles.dateRangeField}>
                 <ThemedText style={styles.dateRangeLabel}>Từ ngày:</ThemedText>
@@ -1009,6 +1061,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
     borderBottomWidth: 1,
+  },
+  dateFieldSelector: {
+    flexDirection: "row",
+    gap: 16,
+    marginBottom: 10,
+  },
+  dateFieldOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  dateFieldRadio: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+  },
+  dateFieldOptionText: {
+    fontSize: 13,
+    fontWeight: "500",
   },
   dateRangeRow: {
     flexDirection: "row",

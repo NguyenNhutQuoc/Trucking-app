@@ -144,6 +144,9 @@ const ProductListScreen: React.FC = () => {
   // Table Header Component
   const TableHeader = () => (
     <View style={[styles.tableHeader, { backgroundColor: colors.gray100 }]}>
+      <ThemedText style={[styles.tableHeaderCell, styles.sttColumn]}>
+        STT
+      </ThemedText>
       <ThemedText style={[styles.tableHeaderCell, styles.nameColumn]}>
         Tên hàng hóa
       </ThemedText>
@@ -172,10 +175,16 @@ const ProductListScreen: React.FC = () => {
         style={[
           styles.tableRow,
           {
-            backgroundColor: index % 2 === 0 ? colors.card : colors.gray50,
+            backgroundColor: index % 2 === 0 ? colors.card : colors.gray200,
           },
         ]}
       >
+        <ThemedText
+          style={[styles.tableCell, styles.sttColumn]}
+          numberOfLines={1}
+        >
+          {index + 1}
+        </ThemedText>
         <ThemedText
           style={[styles.tableCell, styles.nameColumn]}
           numberOfLines={2}
@@ -502,6 +511,10 @@ const styles = StyleSheet.create({
   },
   nameColumn: {
     flex: 3,
+  },
+  sttColumn: {
+    flex: 0.6,
+    textAlign: "center",
   },
   codeColumn: {
     flex: 1.5,

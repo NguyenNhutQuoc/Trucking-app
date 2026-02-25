@@ -30,7 +30,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import LoadMoreButton from "@/components/common/LoadMoreButton";
 import { Phieucan } from "@/types/api.types";
-import { formatWeight } from "@/utils/formatters";
+import { formatWeight, formatDate } from "@/utils/formatters";
 import { spacing } from "@/styles/spacing";
 import { useNavigationStore } from "@/store/navigationStore";
 
@@ -58,7 +58,7 @@ const WeighingListScreen: React.FC = () => {
   const { colors } = useAppTheme();
   const { setSelectedWeighing } = useNavigationStore();
 
-  const [activeFilter, setActiveFilter] = useState<FilterState>("all");
+  const [activeFilter, setActiveFilter] = useState<FilterState>("today");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -66,8 +66,21 @@ const WeighingListScreen: React.FC = () => {
     sortBy: "date",
     sortOrder: "desc",
   });
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [showDateRangeFilter, setShowDateRangeFilter] = useState(false);
+  const [dateFilterField, setDateFilterField] = useState<"ngaycan1" | "ngaycan2">("ngaycan1");
 
   const dateOnly = (date: Date) => date.toISOString().split("T")[0];
+
+  // Parse a DD-MM-YYYY string into a Date (returns null if invalid)
+  const parseDMY = (str: string): Date | null => {
+    const parts = str.split("-");
+    if (parts.length !== 3) return null;
+    const [dd, mm, yyyy] = parts.map(Number);
+    if (!dd || !mm || !yyyy || yyyy < 1000) return null;
+    return new Date(yyyy, mm - 1, dd);
+  };
 
   const getDateRangeForFilter = (filter: FilterState) => {
     const now = new Date();
@@ -193,6 +206,24 @@ const WeighingListScreen: React.FC = () => {
       result = result.filter((item) => item.xuatnhap.toLowerCase() === "xuất");
     }
 
+    // Apply date range filter client-side
+    if (dateFrom || dateTo) {
+      const fromDate = dateFrom ? parseDMY(dateFrom) : null;
+      const toDate = dateTo ? parseDMY(dateTo) : null;
+      if (fromDate) fromDate.setHours(0, 0, 0, 0);
+      if (toDate) toDate.setHours(23, 59, 59, 999);
+      result = result.filter((item) => {
+        const dateValue = dateFilterField === "ngaycan1"
+          ? item.ngaycan1
+          : item.ngaycan2;
+        if (!dateValue) return false;
+        const d = new Date(dateValue);
+        if (fromDate && d < fromDate) return false;
+        if (toDate && d > toDate) return false;
+        return true;
+      });
+    }
+
     // Apply search query client-side
     if (searchQuery) {
       const normalizedQuery = searchQuery.toLowerCase();
@@ -231,7 +262,7 @@ const WeighingListScreen: React.FC = () => {
     });
 
     return result;
-  }, [weighings, activeFilter, searchQuery, filterOptions]);
+  }, [weighings, activeFilter, searchQuery, filterOptions, dateFrom, dateTo, dateFilterField]);
 
   // Event Handlers
   const handleFilterChange = (filter: FilterState) => {
@@ -251,6 +282,9 @@ const WeighingListScreen: React.FC = () => {
   // Table Header Component
   const TableHeader = () => (
     <View style={[styles.tableHeader, { backgroundColor: colors.gray100 }]}>
+      <ThemedText style={[styles.tableHeaderCell, styles.sttColumn]}>
+        STT
+      </ThemedText>
       <ThemedText style={[styles.tableHeaderCell, styles.vehicleColumn]}>
         Xe
       </ThemedText>
@@ -266,9 +300,6 @@ const WeighingListScreen: React.FC = () => {
       <ThemedText style={[styles.tableHeaderCell, styles.weightColumn]}>
         TL Ra
       </ThemedText>
-      <ThemedText style={[styles.tableHeaderCell, styles.statusColumn]}>
-        Trạng thái
-      </ThemedText>
     </View>
   );
 
@@ -280,27 +311,28 @@ const WeighingListScreen: React.FC = () => {
     item: Phieucan;
     index: number;
   }) => {
-    const statusColor = getStatusColor(item);
-    const statusText = getStatusText(item);
     const importExportColor = getImportExportColor(item.xuatnhap);
 
     const date = new Date(item.ngaycan1);
-    const dateString = date.toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-    });
+    const dateString = `${date.getDate().toString().padStart(2, "0")}-${(date.getMonth() + 1).toString().padStart(2, "0")}-${date.getFullYear()}`;
 
     return (
       <TouchableOpacity
         style={[
           styles.tableRow,
           {
-            backgroundColor: index % 2 === 0 ? colors.card : colors.gray50,
+            backgroundColor: index % 2 === 0 ? colors.card : colors.gray200,
             borderLeftColor: importExportColor,
           },
         ]}
         onPress={() => handleWeighingPress(item)}
       >
+        <ThemedText
+          style={[styles.tableCell, styles.sttColumn]}
+          numberOfLines={1}
+        >
+          {index + 1}
+        </ThemedText>
         <ThemedText
           style={[styles.tableCell, styles.vehicleColumn]}
           numberOfLines={1}
@@ -323,17 +355,14 @@ const WeighingListScreen: React.FC = () => {
           style={[styles.tableCell, styles.weightColumn]}
           numberOfLines={1}
         >
-          {Math.round(item.tlcan1)}kg
+          {Math.round(item.tlcan1).toLocaleString("vi-VN")}kg
         </ThemedText>
         <ThemedText
           style={[styles.tableCell, styles.weightColumn]}
           numberOfLines={1}
         >
-          {item.tlcan2 ? `${Math.round(item.tlcan2)}kg` : "-"}
+          {item.tlcan2 ? `${Math.round(item.tlcan2).toLocaleString("vi-VN")}kg` : "-"}
         </ThemedText>
-        <View style={styles.statusColumn}>
-          <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-        </View>
       </TouchableOpacity>
     );
   };
@@ -344,12 +373,8 @@ const WeighingListScreen: React.FC = () => {
     const statusText = getStatusText(item);
     const importExportColor = getImportExportColor(item.xuatnhap);
 
+    const dateString = formatDate(item.ngaycan1);
     const date = new Date(item.ngaycan1);
-    const dateString = date.toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
     const timeString = date.toLocaleTimeString("vi-VN", {
       hour: "2-digit",
       minute: "2-digit",
@@ -766,6 +791,117 @@ const WeighingListScreen: React.FC = () => {
           />
         </View>
 
+        {/* Date range filter */}
+        <View
+          style={[
+            styles.dateRangeHeader,
+            { backgroundColor: colors.surface, borderBottomColor: colors.outlineVariant || colors.gray200 },
+          ]}
+        >
+          <TouchableOpacity
+            style={styles.dateRangeToggle}
+            onPress={() => setShowDateRangeFilter(!showDateRangeFilter)}
+          >
+            <Ionicons name="calendar-outline" size={16} color={colors.primary} />
+            <ThemedText style={[styles.dateRangeToggleText, { color: colors.primary }]}>
+              Lọc theo {dateFilterField === "ngaycan1" ? "Ngày cân 1" : "Ngày cân 2"}{dateFrom || dateTo ? ` (${dateFrom || "..."} → ${dateTo || "..."})` : ""}
+            </ThemedText>
+            <Ionicons
+              name={showDateRangeFilter ? "chevron-up" : "chevron-down"}
+              size={16}
+              color={colors.primary}
+            />
+            {(dateFrom || dateTo) && (
+              <TouchableOpacity
+                onPress={() => { setDateFrom(""); setDateTo(""); }}
+                style={styles.dateRangeClear}
+              >
+                <Ionicons name="close-circle" size={16} color={colors.error} />
+              </TouchableOpacity>
+            )}
+          </TouchableOpacity>
+        </View>
+        {showDateRangeFilter && (
+          <View
+            style={[
+              styles.dateRangeContainer,
+              { backgroundColor: colors.card, borderBottomColor: colors.outlineVariant || colors.gray200 },
+            ]}
+          >
+            {/* Date field selector */}
+            <View style={styles.dateFieldSelector}>
+              <TouchableOpacity
+                style={styles.dateFieldOption}
+                onPress={() => setDateFilterField("ngaycan1")}
+              >
+                <View
+                  style={[
+                    styles.dateFieldRadio,
+                    {
+                      borderColor: colors.primary,
+                      backgroundColor: dateFilterField === "ngaycan1" ? colors.primary : "transparent",
+                    },
+                  ]}
+                />
+                <ThemedText
+                  style={[
+                    styles.dateFieldOptionText,
+                    { color: dateFilterField === "ngaycan1" ? colors.primary : colors.text },
+                  ]}
+                >
+                  Ngày cân 1
+                </ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.dateFieldOption}
+                onPress={() => setDateFilterField("ngaycan2")}
+              >
+                <View
+                  style={[
+                    styles.dateFieldRadio,
+                    {
+                      borderColor: colors.primary,
+                      backgroundColor: dateFilterField === "ngaycan2" ? colors.primary : "transparent",
+                    },
+                  ]}
+                />
+                <ThemedText
+                  style={[
+                    styles.dateFieldOptionText,
+                    { color: dateFilterField === "ngaycan2" ? colors.primary : colors.text },
+                  ]}
+                >
+                  Ngày cân 2
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+
+            {/* Date inputs */}
+            <View style={styles.dateRangeRow}>
+              <View style={styles.dateRangeField}>
+                <ThemedText style={styles.dateRangeLabel}>Từ ngày:</ThemedText>
+                <TextInput
+                  style={[styles.dateRangeInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surfaceContainer || colors.gray100 }]}
+                  placeholder="DD-MM-YYYY"
+                  placeholderTextColor={colors.textSecondary}
+                  value={dateFrom}
+                  onChangeText={setDateFrom}
+                />
+              </View>
+              <View style={styles.dateRangeField}>
+                <ThemedText style={styles.dateRangeLabel}>Đến ngày:</ThemedText>
+                <TextInput
+                  style={[styles.dateRangeInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surfaceContainer || colors.gray100 }]}
+                  placeholder="DD-MM-YYYY"
+                  placeholderTextColor={colors.textSecondary}
+                  value={dateTo}
+                  onChangeText={setDateTo}
+                />
+              </View>
+            </View>
+          </View>
+        )}
+
         {viewMode === "table" ? (
           <View style={styles.tableContainer}>
             <TableHeader />
@@ -904,6 +1040,67 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     gap: spacing.sm,
   },
+  // Date range filter
+  dateRangeHeader: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+  },
+  dateRangeToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  dateRangeToggleText: {
+    fontSize: 13,
+    flex: 1,
+  },
+  dateRangeClear: {
+    marginLeft: 4,
+  },
+  dateRangeContainer: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  dateFieldSelector: {
+    flexDirection: "row",
+    gap: 16,
+    marginBottom: 10,
+  },
+  dateFieldOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  dateFieldRadio: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+  },
+  dateFieldOptionText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  dateRangeRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  dateRangeField: {
+    flex: 1,
+  },
+  dateRangeLabel: {
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  dateRangeInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    fontSize: 13,
+  },
   // M3 Filter Chip - 32dp height, 8dp corner radius
   filterChip: {
     flexDirection: "row",
@@ -947,6 +1144,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: "center",
   },
+  sttColumn: {
+    flex: 0.6,
+  },
   vehicleColumn: {
     flex: 2,
   },
@@ -958,16 +1158,6 @@ const styles = StyleSheet.create({
   },
   weightColumn: {
     flex: 1.5,
-  },
-  statusColumn: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  statusDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
   },
   tableContent: {
     paddingBottom: 20,

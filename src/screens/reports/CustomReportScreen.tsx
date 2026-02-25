@@ -544,16 +544,6 @@ const CustomReportScreen: React.FC = () => {
     const netWeight = calculateNetWeight(item);
     const isCompleted = !!item.ngaycan2;
 
-    const getStatusColor = () => {
-      if (isCompleted) return colors.success;
-      return colors.warning;
-    };
-
-    const getStatusText = () => {
-      if (isCompleted) return "Hoàn thành";
-      return "Đang chờ";
-    };
-
     return (
       <View style={styles.gridItem}>
         <Card style={styles.gridCard}>
@@ -566,16 +556,6 @@ const CustomReportScreen: React.FC = () => {
                 ]}
               >
                 <Ionicons name="receipt" size={18} color={colors.primary} />
-              </View>
-              <View
-                style={[
-                  styles.gridStatusBadge,
-                  { backgroundColor: getStatusColor() },
-                ]}
-              >
-                <ThemedText style={styles.gridStatusText}>
-                  {getStatusText()}
-                </ThemedText>
               </View>
             </View>
 
@@ -628,16 +608,6 @@ const CustomReportScreen: React.FC = () => {
     const netWeight = calculateNetWeight(item);
     const isCompleted = !!item.ngaycan2;
 
-    const getStatusColor = () => {
-      if (isCompleted) return colors.success;
-      return colors.warning;
-    };
-
-    const getStatusText = () => {
-      if (isCompleted) return "Hoàn thành";
-      return "Đang chờ";
-    };
-
     return (
       <Card style={styles.phieucanCard}>
         <TouchableOpacity onPress={() => handlePhieucanPress(item)}>
@@ -659,16 +629,6 @@ const CustomReportScreen: React.FC = () => {
                   {formatDate(item.ngaycan1)} {formatTime(item.ngaycan1)}
                 </ThemedText>
               </View>
-            </View>
-            <View
-              style={[
-                styles.listStatusBadge,
-                { backgroundColor: getStatusColor() },
-              ]}
-            >
-              <ThemedText style={styles.listStatusText}>
-                {getStatusText()}
-              </ThemedText>
             </View>
           </View>
 

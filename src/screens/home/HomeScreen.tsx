@@ -742,7 +742,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   gradientCardNumber: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "bold",
     color: "#FFFFFF",
     marginBottom: 4,

@@ -33,11 +33,11 @@ import { PhieucanStatistics } from "@/types/api.types";
 
 // Per-category accent colors for report list items
 const REPORT_ITEM_COLORS = {
-  CompanyReports:   { bg: "#3F51B5", icon: "#3F51B5" }, // indigo
-  ProductReports:   { bg: "#00897B", icon: "#00897B" }, // teal
-  VehicleReports:   { bg: "#FB8C00", icon: "#FB8C00" }, // amber
+  CompanyReports: { bg: "#3F51B5", icon: "#3F51B5" }, // indigo
+  ProductReports: { bg: "#00897B", icon: "#00897B" }, // teal
+  VehicleReports: { bg: "#FB8C00", icon: "#FB8C00" }, // amber
   DateRangeReports: { bg: "#8E24AA", icon: "#8E24AA" }, // purple
-  CustomReport:     { bg: "#E91E63", icon: "#E91E63" }, // pink
+  CustomReport: { bg: "#E91E63", icon: "#E91E63" }, // pink
 };
 
 const ReportsHomeScreen: React.FC = () => {
@@ -129,8 +129,14 @@ const ReportsHomeScreen: React.FC = () => {
             style={[
               styles.chip,
               isSelected
-                ? { backgroundColor: colors.primary, borderColor: colors.primary }
-                : { backgroundColor: "transparent", borderColor: colors.primary },
+                ? {
+                    backgroundColor: colors.primary,
+                    borderColor: colors.primary,
+                  }
+                : {
+                    backgroundColor: "transparent",
+                    borderColor: colors.primary,
+                  },
             ]}
             onPress={() => handleTimeframeChange(t)}
           >
@@ -207,16 +213,11 @@ const ReportsHomeScreen: React.FC = () => {
           {renderKpiCard(
             ["#0288D1", "#0277BD"],
             "stats-chart",
-            timeframe === "today" ? String(statistics.totalVehicles) : String(avgPerDay),
+            timeframe === "today"
+              ? String(statistics.totalVehicles)
+              : String(avgPerDay),
             timeframe === "today" ? "Xe hôm nay" : "Trung bình / ngày",
             avgPerDay > 0,
-          )}
-          {renderKpiCard(
-            statusGood ? ["#2E7D32", "#1B5E20"] : ["#E65100", "#BF360C"],
-            statusGood ? "checkmark-circle" : "alert-circle",
-            statusGood ? "Tốt" : "Cần chú ý",
-            "Trạng thái",
-            statusGood,
           )}
         </View>
       </View>
@@ -226,8 +227,15 @@ const ReportsHomeScreen: React.FC = () => {
   // ── Section header with accent bar ────────────────────────────────────────
   const renderSectionHeader = (icon: string, title: string) => (
     <View style={styles.sectionHeader}>
-      <View style={[styles.sectionAccentBar, { backgroundColor: colors.primary }]} />
-      <Ionicons name={icon as any} size={18} color={colors.primary} style={styles.sectionHeaderIcon} />
+      <View
+        style={[styles.sectionAccentBar, { backgroundColor: colors.primary }]}
+      />
+      <Ionicons
+        name={icon as any}
+        size={18}
+        color={colors.primary}
+        style={styles.sectionHeaderIcon}
+      />
       <ThemedText style={[styles.sectionTitle, { color: colors.onSurface }]}>
         {title}
       </ThemedText>
@@ -285,7 +293,10 @@ const ReportsHomeScreen: React.FC = () => {
         </View>
 
         {/* Arrow indicator */}
-        <View style={[styles.reportArrow, { backgroundColor: accent.bg + "1A" }]}>{/* ~10% opacity (0x1A = 26/255) */}
+        <View
+          style={[styles.reportArrow, { backgroundColor: accent.bg + "1A" }]}
+        >
+          {/* ~10% opacity (0x1A = 26/255) */}
           <Ionicons name="chevron-forward" size={16} color={accent.icon} />
         </View>
       </TouchableOpacity>
@@ -316,7 +327,9 @@ const ReportsHomeScreen: React.FC = () => {
                     size={48}
                     color={colors.error}
                   />
-                  <ThemedText style={[styles.errorText, { color: colors.error }]}>
+                  <ThemedText
+                    style={[styles.errorText, { color: colors.error }]}
+                  >
                     {error}
                   </ThemedText>
                   <Button
@@ -336,7 +349,15 @@ const ReportsHomeScreen: React.FC = () => {
 
                 {/* ── Pie chart ── */}
                 {statistics.byProduct.length > 0 && (
-                  <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}>
+                  <View
+                    style={[
+                      styles.chartCard,
+                      {
+                        backgroundColor: colors.surface,
+                        borderColor: colors.outlineVariant,
+                      },
+                    ]}
+                  >
                     {renderSectionHeader("pie-chart", "Phân bố theo loại hàng")}
                     <PieChart
                       data={statistics.byProduct.map((item) => ({
@@ -350,7 +371,15 @@ const ReportsHomeScreen: React.FC = () => {
 
                 {/* ── Bar chart ── */}
                 {statistics.byDay.length > 0 && (
-                  <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}>
+                  <View
+                    style={[
+                      styles.chartCard,
+                      {
+                        backgroundColor: colors.surface,
+                        borderColor: colors.outlineVariant,
+                      },
+                    ]}
+                  >
                     {renderSectionHeader("bar-chart", "Hoạt động theo ngày")}
                     <BarChart
                       data={statistics.byDay.map((day) => ({
@@ -407,7 +436,9 @@ const ReportsHomeScreen: React.FC = () => {
             <TouchableOpacity
               activeOpacity={0.85}
               style={styles.exportButton}
-              onPress={() => {/* existing export action */}}
+              onPress={() => {
+                /* existing export action */
+              }}
             >
               <LinearGradient
                 colors={[colors.primary, colors.primaryDark]}
@@ -487,7 +518,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   kpiValue: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
     color: "#FFFFFF",
   },

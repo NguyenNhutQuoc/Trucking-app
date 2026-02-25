@@ -6,7 +6,16 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import { View, StyleSheet, TouchableOpacity, FlatList, RefreshControl, TextInput, ScrollView, Modal } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  RefreshControl,
+  TextInput,
+  ScrollView,
+  Modal,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useFocusEffect } from "expo-router";
 
@@ -77,11 +86,17 @@ const WeighingListScreen: React.FC = () => {
       case "thisWeek": {
         const startOfWeek = new Date();
         startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-        return { startDate: dateOnly(startOfWeek), endDate: dateOnly(now) + "T23:59:59" };
+        return {
+          startDate: dateOnly(startOfWeek),
+          endDate: dateOnly(now) + "T23:59:59",
+        };
       }
       case "thisMonth": {
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        return { startDate: dateOnly(startOfMonth), endDate: dateOnly(now) + "T23:59:59" };
+        return {
+          startDate: dateOnly(startOfMonth),
+          endDate: dateOnly(now) + "T23:59:59",
+        };
       }
       default:
         return null;
@@ -155,9 +170,6 @@ const WeighingListScreen: React.FC = () => {
   };
 
   const getStatusColor = (weighing: Phieucan) => {
-    if (weighing.uploadStatus === 1) {
-      return colors.error;
-    }
     if (weighing.ngaycan2) {
       return colors.success;
     }
@@ -165,9 +177,6 @@ const WeighingListScreen: React.FC = () => {
   };
 
   const getStatusText = (weighing: Phieucan) => {
-    if (weighing.uploadStatus === 1) {
-      return "Hủy";
-    }
     if (weighing.ngaycan2) {
       return "Hoàn thành";
     }
@@ -630,8 +639,8 @@ const WeighingListScreen: React.FC = () => {
     // M3 Filter Chips with proper styling
     return (
       <View style={styles.filtersContainer}>
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filtersScrollContent}
         >
@@ -644,9 +653,9 @@ const WeighingListScreen: React.FC = () => {
                   styles.filterChip,
                   {
                     backgroundColor: isActive
-                      ? colors.primaryContainer || colors.primary + '20'
+                      ? colors.primaryContainer || colors.primary + "20"
                       : colors.surfaceContainer || colors.gray100,
-                    borderColor: isActive ? colors.primary : 'transparent',
+                    borderColor: isActive ? colors.primary : "transparent",
                   },
                 ]}
                 onPress={() => onFilterChange(filter.key)}
@@ -664,7 +673,7 @@ const WeighingListScreen: React.FC = () => {
                     styles.filterChipText,
                     {
                       color: isActive ? colors.primary : colors.text,
-                      fontWeight: isActive ? '600' : '400',
+                      fontWeight: isActive ? "600" : "400",
                     },
                   ]}
                 >
@@ -687,7 +696,10 @@ const WeighingListScreen: React.FC = () => {
         <View
           style={[
             styles.searchContainer,
-            { backgroundColor: colors.surface, borderBottomColor: colors.outlineVariant || colors.gray200 },
+            {
+              backgroundColor: colors.surface,
+              borderBottomColor: colors.outlineVariant || colors.gray200,
+            },
           ]}
         >
           <View
@@ -721,14 +733,20 @@ const WeighingListScreen: React.FC = () => {
           </View>
 
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.surfaceContainer || colors.gray100 }]}
+            style={[
+              styles.actionButton,
+              { backgroundColor: colors.surfaceContainer || colors.gray100 },
+            ]}
             onPress={() => setShowFilterModal(true)}
           >
             <Ionicons name="options-outline" size={20} color={colors.text} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.surfaceContainer || colors.gray100 }]}
+            style={[
+              styles.actionButton,
+              { backgroundColor: colors.surfaceContainer || colors.gray100 },
+            ]}
             onPress={() => setViewMode(viewMode === "list" ? "table" : "list")}
           >
             <Ionicons

@@ -9,6 +9,7 @@ import {
   ViewStyle,
   TextStyle,
   StyleProp,
+  Platform,
 } from "react-native";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import spacing from "@/styles/spacing";
@@ -106,76 +107,115 @@ const Card: React.FC<CardProps> = ({
     }
   };
 
-  const renderContent = () => (
-    <View
-      style={[
-        styles.card,
-        { backgroundColor: colors.card },
-        getVariantStyles(),
-        bordered && styles.bordered,
-        bordered && { borderColor: colors.outlineVariant || colors.gray200 },
-        style,
-      ]}
-    >
-      {status !== "default" && (
-        <View
-          style={[styles.statusBar, { backgroundColor: getStatusColor() }]}
-        />
-      )}
+  const variantStyles = getVariantStyles();
+  const borderRadius =
+    (variantStyles as ViewStyle).borderRadius ?? spacing.radiusMd;
 
-      {(header || title || subtitle) && (
-        <View
-          style={[
-            styles.headerContainer,
-            { borderBottomColor: colors.outlineVariant || colors.gray200 },
-          ]}
-        >
-          {header || (
-            <View style={styles.titleContainer}>
-              <View style={styles.titleWrapper}>
-                {title && (
-                  <Text
-                    style={[
-                      styles.title, 
-                      { color: colors.onSurface || colors.text }, 
-                      titleStyle
-                    ]}
-                  >
-                    {title}
-                  </Text>
-                )}
-                {subtitle && (
-                  <Text
-                    style={[
-                      styles.subtitle,
-                      { color: colors.onSurfaceVariant || colors.textSecondary },
-                      subtitleStyle,
-                    ]}
-                  >
-                    {subtitle}
-                  </Text>
+  // Flatten external style to decompose & redistribute properties safely.
+  const flatStyle = StyleSheet.flatten(style ?? {}) as ViewStyle;
+
+  // The user-intended or variant background (may be semi-transparent).
+  const intentedBg: string =
+    (flatStyle?.backgroundColor as string) ||
+    ((variantStyles as ViewStyle).backgroundColor as string) ||
+    colors.card;
+
+  // On Android, elevation draws a native shadow BEHIND the view.
+  // If the view's background is semi-transparent, the shadow bleeds through
+  // and appears as a dark/black border. Fix: outer view (which carries
+  // elevation) always uses an OPAQUE background on Android.
+  const outerBg = Platform.OS === "android" ? colors.card : intentedBg;
+
+  // Strip overflow and backgroundColor from the user style so they don't
+  // leak onto the outer view. overflow:hidden on an elevated Android view
+  // also causes the black border artifact.
+  const {
+    overflow: _overflow,
+    backgroundColor: _bg,
+    ...cleanedStyle
+  } = flatStyle || {};
+
+  const outerStyle: StyleProp<ViewStyle>[] = [
+    styles.cardOuter,
+    { borderRadius, backgroundColor: outerBg },
+    variantStyles,
+    cleanedStyle as ViewStyle,
+  ];
+
+  const innerStyle: StyleProp<ViewStyle>[] = [
+    styles.cardInner,
+    { borderRadius, backgroundColor: intentedBg },
+    bordered && styles.bordered,
+    bordered && { borderColor: colors.outlineVariant || colors.gray200 },
+  ];
+
+  const renderContent = () => (
+    <View style={outerStyle}>
+      {/* Inner view clips content to borderRadius without conflicting with elevation on Android */}
+      <View style={innerStyle}>
+        {status !== "default" && (
+          <View
+            style={[styles.statusBar, { backgroundColor: getStatusColor() }]}
+          />
+        )}
+
+        {(header || title || subtitle) && (
+          <View
+            style={[
+              styles.headerContainer,
+              { borderBottomColor: colors.outlineVariant || colors.gray200 },
+            ]}
+          >
+            {header || (
+              <View style={styles.titleContainer}>
+                <View style={styles.titleWrapper}>
+                  {title && (
+                    <Text
+                      style={[
+                        styles.title,
+                        { color: colors.onSurface || colors.text },
+                        titleStyle,
+                      ]}
+                    >
+                      {title}
+                    </Text>
+                  )}
+                  {subtitle && (
+                    <Text
+                      style={[
+                        styles.subtitle,
+                        {
+                          color:
+                            colors.onSurfaceVariant || colors.textSecondary,
+                        },
+                        subtitleStyle,
+                      ]}
+                    >
+                      {subtitle}
+                    </Text>
+                  )}
+                </View>
+                {rightContent && (
+                  <View style={styles.rightContent}>{rightContent}</View>
                 )}
               </View>
-              {rightContent && (
-                <View style={styles.rightContent}>{rightContent}</View>
-              )}
-            </View>
-          )}
-        </View>
-      )}
+            )}
+          </View>
+        )}
 
-      <View style={[styles.content, contentStyle]}>{children}</View>
+        <View style={[styles.content, contentStyle]}>{children}</View>
 
-      {footer && (
-        <View
-          style={[
-            styles.footerContainer, 
-            { borderTopColor: colors.outlineVariant || colors.gray200 }
-          ]}
-        >
-          {footer}
-        </View>
-      )}
+        {footer && (
+          <View
+            style={[
+              styles.footerContainer,
+              { borderTopColor: colors.outlineVariant || colors.gray200 },
+            ]}
+          >
+            {footer}
+          </View>
+        )}
+      </View>
     </View>
   );
 
@@ -191,10 +231,16 @@ const Card: React.FC<CardProps> = ({
 };
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: spacing.radiusMd, // fallback, overridden per variant
-    overflow: "hidden",
+  // Outer container: handles elevation/shadow — NO overflow:hidden to avoid Android black border
+  cardOuter: {
+    borderRadius: spacing.radiusMd,
     marginBottom: spacing.md,
+  },
+  // Inner container: handles borderRadius clipping — safe to use overflow:hidden here
+  // because there is no elevation on this view
+  cardInner: {
+    overflow: "hidden",
+    borderRadius: spacing.radiusMd,
   },
   bordered: {
     borderWidth: 1,
@@ -203,7 +249,7 @@ const styles = StyleSheet.create({
     elevation: 3,
     shadowColor: "#4A4A8A",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.10,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
   },
   statusBar: {

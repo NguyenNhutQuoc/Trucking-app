@@ -30,7 +30,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import LoadMoreButton from "@/components/common/LoadMoreButton";
 import { Phieucan } from "@/types/api.types";
-import { formatWeight } from "@/utils/formatters";
+import { formatWeight, formatDate } from "@/utils/formatters";
 import { spacing } from "@/styles/spacing";
 import { useNavigationStore } from "@/store/navigationStore";
 
@@ -72,6 +72,15 @@ const WeighingListScreen: React.FC = () => {
   const [dateFilterField, setDateFilterField] = useState<"ngaycan1" | "ngaycan2">("ngaycan1");
 
   const dateOnly = (date: Date) => date.toISOString().split("T")[0];
+
+  // Parse a DD-MM-YYYY string into a Date (returns null if invalid)
+  const parseDMY = (str: string): Date | null => {
+    const parts = str.split("-");
+    if (parts.length !== 3) return null;
+    const [dd, mm, yyyy] = parts.map(Number);
+    if (!dd || !mm || !yyyy || yyyy < 1000) return null;
+    return new Date(yyyy, mm - 1, dd);
+  };
 
   const getDateRangeForFilter = (filter: FilterState) => {
     const now = new Date();
@@ -199,22 +208,18 @@ const WeighingListScreen: React.FC = () => {
 
     // Apply date range filter client-side
     if (dateFrom || dateTo) {
+      const fromDate = dateFrom ? parseDMY(dateFrom) : null;
+      const toDate = dateTo ? parseDMY(dateTo) : null;
+      if (fromDate) fromDate.setHours(0, 0, 0, 0);
+      if (toDate) toDate.setHours(23, 59, 59, 999);
       result = result.filter((item) => {
         const dateValue = dateFilterField === "ngaycan1"
           ? item.ngaycan1
           : item.ngaycan2;
         if (!dateValue) return false;
         const d = new Date(dateValue);
-        if (dateFrom) {
-          const from = new Date(dateFrom);
-          from.setHours(0, 0, 0, 0);
-          if (d < from) return false;
-        }
-        if (dateTo) {
-          const to = new Date(dateTo);
-          to.setHours(23, 59, 59, 999);
-          if (d > to) return false;
-        }
+        if (fromDate && d < fromDate) return false;
+        if (toDate && d > toDate) return false;
         return true;
       });
     }
@@ -368,12 +373,8 @@ const WeighingListScreen: React.FC = () => {
     const statusText = getStatusText(item);
     const importExportColor = getImportExportColor(item.xuatnhap);
 
+    const dateString = formatDate(item.ngaycan1);
     const date = new Date(item.ngaycan1);
-    const dateString = date.toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
     const timeString = date.toLocaleTimeString("vi-VN", {
       hour: "2-digit",
       minute: "2-digit",
@@ -881,7 +882,7 @@ const WeighingListScreen: React.FC = () => {
                 <ThemedText style={styles.dateRangeLabel}>Từ ngày:</ThemedText>
                 <TextInput
                   style={[styles.dateRangeInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surfaceContainer || colors.gray100 }]}
-                  placeholder="YYYY-MM-DD"
+                  placeholder="DD-MM-YYYY"
                   placeholderTextColor={colors.textSecondary}
                   value={dateFrom}
                   onChangeText={setDateFrom}
@@ -891,7 +892,7 @@ const WeighingListScreen: React.FC = () => {
                 <ThemedText style={styles.dateRangeLabel}>Đến ngày:</ThemedText>
                 <TextInput
                   style={[styles.dateRangeInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.surfaceContainer || colors.gray100 }]}
-                  placeholder="YYYY-MM-DD"
+                  placeholder="DD-MM-YYYY"
                   placeholderTextColor={colors.textSecondary}
                   value={dateTo}
                   onChangeText={setDateTo}

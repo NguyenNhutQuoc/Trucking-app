@@ -191,16 +191,6 @@ const WeighingDetailScreen: React.FC = () => {
               <ThemedText style={styles.ticketNumber}>
                 Phiếu #{weighing.sophieu}
               </ThemedText>
-              <View
-                style={[
-                  styles.statusBadge,
-                  { backgroundColor: getStatusColor() },
-                ]}
-              >
-                <ThemedText style={styles.statusText}>
-                  {getStatusText()}
-                </ThemedText>
-              </View>
             </View>
 
             <View style={styles.vehicleInfo}>

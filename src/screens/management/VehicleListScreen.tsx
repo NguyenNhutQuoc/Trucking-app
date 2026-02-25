@@ -140,6 +140,9 @@ const VehicleListScreen: React.FC = () => {
   // Table Header Component
   const TableHeader = () => (
     <View style={[styles.tableHeader, { backgroundColor: colors.gray100 }]}>
+      <ThemedText style={[styles.tableHeaderCell, styles.sttColumn]}>
+        STT
+      </ThemedText>
       <ThemedText style={[styles.tableHeaderCell, styles.vehicleColumn]}>
         Biển số xe
       </ThemedText>
@@ -159,10 +162,16 @@ const VehicleListScreen: React.FC = () => {
         style={[
           styles.tableRow,
           {
-            backgroundColor: index % 2 === 0 ? colors.card : colors.gray50,
+            backgroundColor: index % 2 === 0 ? colors.card : colors.gray200,
           },
         ]}
       >
+        <ThemedText
+          style={[styles.tableCell, styles.sttColumn]}
+          numberOfLines={1}
+        >
+          {index + 1}
+        </ThemedText>
         <ThemedText
           style={[styles.tableCell, styles.vehicleColumn]}
           numberOfLines={1}
@@ -482,6 +491,10 @@ const styles = StyleSheet.create({
   },
   vehicleColumn: {
     flex: 3,
+  },
+  sttColumn: {
+    flex: 0.6,
+    textAlign: "center",
   },
   weightColumn: {
     flex: 2,

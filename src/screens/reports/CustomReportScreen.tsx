@@ -461,6 +461,9 @@ const CustomReportScreen: React.FC = () => {
   // Table Header Component
   const TableHeader = () => (
     <View style={[styles.tableHeader, { backgroundColor: colors.gray100 }]}>
+      <ThemedText style={[styles.tableHeaderCell, styles.sttColumn]}>
+        STT
+      </ThemedText>
       <ThemedText style={[styles.tableHeaderCell, styles.ticketColumn]}>
         Phiếu
       </ThemedText>
@@ -473,34 +476,30 @@ const CustomReportScreen: React.FC = () => {
       <ThemedText style={[styles.tableHeaderCell, styles.weightColumn]}>
         Trọng lượng
       </ThemedText>
-      <ThemedText style={[styles.tableHeaderCell, styles.statusColumn]}>
-        Trạng thái
-      </ThemedText>
     </View>
   );
 
   // Table Row Component
-  const renderTableRow = ({ item }: { item: Phieucan }) => {
+  const renderTableRow = ({ item, index }: { item: Phieucan; index: number }) => {
     if (!item) return null;
 
     const netWeight = calculateNetWeight(item);
     const isCompleted = !!item.ngaycan2;
 
-    const getStatusColor = () => {
-      if (isCompleted) return colors.success;
-      return colors.warning;
-    };
-
-    const getStatusText = () => {
-      if (isCompleted) return "Hoàn thành";
-      return "Chờ";
-    };
-
     return (
       <TouchableOpacity
-        style={styles.tableRow}
+        style={[
+          styles.tableRow,
+          { backgroundColor: index % 2 === 0 ? colors.card : colors.gray200 },
+        ]}
         onPress={() => handlePhieucanPress(item)}
       >
+        <ThemedText
+          style={[styles.tableCell, styles.sttColumn, styles.tableCellText]}
+          numberOfLines={1}
+        >
+          {index + 1}
+        </ThemedText>
         <View style={[styles.tableCell, styles.ticketColumn]}>
           <ThemedText numberOfLines={1} style={styles.tableCellText}>
             #{item.sophieu}
@@ -527,13 +526,6 @@ const CustomReportScreen: React.FC = () => {
               ? formatWeight(netWeight, true)
               : formatWeight(item.tlcan1, true)}
           </ThemedText>
-        </View>
-        <View style={[styles.tableCell, styles.statusColumn]}>
-          <View
-            style={[styles.statusBadge, { backgroundColor: getStatusColor() }]}
-          >
-            <ThemedText style={styles.statusText}>{getStatusText()}</ThemedText>
-          </View>
         </View>
       </TouchableOpacity>
     );
@@ -1311,6 +1303,12 @@ const styles = StyleSheet.create({
   ticketColumn: {
     flex: 1.5,
     justifyContent: "center",
+  },
+  sttColumn: {
+    flex: 0.6,
+    justifyContent: "center",
+    alignItems: "center",
+    textAlign: "center",
   },
   vehicleColumn: {
     flex: 1.5,

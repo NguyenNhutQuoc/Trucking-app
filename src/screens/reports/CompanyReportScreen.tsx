@@ -139,6 +139,9 @@ const CompanyReportScreen: React.FC = () => {
   // Table Header Component
   const TableHeader = () => (
     <View style={[styles.tableHeader, { backgroundColor: colors.gray100 }]}>
+      <ThemedText style={[styles.tableHeaderCell, styles.sttColumn]}>
+        STT
+      </ThemedText>
       <ThemedText style={[styles.tableHeaderCell, styles.companyColumn]}>
         Khách hàng
       </ThemedText>
@@ -167,10 +170,16 @@ const CompanyReportScreen: React.FC = () => {
         style={[
           styles.tableRow,
           {
-            backgroundColor: index % 2 === 0 ? colors.card : colors.gray50,
+            backgroundColor: index % 2 === 0 ? colors.card : colors.gray200,
           },
         ]}
       >
+        <ThemedText
+          style={[styles.tableCell, styles.sttColumn, styles.tableCellText]}
+          numberOfLines={1}
+        >
+          {index + 1}
+        </ThemedText>
         <View style={[styles.tableCell, styles.companyColumn]}>
           <ThemedText numberOfLines={2} style={styles.tableCellText}>
             {item.companyName}
@@ -651,6 +660,12 @@ const styles = StyleSheet.create({
   companyColumn: {
     flex: 3,
     justifyContent: "center",
+  },
+  sttColumn: {
+    flex: 0.6,
+    justifyContent: "center",
+    alignItems: "center",
+    textAlign: "center",
   },
   countColumn: {
     flex: 1.5,

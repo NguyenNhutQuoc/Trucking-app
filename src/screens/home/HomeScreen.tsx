@@ -444,9 +444,9 @@ const HomeScreen: React.FC = () => {
           <Card
             style={{
               ...styles.stationInfoCard,
-              padding: 0,
               overflow: "hidden",
             }}
+            contentStyle={{ padding: 0 }}
           >
             <LinearGradient
               colors={
@@ -680,11 +680,11 @@ const styles = StyleSheet.create({
     minHeight: 110,
     alignItems: "center",
     justifyContent: "center",
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    elevation: 4,
+    shadowColor: "#1565C0",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
   },
   gradientCardIconCircle: {
     width: 40,

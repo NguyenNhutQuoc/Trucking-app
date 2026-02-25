@@ -201,9 +201,9 @@ const styles = StyleSheet.create({
   },
   elevated: {
     elevation: 3,
-    shadowColor: "#000",
+    shadowColor: "#4A4A8A",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.10,
     shadowRadius: 8,
   },
   statusBar: {
